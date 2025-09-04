@@ -38,8 +38,8 @@ import {
   getPaymentStatus,
   getTeamById,
   getTopRevenueClient,
-  getTrackerProjectById,
-  getTrackerRecordsByRange,
+  // getTrackerProjectById, // Removed - tracker functionality disabled
+  // getTrackerRecordsByRange, // Removed - tracker functionality disabled
   getUserById,
   searchInvoiceNumber,
   updateInvoice,
@@ -162,18 +162,14 @@ export const invoiceRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx: { db, teamId, session }, input }) => {
+      // Tracker functionality has been disabled
+      throw new TRPCError({
+        code: "NOT_IMPLEMENTED",
+        message: "Tracker functionality is no longer supported",
+      });
+      
+      /* Original implementation removed due to missing tracker dependencies
       const { projectId, dateFrom, dateTo } = input;
-
-      // Get project data and tracker entries
-      const [projectData, trackerData] = await Promise.all([
-        getTrackerProjectById(db, { id: projectId, teamId: teamId! }),
-        getTrackerRecordsByRange(db, {
-          teamId: teamId!,
-          projectId,
-          from: dateFrom,
-          to: dateTo,
-        }),
-      ]);
 
       if (!projectData) {
         throw new TRPCError({
@@ -301,6 +297,7 @@ export const invoiceRouter = createTRPCRouter({
       };
 
       return draftInvoice(db, invoiceData);
+      */
     }),
 
   defaultSettings: protectedProcedure.query(
