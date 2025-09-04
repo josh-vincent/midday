@@ -3,6 +3,23 @@ export type LineItem = {
   quantity?: number;
   price?: number;
   unit?: string;
+  // Dirt-specific weighbridge fields
+  ticketNumber?: string;
+  truckRego?: string;
+  weighInTime?: string;
+  weighOutTime?: string;
+  grossWeight?: number;
+  tareWeight?: number;
+  netTonnage?: number;
+  volumeM3?: number;
+  materialType?: string;
+  siteFrom?: string;
+  siteTo?: string;
+  purchaseOrder?: string;
+  costCenter?: string;
+  epaLevyRate?: number;
+  epaLevyAmount?: number;
+  attachments?: string[];
 };
 
 export type Invoice = {

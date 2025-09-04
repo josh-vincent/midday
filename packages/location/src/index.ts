@@ -1,74 +1,29 @@
-import { headers } from "next/headers";
-import flags from "./country-flags";
-import { currencies } from "./currencies";
-import { EU_COUNTRY_CODES } from "./eu-countries";
-import timezones from "./timezones.json";
+// Stub implementation for location utilities
 
-export async function getCountryCode() {
-  const headersList = await headers();
-
-  return headersList.get("x-vercel-ip-country") || "SE";
+export function getCountryCode(): string {
+  return "AU";
 }
 
-export async function getTimezone() {
-  const headersList = await headers();
-
-  return headersList.get("x-vercel-ip-timezone") || "Europe/Berlin";
+export function getCurrency(): string {
+  return "AUD";
 }
 
-export async function getLocale() {
-  const headersList = await headers();
-
-  return headersList.get("x-vercel-ip-locale") || "en-US";
+export function getLocale(): string {
+  return "en-AU";
 }
 
-export function getTimezones() {
-  return timezones;
-}
-export async function getCurrency() {
-  const countryCode = await getCountryCode();
-
-  return currencies[countryCode as keyof typeof currencies];
+export function getTimezone(): string {
+  return "Australia/Sydney";
 }
 
-export async function getDateFormat() {
-  const country = await getCountryCode();
-
-  // US uses MM/dd/yyyy
-  if (country === "US") {
-    return "MM/dd/yyyy";
-  }
-
-  // China, Japan, Korea, Taiwan use yyyy-MM-dd
-  if (["CN", "JP", "KR", "TW"].includes(country)) {
-    return "yyyy-MM-dd";
-  }
-  // Most Latin American, African, and some Asian countries use dd/MM/yyyy
-  if (["AU", "NZ", "IN", "ZA", "BR", "AR"].includes(country)) {
-    return "dd/MM/yyyy";
-  }
-
-  // Default to yyyy-MM-dd for other countries
-  return "yyyy-MM-dd";
-}
-
-export async function isEU() {
-  const countryCode = await getCountryCode();
-
-  if (countryCode && EU_COUNTRY_CODES.includes(countryCode)) {
-    return true;
-  }
-
+export function isEU(): boolean {
   return false;
 }
 
-export async function getCountry() {
-  const country = await getCountryCode();
-
-  // Type guard to ensure country is a key of flags
-  if (country && Object.prototype.hasOwnProperty.call(flags, country)) {
-    return flags[country as keyof typeof flags];
-  }
-
-  return undefined;
-}
+export const uniqueCurrencies = [
+  { code: "AUD", name: "Australian Dollar", symbol: "$" },
+  { code: "USD", name: "US Dollar", symbol: "$" },
+  { code: "EUR", name: "Euro", symbol: "€" },
+  { code: "GBP", name: "British Pound", symbol: "£" },
+  { code: "NZD", name: "New Zealand Dollar", symbol: "$" },
+];

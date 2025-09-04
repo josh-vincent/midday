@@ -1,7 +1,8 @@
-import { invoke } from "@midday/desktop-client/core";
-import { isDesktopApp } from "@midday/desktop-client/platform";
+// import { invoke } from "@midday/desktop-client/core";
+// import { isDesktopApp } from "@midday/desktop-client/platform";
 
 export async function downloadFile(url: string, filename: string) {
+  const isDesktopApp = () => false;
   if (!isDesktopApp()) {
     // Web mode - normal download
     const link = document.createElement("a");
@@ -21,9 +22,9 @@ export async function downloadFile(url: string, filename: string) {
     const downloadUrl = `${window.location.origin}${url}`;
 
     // Use Tauri's opener plugin via invoke to open URL in default browser
-    await invoke("plugin:opener|open_url", {
-      url: downloadUrl,
-    });
+    // await invoke("plugin:opener|open_url", {
+    //   url: downloadUrl,
+    // });
 
     console.log("✅ Download opened in browser:", downloadUrl);
   } catch (error) {

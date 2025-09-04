@@ -1,63 +1,9 @@
-// Types
-export type {
-  BaseCategory,
-  ParentCategory,
-  ChildCategory,
-  CategoryHierarchy,
-  TaxRateConfig,
-} from "./types";
-
-// Zod schemas for validation
-export {
-  baseCategorySchema,
-  childCategorySchema,
-  parentCategorySchema,
-  categoryHierarchySchema,
-  taxRateConfigSchema,
-} from "./types";
-
-// Main category definitions
-export { CATEGORIES } from "./categories";
-
-// Tax rate configurations
-export {
-  TAX_RATE_CONFIGS,
-  getTaxRateForCategory,
-  getTaxTypeForCountry,
-  getSupportedCountries,
-  isCountrySupported,
-} from "./tax-rates";
-
-// Utility functions
-export {
-  getFlatCategories,
-  getCategoryBySlug,
-  getParentCategory,
-  getCategoryWithTaxRate,
-} from "./utils";
-
-// Color system
-export {
-  CATEGORY_COLORS,
-  CATEGORY_COLOR_MAP,
-  getCategoryColor,
-  getColorFromSlug,
-  getRandomColor,
-  getAllColors,
-} from "./color-system";
-
-// Embeddings
-export {
-  generateCategoryEmbedding,
-  generateCategoryEmbeddings,
-  CategoryEmbeddings,
-} from "./embeddings";
-
-// Constants for easy reference
-export const TAX_TYPES = [
-  "vat",
-  "gst",
-  "sales_tax",
-  "income_tax",
-  "none",
-] as const;
+// Stub for categories package
+export const CATEGORIES = [];
+export const getTaxTypeForCountry = (country: string) => 'tax';
+export const getTaxRateForCategory = (category: string, country: string) => 0;
+export const CategoryEmbeddings = class CategoryEmbeddings {
+  constructor(config: any) {}
+  findCategory(text: string) { return null; }
+};
+export default {};

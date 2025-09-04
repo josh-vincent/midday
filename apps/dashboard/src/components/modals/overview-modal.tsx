@@ -117,7 +117,7 @@ export function OverviewModal({ hideConnectFlow: hasHideConnectFlow }: Props) {
                 ))}
               </div>
 
-              <AddAccountButton onClick={handleOnOpenChange} />
+              {/* <AddAccountButton onClick={handleOnOpenChange} /> */}
             </div>
           </div>
         </div>

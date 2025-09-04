@@ -65,7 +65,7 @@ export function ComboboxDropdown<T extends ComboboxItem>({
 
   const selectedItem = incomingSelectedItem ?? internalSelectedItem;
 
-  const filteredItems = items.filter((item) =>
+  const filteredItems = items?.filter((item) =>
     item.label.toLowerCase().includes(inputValue.toLowerCase()),
   );
 
@@ -82,7 +82,7 @@ export function ComboboxDropdown<T extends ComboboxItem>({
 
       <CommandGroup>
         <CommandList className="max-h-[225px] overflow-auto">
-          {filteredItems.map((item) => {
+          {filteredItems?.map((item) => {
             const isChecked = selectedItem?.id === item.id;
 
             return (

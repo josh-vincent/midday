@@ -50,7 +50,8 @@ import type {
   GenerateInvoicePayload,
   SendInvoiceReminderPayload,
 } from "@midday/jobs/schema";
-import { runs, tasks } from "@trigger.dev/sdk";
+// Disabled - trigger.dev
+// import { runs, tasks } from "@trigger.dev/sdk";
 import { TRPCError } from "@trpc/server";
 import { addMonths, format, parseISO } from "date-fns";
 import { v4 as uuidv4 } from "uuid";
@@ -481,24 +482,27 @@ export const invoiceRouter = createTRPCRouter({
 
         if (existingInvoice?.scheduledJobId) {
           // Reschedule the existing job instead of creating a new one
-          await runs.reschedule(existingInvoice.scheduledJobId, {
-            delay: scheduledDate,
-          });
+          // Disabled - trigger.dev
+          // await runs.reschedule(existingInvoice.scheduledJobId, {
+          //   delay: scheduledDate,
+          // });
           scheduledJobId = existingInvoice.scheduledJobId;
         } else {
           // Create a new scheduled job
-          const scheduledRun = await tasks.trigger(
-            "schedule-invoice",
-            {
-              invoiceId: input.id,
-              scheduledAt: input.scheduledAt,
-            },
-            {
-              delay: scheduledDate,
-            },
-          );
+          // Disabled - trigger.dev
+          // const scheduledRun = await tasks.trigger(
+          //   "schedule-invoice",
+          //   {
+          //     invoiceId: input.id,
+          //     scheduledAt: input.scheduledAt,
+          //   },
+          //   {
+          //     delay: scheduledDate,
+          //   },
+          // );
 
-          scheduledJobId = scheduledRun.id;
+          // scheduledJobId = scheduledRun.id;
+          scheduledJobId = null; // Placeholder
         }
 
         // Update the invoice with scheduling information
@@ -517,14 +521,15 @@ export const invoiceRouter = createTRPCRouter({
           });
         }
 
-        tasks.trigger("notification", {
-          type: "invoice_scheduled",
-          teamId: teamId!,
-          invoiceId: input.id,
-          invoiceNumber: data.invoiceNumber,
-          scheduledAt: input.scheduledAt,
-          customerName: data.customerName,
-        });
+        // Disabled - trigger.dev
+        // tasks.trigger("notification", {
+        //   type: "invoice_scheduled",
+        //   teamId: teamId!,
+        //   invoiceId: input.id,
+        //   invoiceNumber: data.invoiceNumber,
+        //   scheduledAt: input.scheduledAt,
+        //   customerName: data.customerName,
+        // });
 
         return data;
       }
@@ -543,10 +548,11 @@ export const invoiceRouter = createTRPCRouter({
         });
       }
 
-      await tasks.trigger("generate-invoice", {
-        invoiceId: data.id,
-        deliveryType: input.deliveryType,
-      } satisfies GenerateInvoicePayload);
+      // Disabled - trigger.dev
+      // await tasks.trigger("generate-invoice", {
+      //   invoiceId: data.id,
+      //   deliveryType: input.deliveryType,
+      // } satisfies GenerateInvoicePayload);
 
       return data;
     }),
@@ -554,9 +560,10 @@ export const invoiceRouter = createTRPCRouter({
   remind: protectedProcedure
     .input(remindInvoiceSchema)
     .mutation(async ({ input, ctx: { db, teamId } }) => {
-      await tasks.trigger("send-invoice-reminder", {
-        invoiceId: input.id,
-      } satisfies SendInvoiceReminderPayload);
+      // Disabled - trigger.dev
+      // await tasks.trigger("send-invoice-reminder", {
+      //   invoiceId: input.id,
+      // } satisfies SendInvoiceReminderPayload);
 
       return updateInvoice(db, {
         id: input.id,
@@ -605,10 +612,11 @@ export const invoiceRouter = createTRPCRouter({
         });
       }
 
+      // Disabled - trigger.dev
       // Reschedule the existing job with the new date
-      await runs.reschedule(invoice.scheduledJobId, {
-        delay: scheduledDate,
-      });
+      // await runs.reschedule(invoice.scheduledJobId, {
+      //   delay: scheduledDate,
+      // });
 
       // Update the scheduled date in the database
       const updatedInvoice = await updateInvoice(db, {
@@ -636,8 +644,9 @@ export const invoiceRouter = createTRPCRouter({
         });
       }
 
+      // Disabled - trigger.dev
       // Cancel the scheduled job
-      await runs.cancel(invoice.scheduledJobId);
+      // await runs.cancel(invoice.scheduledJobId);
 
       // Update the invoice status back to draft and clear scheduling fields
       const updatedInvoice = await updateInvoice(db, {

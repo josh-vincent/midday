@@ -16,6 +16,7 @@
     "./job-client": "./src/job-client.ts",
     "./queries": "./src/queries/index.ts",
     "./schema": "./src/schema.ts",
+    "./schema-dirt": "./src/schema-dirt.ts",
     "./utils/api-keys": "./src/utils/api-keys.ts",
     "./utils/search-query": "./src/utils/search-query.ts",
     "./utils/health": "./src/utils/health.ts",
@@ -33,7 +34,7 @@
     "snakecase-keys": "^8.0.1"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.31.1",
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "drizzle-kit": "^0.31.4"
   }
 }

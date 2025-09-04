@@ -10,7 +10,7 @@ import { useTransactionParams } from "@/hooks/use-transaction-params";
 import { useUserQuery } from "@/hooks/use-user";
 import { useZodForm } from "@/hooks/use-zod-form";
 import { useTRPC } from "@/trpc/client";
-import { uniqueCurrencies } from "@midday/location/currencies";
+// import { uniqueCurrencies } from "@midday/location/currencies";
 import {
   Accordion,
   AccordionContent,
@@ -196,7 +196,7 @@ export function TransactionCreateForm() {
                 <FormControl>
                   <SelectCurrency
                     className="w-full"
-                    currencies={uniqueCurrencies}
+                    currencies={["AUD"]}
                     onChange={field.onChange}
                     value={field.value}
                   />

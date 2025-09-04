@@ -5,8 +5,6 @@ import {
   invoiceStatusEnum,
   invoices,
   teams,
-  trackerEntries,
-  trackerProjects,
 } from "@db/schema";
 import { buildSearchQuery } from "@midday/db/utils/search-query";
 import { generateToken } from "@midday/invoice/token";
@@ -755,24 +753,13 @@ export async function getMostActiveClient(
         gte(invoices.createdAt, thirtyDaysAgo.toISOString()),
       ),
     )
-    .leftJoin(trackerProjects, eq(trackerProjects.customerId, customers.id))
-    .leftJoin(
-      trackerEntries,
-      and(
-        eq(trackerEntries.projectId, trackerProjects.id),
-        gte(
-          trackerEntries.date,
-          thirtyDaysAgo.toISOString().split("T")[0] ?? "",
-        ),
-      ),
-    )
     .where(eq(customers.teamId, teamId))
     .groupBy(customers.id, customers.name)
     .having(
-      sql`COUNT(DISTINCT ${invoices.id}) > 0 OR COALESCE(SUM(${trackerEntries.duration}), 0) > 0`,
+      sql`COUNT(DISTINCT ${invoices.id}) > 0`,
     )
     .orderBy(
-      sql`(COUNT(DISTINCT ${invoices.id}) + COALESCE(SUM(${trackerEntries.duration}) / 3600, 0)) DESC`,
+      sql`COUNT(DISTINCT ${invoices.id}) DESC`,
     )
     .limit(1);
 

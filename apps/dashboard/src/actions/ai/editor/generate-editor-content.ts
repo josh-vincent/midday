@@ -1,8 +1,7 @@
 "use server";
 
 import { openai } from "@ai-sdk/openai";
-import { streamText } from "ai";
-import { createStreamableValue } from "ai/rsc";
+import { generateText } from "ai";
 
 type Params = {
   input: string;
@@ -10,10 +9,8 @@ type Params = {
 };
 
 export async function generateEditorContent({ input, context }: Params) {
-  const stream = createStreamableValue("");
-
-  (async () => {
-    const { textStream } = await streamText({
+  try {
+    const { text } = await generateText({
       model: openai("gpt-4o-mini"),
       prompt: input,
       temperature: 0.8,
@@ -39,12 +36,9 @@ export async function generateEditorContent({ input, context }: Params) {
 `,
     });
 
-    for await (const delta of textStream) {
-      stream.update(delta);
-    }
-
-    stream.done();
-  })();
-
-  return { output: stream.value };
+    return { output: text };
+  } catch (error) {
+    console.error("Error generating editor content:", error);
+    return { output: "" };
+  }
 }

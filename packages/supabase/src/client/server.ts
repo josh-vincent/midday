@@ -40,9 +40,12 @@ export async function createClient(options?: CreateClientOptions) {
   const { admin = false, ...rest } = options ?? {};
   const cookieStore = await cookies();
 
-  const key = admin
-    ? process.env.SUPABASE_SERVICE_KEY!
-    : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  // Provide fallback values for Supabase configuration
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://ulncfblvuijlgniydjju.supabase.co";
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsbmNmYmx2dWlqbGduaXlkamp1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5NTkxODUsImV4cCI6MjA3MjUzNTE4NX0.pCycxnDK259p3AqhTuet9k20ErxOYEJReDUI5iBG6Ik";
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsbmNmYmx2dWlqbGduaXlkamp1Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1Njk1OTE4NSwiZXhwIjoyMDcyNTM1MTg1fQ.S_hlGIzZYmMlSq5s8dypf1yGfbRb5_hIPIocsWT9ZgQ";
+
+  const key = admin ? supabaseServiceKey : supabaseAnonKey;
 
   const auth = admin
     ? {
@@ -53,7 +56,7 @@ export async function createClient(options?: CreateClientOptions) {
     : {};
 
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    supabaseUrl,
     key,
     {
       ...rest,

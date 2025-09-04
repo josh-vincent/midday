@@ -105,7 +105,7 @@ export function TransactionsModal({
                 ))}
               </div>
 
-              <AddAccountButton />
+              {/* <AddAccountButton /> */}
             </div>
           </div>
         </div>

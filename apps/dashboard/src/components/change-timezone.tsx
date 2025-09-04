@@ -2,7 +2,7 @@
 
 import { useUserMutation, useUserQuery } from "@/hooks/use-user";
 import { useI18n } from "@/locales/client";
-import { getTimezones } from "@midday/location/timezones";
+// import { getTimezones } from "@midday/location/timezones";
 import {
   Card,
   CardContent,
@@ -20,7 +20,7 @@ export function ChangeTimezone() {
   const { data: user } = useUserQuery();
   const updateUserMutation = useUserMutation();
 
-  const timezones = getTimezones();
+  const timezones = [{ name: "Australia/Sydney", tzCode: "Australia/Sydney" }];
   const [currentBrowserTimezone, setCurrentBrowserTimezone] =
     useState<string>("");
 

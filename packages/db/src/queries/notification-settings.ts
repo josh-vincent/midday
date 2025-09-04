@@ -1,37 +1,25 @@
-import {
-  type NotificationType,
-  getUserSettingsNotificationTypes,
-} from "@midday/notifications";
 import { and, eq } from "drizzle-orm";
 import type { Database } from "../client";
-import { notificationSettings } from "../schema";
+import { notificationSettings, notificationTypeEnum } from "../schema";
 
-export type NotificationChannel = "in_app" | "email" | "push";
+export type NotificationType = typeof notificationTypeEnum.enumValues[number];
 
 export interface NotificationSetting {
   id: string;
   userId: string;
   teamId: string;
-  notificationType: string;
-  channel: NotificationChannel;
+  type: NotificationType;
   enabled: boolean;
+  email: boolean;
+  inApp: boolean;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface UpsertNotificationSettingParams {
-  userId: string;
-  teamId: string;
-  notificationType: string;
-  channel: NotificationChannel;
-  enabled: boolean;
 }
 
 export interface GetNotificationSettingsParams {
   userId: string;
   teamId: string;
-  notificationType?: string;
-  channel?: NotificationChannel;
+  type?: NotificationType;
 }
 
 export async function getNotificationSettings(
@@ -43,145 +31,158 @@ export async function getNotificationSettings(
     eq(notificationSettings.teamId, params.teamId),
   ];
 
-  if (params.notificationType) {
-    conditions.push(
-      eq(notificationSettings.notificationType, params.notificationType),
-    );
+  if (params.type) {
+    conditions.push(eq(notificationSettings.type, params.type));
   }
 
-  if (params.channel) {
-    conditions.push(eq(notificationSettings.channel, params.channel));
-  }
-
-  const results = await db
+  const settings = await db
     .select()
     .from(notificationSettings)
     .where(and(...conditions));
 
-  return results.map((result) => ({
-    ...result,
-    channel: result.channel as NotificationChannel,
-  }));
+  return settings as NotificationSetting[];
+}
+
+export interface UpsertNotificationSettingParams {
+  userId: string;
+  teamId: string;
+  type: NotificationType;
+  enabled?: boolean;
+  email?: boolean;
+  inApp?: boolean;
 }
 
 export async function upsertNotificationSetting(
   db: Database,
   params: UpsertNotificationSettingParams,
-): Promise<NotificationSetting> {
-  const [result] = await db
+) {
+  const { userId, teamId, type, ...updates } = params;
+
+  const [setting] = await db
     .insert(notificationSettings)
     .values({
-      userId: params.userId,
-      teamId: params.teamId,
-      notificationType: params.notificationType,
-      channel: params.channel,
-      enabled: params.enabled,
+      userId,
+      teamId,
+      type,
+      enabled: updates.enabled !== undefined ? updates.enabled : true,
+      email: updates.email !== undefined ? updates.email : true,
+      inApp: updates.inApp !== undefined ? updates.inApp : true,
     })
     .onConflictDoUpdate({
       target: [
         notificationSettings.userId,
         notificationSettings.teamId,
-        notificationSettings.notificationType,
-        notificationSettings.channel,
+        notificationSettings.type,
       ],
       set: {
-        enabled: params.enabled,
+        ...updates,
         updatedAt: new Date().toISOString(),
       },
     })
     .returning();
 
-  if (!result) {
-    throw new Error("Failed to upsert notification setting");
+  return setting as NotificationSetting;
+}
+
+export async function deleteNotificationSetting(
+  db: Database,
+  params: {
+    userId: string;
+    teamId: string;
+    type: NotificationType;
+  },
+) {
+  const [deleted] = await db
+    .delete(notificationSettings)
+    .where(
+      and(
+        eq(notificationSettings.userId, params.userId),
+        eq(notificationSettings.teamId, params.teamId),
+        eq(notificationSettings.type, params.type)
+      )
+    )
+    .returning();
+
+  return deleted as NotificationSetting | undefined;
+}
+
+export async function getUserNotificationSettings(
+  db: Database,
+  userId: string,
+  teamId: string,
+) {
+  const settings = await db
+    .select()
+    .from(notificationSettings)
+    .where(
+      and(
+        eq(notificationSettings.userId, userId),
+        eq(notificationSettings.teamId, teamId)
+      )
+    );
+
+  return settings as NotificationSetting[];
+}
+
+export async function initializeDefaultNotificationSettings(
+  db: Database,
+  userId: string,
+  teamId: string,
+) {
+  const defaultTypes: NotificationType[] = [
+    "invoice_created",
+    "invoice_paid",
+    "invoice_overdue",
+    "invoice_reminder",
+    "payment_received",
+    "payment_failed",
+  ];
+
+  const existingSettings = await getUserNotificationSettings(db, userId, teamId);
+  const existingTypes = new Set(existingSettings.map(s => s.type));
+
+  const settingsToCreate = defaultTypes
+    .filter(type => !existingTypes.has(type))
+    .map(type => ({
+      userId,
+      teamId,
+      type,
+      enabled: true,
+      email: true,
+      inApp: true,
+    }));
+
+  if (settingsToCreate.length > 0) {
+    const created = await db
+      .insert(notificationSettings)
+      .values(settingsToCreate)
+      .returning();
+
+    return created as NotificationSetting[];
   }
 
-  return {
-    ...result,
-    channel: result.channel as NotificationChannel,
-  };
+  return [];
 }
 
-// Helper to check if a specific notification should be sent
-export async function shouldSendNotification(
+export async function updateNotificationSettings(
   db: Database,
   userId: string,
   teamId: string,
-  notificationType: string,
-  channel: NotificationChannel,
-): Promise<boolean> {
-  const settings = await getNotificationSettings(db, {
-    userId,
-    teamId,
-    notificationType,
-    channel,
-  });
-
-  // If no setting exists, default to enabled
-  if (settings.length === 0) {
-    return true;
-  }
-
-  return settings[0]?.enabled ?? true;
-}
-
-// Get all notification types with their current settings for a user
-// Note: This only returns the backend data (type, channels, settings)
-// Frontend should handle name/description via i18n
-export async function getUserNotificationPreferences(
-  db: Database,
-  userId: string,
-  teamId: string,
-): Promise<
-  {
-    type: string;
-    channels: NotificationChannel[];
-    settings: { channel: NotificationChannel; enabled: boolean }[];
-    category?: string;
-    order?: number;
-  }[]
-> {
-  const userSettings = await getNotificationSettings(db, { userId, teamId });
-
-  // Get notification types that should appear in user settings
-  const notificationTypes = getUserSettingsNotificationTypes();
-
-  return notificationTypes.map((notificationType) => ({
-    type: notificationType.type,
-    channels: notificationType.channels,
-    category: notificationType.category,
-    order: notificationType.order,
-    settings: notificationType.channels.map((channel) => {
-      const setting = userSettings.find(
-        (s) =>
-          s.notificationType === notificationType.type && s.channel === channel,
-      );
-      return {
-        channel,
-        enabled: setting?.enabled ?? true, // Default to enabled if no setting exists
-      };
-    }),
-  }));
-}
-
-// Bulk update multiple notification settings
-export async function bulkUpdateNotificationSettings(
-  db: Database,
-  userId: string,
-  teamId: string,
-  updates: {
-    notificationType: string;
-    channel: NotificationChannel;
-    enabled: boolean;
-  }[],
-): Promise<NotificationSetting[]> {
+  updates: Array<{
+    type: NotificationType;
+    enabled?: boolean;
+    email?: boolean;
+    inApp?: boolean;
+  }>,
+) {
   const results = await Promise.all(
-    updates.map((update) =>
+    updates.map(update =>
       upsertNotificationSetting(db, {
         userId,
         teamId,
         ...update,
-      }),
-    ),
+      })
+    )
   );
 
   return results;

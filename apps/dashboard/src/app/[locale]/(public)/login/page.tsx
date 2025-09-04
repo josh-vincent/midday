@@ -1,110 +1,20 @@
-import { AppleSignIn } from "@/components/apple-sign-in";
+"use client";
+
+import { useState } from "react";
+import { PasswordSignIn } from "@/components/password-sign-in";
+import { PasswordSignUp } from "@/components/password-sign-up";
 import { ConsentBanner } from "@/components/consent-banner";
-import { GithubSignIn } from "@/components/github-sign-in";
-import { GoogleSignIn } from "@/components/google-sign-in";
-import { OTPSignIn } from "@/components/otp-sign-in";
 import { Cookies } from "@/utils/constants";
 import { isEU } from "@midday/location";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@midday/ui/accordion";
 import { Icons } from "@midday/ui/icons";
-import type { Metadata } from "next";
-import { cookies, headers } from "next/headers";
+import { Button } from "@midday/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import { userAgent } from "next/server";
 import backgroundDark from "public/assets/bg-login-dark.jpg";
 import backgroundLight from "public/assets/bg-login.jpg";
 
-export const metadata: Metadata = {
-  title: "Login | Midday",
-};
-
-export default async function Page() {
-  const cookieStore = await cookies();
-  const preferred = cookieStore.get(Cookies.PreferredSignInProvider);
-  const showTrackingConsent =
-    (await isEU()) && !cookieStore.has(Cookies.TrackingConsent);
-  const { device } = userAgent({ headers: await headers() });
-
-  let moreSignInOptions = null;
-  let preferredSignInOption =
-    device?.vendor === "Apple" ? (
-      <div className="flex flex-col space-y-2">
-        <GoogleSignIn />
-        <AppleSignIn />
-      </div>
-    ) : (
-      <GoogleSignIn />
-    );
-
-  switch (preferred?.value) {
-    case "apple":
-      preferredSignInOption = <AppleSignIn />;
-      moreSignInOptions = (
-        <>
-          <GoogleSignIn />
-          <GithubSignIn />
-          <OTPSignIn className="border-t-[1px] border-border pt-8" />
-        </>
-      );
-      break;
-
-    case "github":
-      preferredSignInOption = <GithubSignIn />;
-      moreSignInOptions = (
-        <>
-          <GoogleSignIn />
-          <AppleSignIn />
-          <OTPSignIn className="border-t-[1px] border-border pt-8" />
-        </>
-      );
-      break;
-
-    case "google":
-      preferredSignInOption = <GoogleSignIn />;
-      moreSignInOptions = (
-        <>
-          <AppleSignIn />
-          <GithubSignIn />
-          <OTPSignIn className="border-t-[1px] border-border pt-8" />
-        </>
-      );
-      break;
-
-    case "otp":
-      preferredSignInOption = <OTPSignIn />;
-      moreSignInOptions = (
-        <>
-          <GoogleSignIn />
-          <AppleSignIn />
-          <GithubSignIn />
-        </>
-      );
-      break;
-
-    default:
-      if (device?.vendor === "Apple") {
-        moreSignInOptions = (
-          <>
-            <GithubSignIn />
-            <OTPSignIn className="border-t-[1px] border-border pt-8" />
-          </>
-        );
-      } else {
-        moreSignInOptions = (
-          <>
-            <AppleSignIn />
-            <GithubSignIn />
-            <OTPSignIn className="border-t-[1px] border-border pt-8" />
-          </>
-        );
-      }
-  }
+export default function Page() {
+  const [isSignUp, setIsSignUp] = useState(false);
 
   return (
     <div className="h-screen p-2">
@@ -142,32 +52,40 @@ export default async function Page() {
             <div className="w-full max-w-md space-y-8">
               {/* Welcome Section */}
               <div className="text-center">
-                <h1 className="text-lg mb-4 font-serif">Welcome to Midday</h1>
+                <h1 className="text-2xl mb-4 font-serif">
+                  {isSignUp ? "Create Your Account" : "Welcome Back"}
+                </h1>
                 <p className="text-[#878787] text-sm mb-8">
-                  New here or coming back? Choose how you want to continue
+                  {isSignUp 
+                    ? "Sign up to start managing your invoices" 
+                    : "Sign in to your account to continue"}
                 </p>
               </div>
 
-              {/* Sign In Options */}
+              {/* Sign In/Up Form */}
               <div className="space-y-4">
-                {/* Primary Sign In Option */}
-                <div className="space-y-3">{preferredSignInOption}</div>
-
-                <div className="flex items-center justify-center">
-                  <span className="text-[#878787] text-sm">Or</span>
+                {isSignUp ? <PasswordSignUp /> : <PasswordSignIn />}
+                
+                <div className="text-center">
+                  <Button
+                    variant="link"
+                    onClick={() => setIsSignUp(!isSignUp)}
+                    className="text-sm text-[#878787] hover:text-primary"
+                  >
+                    {isSignUp 
+                      ? "Already have an account? Sign in" 
+                      : "Don't have an account? Sign up"}
+                  </Button>
                 </div>
 
-                {/* More Options Accordion */}
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="item-1" className="border-0">
-                    <AccordionTrigger className="flex justify-center items-center text-sm py-2 hover:no-underline">
-                      <span>Other options</span>
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-4">
-                      <div className="space-y-3">{moreSignInOptions}</div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+                <div className="text-center">
+                  <Link 
+                    href="/forgot-password" 
+                    className="text-sm text-[#878787] hover:text-primary underline"
+                  >
+                    Forgot your password?
+                  </Link>
+                </div>
               </div>
 
               {/* Terms and Privacy */}
@@ -187,9 +105,6 @@ export default async function Page() {
           </div>
         </div>
       </div>
-
-      {/* Consent Banner */}
-      {showTrackingConsent && <ConsentBanner />}
     </div>
   );
 }

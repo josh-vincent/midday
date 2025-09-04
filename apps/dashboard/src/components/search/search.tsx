@@ -12,8 +12,8 @@ import { downloadFile } from "@/lib/download";
 import { useSearchStore } from "@/store/search";
 import { useTRPC } from "@/trpc/client";
 import { formatDate } from "@/utils/format";
-import { Window, emit, invoke, listen } from "@midday/desktop-client/core";
-import { isDesktopApp } from "@midday/desktop-client/platform";
+// import { Window, emit, invoke, listen } from "@midday/desktop-client/core";
+// import { isDesktopApp } from "@midday/desktop-client/platform";
 import {
   Command,
   CommandEmpty,
@@ -33,7 +33,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { useDebounceValue } from "usehooks-ts";
 import { useCopyToClipboard } from "usehooks-ts";
 import { FilePreviewIcon } from "../file-preview-icon";
-import { TrackerTimer } from "../tracker-timer";
+// import { TrackerTimer } from "../tracker-timer";
 
 interface SearchItem {
   id: string;
@@ -150,11 +150,15 @@ const handleDesktopNavigation = async (
   path: string,
   params?: Record<string, any>,
 ) => {
+  const isDesktopApp = () => false;
+  const Window = { getByLabel: () => ({ label: "main" }), getCurrent: () => ({ label: "main" }) };
+  const emit = () => {};
+  const invoke = () => {};
   if (!isDesktopApp()) return false;
 
   try {
     // Step 1: Get the main window first to check its current path
-    const mainWindow = await Window.getByLabel("main");
+    const mainWindow = await Window.getCurrent();
 
     if (!mainWindow) {
       console.error("❌ Main window not found for navigation");
@@ -162,10 +166,10 @@ const handleDesktopNavigation = async (
     }
 
     // Step 2: Close search window
-    await emit("search-window-close-requested");
+    await emit();
 
     // Step 3: Show and focus main window
-    await invoke("show_window");
+    await invoke();
 
     // Step 4: Navigate in main window context
     // If we have params, we need to use the main window's current path
@@ -174,10 +178,10 @@ const handleDesktopNavigation = async (
       // For param navigation, we want to stay on the current main window page
       // but we can't easily get the main window's current path from here
       // So let's send a special signal to navigate with params on current page
-      await mainWindow.emit("desktop-navigate-with-params", { params });
+      await mainWindow.emit("desktop-navigate-with-params", { params } as any);
     } else {
       // For full path navigation, use the path directly
-      await mainWindow.emit("desktop-navigate", { path, params });
+      await mainWindow.emit("desktop-navigate", { path, params } as any);
     }
 
     return true;
@@ -195,6 +199,10 @@ const useSearchNavigation = () => {
   const { setParams: setTrackerParams } = useTrackerParams();
   const { setParams: setTransactionParams } = useTransactionParams();
   const { setParams: setDocumentParams } = useDocumentParams();
+  const isDesktopApp = () => false;
+  const Window = { getCurrent: () => ({ label: "main" }), getByLabel: () => ({ label: "main" }) };
+  const emit = () => {};
+  const invoke = () => {};
 
   const shouldUseWebNavigation = async () => {
     if (!isDesktopApp()) {
@@ -452,14 +460,14 @@ const SearchResultItemDisplay = ({
         resultDisplay = (
           <div className="flex items-center w-full">
             <div className="flex-grow min-w-0 -ml-[6px]">
-              <TrackerTimer
+              {/* <TrackerTimer
                 projectId={item.id}
                 projectName={item.data.name as string}
                 onClick={() =>
                   nav.navigateToTracker({ projectId: item.id, update: true })
                 }
                 alwaysShowButton={true}
-              />
+              /> */}
             </div>
           </div>
         );
@@ -533,11 +541,11 @@ export function Search() {
   const trpc = useTRPC();
 
   // Get current timer status to prioritize tracker section
-  const { data: timerStatus, refetch: refetchTimerStatus } = useQuery({
-    ...trpc.trackerEntries.getTimerStatus.queryOptions(),
-    refetchInterval: false,
-    staleTime: 5 * 60 * 1000,
-  });
+  // const { data: timerStatus, refetch: refetchTimerStatus } = useQuery({
+  //   ...trpc.trackerEntries.getTimerStatus.queryOptions(),
+  //   refetchInterval: false,
+  //   staleTime: 5 * 60 * 1000,
+  // });
 
   useHotkeys(
     "esc",
@@ -551,6 +559,10 @@ export function Search() {
   );
 
   useEffect(() => {
+    const isDesktopApp = () => false;
+    const Window = { getByLabel: () => ({ label: "main" }) };
+    const emit = () => {};
+    const invoke = () => {};
     if (!isDesktopApp()) {
       return;
     }

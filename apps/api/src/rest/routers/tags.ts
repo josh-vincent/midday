@@ -44,7 +44,7 @@ app.openapi(
     const db = c.get("db");
     const teamId = c.get("teamId");
 
-    const result = await getTags(db, { teamId });
+    const result = await getTags(db, teamId);
 
     return c.json(
       validateResponse(

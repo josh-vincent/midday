@@ -2,7 +2,8 @@ import { isTeamEligibleForSync } from "@/utils/check-team-eligibility";
 import { logger } from "@/utils/logger";
 import type { SyncConnectionPayload } from "@midday/jobs/schema";
 import { createClient } from "@midday/supabase/server";
-import { tasks } from "@trigger.dev/sdk";
+// Disabled - trigger.dev
+// import { tasks } from "@trigger.dev/sdk";
 import { isAfter, subDays } from "date-fns";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -113,10 +114,11 @@ export async function POST(req: NextRequest) {
           manualSync,
         });
 
-        await tasks.trigger("sync-connection", {
-          connectionId: connectionData.id,
-          manualSync,
-        } satisfies SyncConnectionPayload);
+        // Disabled - trigger.dev
+        // await tasks.trigger("sync-connection", {
+        //   connectionId: connectionData.id,
+        //   manualSync,
+        // } satisfies SyncConnectionPayload);
 
         break;
       }

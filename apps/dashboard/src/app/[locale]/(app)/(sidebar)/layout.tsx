@@ -23,13 +23,6 @@ export default async function Layout({
   const currencyPromise = getCurrency();
   const countryCodePromise = getCountryCode();
 
-  // NOTE: These are used in the global sheets
-  batchPrefetch([
-    trpc.team.current.queryOptions(),
-    trpc.invoice.defaultSettings.queryOptions(),
-    trpc.search.global.queryOptions({ searchTerm: "" }),
-  ]);
-
   // NOTE: Right now we want to fetch the user and hydrate the client
   // Next steps would be to prefetch and suspense
   const user = await queryClient.fetchQuery(trpc.user.me.queryOptions());
@@ -45,6 +38,14 @@ export default async function Layout({
   if (!user.teamId) {
     redirect("/teams");
   }
+
+  // NOTE: Only prefetch team data if user has a teamId
+  // These are used in the global sheets
+  // batchPrefetch([
+  //   trpc.team.current.queryOptions(),
+  //   trpc.invoice.defaultSettings.queryOptions(),
+  //   // trpc.search.global.queryOptions({ searchTerm: "" }),
+  // ]);
 
   return (
     <HydrateClient>

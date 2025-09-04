@@ -1,18 +1,15 @@
 "use server";
 
 import { openai } from "@ai-sdk/openai";
-import { streamObject } from "ai";
-import { createStreamableValue } from "ai/rsc";
+import { generateObject } from "ai";
 import { z } from "zod";
 
 export async function generateCsvMapping(
   fieldColumns: string[],
   firstRows: Record<string, string>[],
 ) {
-  const stream = createStreamableValue();
-
-  (async () => {
-    const { partialObjectStream } = await streamObject({
+  try {
+    const { object } = await generateObject({
       model: openai("gpt-4o-mini"),
       schema: z.object({
         date: z
@@ -48,12 +45,9 @@ export async function generateCsvMapping(
       `,
     });
 
-    for await (const partialObject of partialObjectStream) {
-      stream.update(partialObject);
-    }
-
-    stream.done();
-  })();
-
-  return { object: stream.value };
+    return { object };
+  } catch (error) {
+    console.error("Error generating CSV mapping:", error);
+    return { object: {} };
+  }
 }

@@ -21,7 +21,7 @@ import {
 import { Icons } from "@midday/ui/icons";
 import { Input } from "@midday/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { readStreamableValue } from "ai/rsc";
+// Removed readStreamableValue as we're not using streaming anymore
 import { formatISO } from "date-fns";
 import { useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
@@ -97,30 +97,24 @@ export function InvoiceSearchFilter() {
       `,
       );
 
-      let finalObject = {};
-
-      for await (const partialObject of readStreamableValue(object)) {
-        if (partialObject) {
-          finalObject = {
-            ...finalObject,
-            statuses: Array.isArray(partialObject?.statuses)
-              ? partialObject?.statuses
-              : partialObject?.statuses
-                ? [partialObject.statuses]
-                : null,
-            customers:
-              partialObject?.customers?.map(
-                (name: string) =>
-                  customersData?.data?.find(
-                    (customer) => customer.name === name,
-                  )?.id,
-              ) ?? null,
-            q: partialObject?.name ?? null,
-            start: partialObject?.start ?? null,
-            end: partialObject?.end ?? null,
-          };
-        }
-      }
+      // Since we're no longer streaming, we can directly use the object
+      const finalObject = object ? {
+        statuses: Array.isArray(object?.statuses)
+          ? object?.statuses
+          : object?.statuses
+            ? [object.statuses]
+            : null,
+        customers:
+          object?.customers?.map(
+            (name: string) =>
+              customersData?.data?.find(
+                (customer) => customer.name === name,
+              )?.id,
+          ) ?? null,
+        q: object?.name ?? null,
+        start: object?.start ?? null,
+        end: object?.end ?? null,
+      } : {};
 
       setFilter({
         q: null,

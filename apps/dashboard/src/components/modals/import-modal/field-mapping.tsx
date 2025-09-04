@@ -31,7 +31,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@midday/ui/tooltip";
-import { readStreamableValue } from "ai/rsc";
+import { readStreamableValue } from "ai";
 import { capitalCase } from "change-case";
 import { useEffect, useState } from "react";
 import { Controller } from "react-hook-form";

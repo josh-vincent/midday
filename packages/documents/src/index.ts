@@ -1,2 +1,6 @@
-export * from "./client";
-export * from "./utils";
+// Stub for documents package
+export function getAllowedAttachments() {
+  return ["pdf", "jpg", "jpeg", "png", "gif"];
+}
+
+export default {};

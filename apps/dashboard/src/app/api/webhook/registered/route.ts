@@ -2,7 +2,8 @@ import * as crypto from "node:crypto";
 import { LogEvents } from "@midday/events/events";
 import { setupAnalytics } from "@midday/events/server";
 import type { OnboardTeamPayload } from "@midday/jobs/schema";
-import { tasks } from "@trigger.dev/sdk";
+// Disabled - trigger.dev
+// import { tasks } from "@trigger.dev/sdk";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -48,15 +49,16 @@ export async function POST(req: Request) {
     channel: LogEvents.Registered.channel,
   });
 
-  await tasks.trigger(
-    "onboard-team",
-    {
-      userId,
-    } satisfies OnboardTeamPayload,
-    {
-      delay: "10m",
-    },
-  );
+  // Disabled - trigger.dev
+  // await tasks.trigger(
+  //   "onboard-team",
+  //   {
+  //     userId,
+  //   } satisfies OnboardTeamPayload,
+  //   {
+  //     delay: "10m",
+  //   },
+  // );
 
   return NextResponse.json({ success: true });
 }

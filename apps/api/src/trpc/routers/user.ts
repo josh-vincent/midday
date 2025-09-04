@@ -1,6 +1,6 @@
 import { updateUserSchema } from "@api/schemas/users";
 import { resend } from "@api/services/resend";
-import { createTRPCRouter, protectedProcedure } from "@api/trpc/init";
+import { createTRPCRouter, authProcedure, protectedProcedure } from "@api/trpc/init";
 import {
   deleteUser,
   getUserById,
@@ -9,11 +9,12 @@ import {
 } from "@midday/db/queries";
 
 export const userRouter = createTRPCRouter({
-  me: protectedProcedure.query(async ({ ctx: { db, session } }) => {
+  // User profile endpoints don't require team membership
+  me: authProcedure.query(async ({ ctx: { db, session } }) => {
     return getUserById(db, session.user.id);
   }),
 
-  update: protectedProcedure
+  update: authProcedure
     .input(updateUserSchema)
     .mutation(async ({ ctx: { db, session }, input }) => {
       return updateUser(db, {
@@ -22,7 +23,7 @@ export const userRouter = createTRPCRouter({
       });
     }),
 
-  delete: protectedProcedure.mutation(
+  delete: authProcedure.mutation(
     async ({ ctx: { supabase, db, session } }) => {
       const [data] = await Promise.all([
         deleteUser(db, session.user.id),
@@ -37,7 +38,7 @@ export const userRouter = createTRPCRouter({
     },
   ),
 
-  invites: protectedProcedure.query(async ({ ctx: { db, session } }) => {
+  invites: authProcedure.query(async ({ ctx: { db, session } }) => {
     if (!session.user.email) {
       return [];
     }

@@ -10,10 +10,11 @@ import {
 import { validateResponse } from "@api/utils/validate-response";
 import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 import {
+  createCustomer,
+  updateCustomer,
   deleteCustomer,
   getCustomerById,
   getCustomers,
-  upsertCustomer,
 } from "@midday/db/queries";
 
 const app = new OpenAPIHono<Context>();
@@ -92,7 +93,7 @@ app.openapi(
     const teamId = c.get("teamId");
     const body = c.req.valid("json");
 
-    const result = await upsertCustomer(db, {
+    const result = await createCustomer(db, {
       ...body,
       teamId,
     });
@@ -173,7 +174,7 @@ app.openapi(
     const id = c.req.valid("param").id;
     const body = c.req.valid("json");
 
-    const result = await upsertCustomer(db, {
+    const result = await updateCustomer(db, {
       ...body,
       id,
       teamId,

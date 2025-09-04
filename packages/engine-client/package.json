@@ -1,12 +1,1 @@
-{
-  "name": "@midday/engine-client",
-  "version": "0.0.1",
-  "private": true,
-  "main": "./src/index.ts",
-  "dependencies": {
-    "hono": "^4.8.12"
-  },
-  "devDependencies": {
-    "typescript": "^5.9.2"
-  }
-}
+{"name":"@midday/engine-client","version":"1.0.0","main":"src/index.ts"}

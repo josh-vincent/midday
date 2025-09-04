@@ -1,8 +1,9 @@
 "use server";
 
 import { LogEvents } from "@midday/events/events";
-import type { ExportTransactionsPayload } from "@midday/jobs/schema";
-import { tasks } from "@trigger.dev/sdk";
+// Disabled - trigger.dev
+// import type { ExportTransactionsPayload } from "@midday/jobs/schema";
+// import { tasks } from "@trigger.dev/sdk";
 import { z } from "zod";
 import { authActionClient } from "./safe-action";
 
@@ -30,12 +31,16 @@ export const exportTransactionsAction = authActionClient
         throw new Error("Team not found");
       }
 
-      const event = await tasks.trigger("export-transactions", {
-        teamId,
-        locale,
-        transactionIds,
-        dateFormat,
-      } satisfies ExportTransactionsPayload);
+      // Disabled - trigger.dev
+      // const event = await tasks.trigger("export-transactions", {
+      //   teamId,
+      //   locale,
+      //   transactionIds,
+      //   dateFormat,
+      // } satisfies ExportTransactionsPayload);
+
+      // Mock event object for compatibility
+      const event = { id: `mock-export-${Date.now()}` };
 
       return event;
     },

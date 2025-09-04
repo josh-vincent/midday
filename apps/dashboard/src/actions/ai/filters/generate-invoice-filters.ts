@@ -1,8 +1,7 @@
 "use server";
 
 import { openai } from "@ai-sdk/openai";
-import { streamObject } from "ai";
-import { createStreamableValue } from "ai/rsc";
+import { generateObject } from "ai";
 import { z } from "zod";
 
 const schema = z.object({
@@ -28,10 +27,8 @@ const schema = z.object({
 });
 
 export async function generateInvoiceFilters(prompt: string, context?: string) {
-  const stream = createStreamableValue();
-
-  (async () => {
-    const { partialObjectStream } = await streamObject({
+  try {
+    const { object } = await generateObject({
       model: openai("gpt-4o-mini"),
       system: `You are a helpful assistant that generates filters for a given prompt. \n
                 Current date is: ${new Date().toISOString().split("T")[0]} \n
@@ -41,12 +38,9 @@ export async function generateInvoiceFilters(prompt: string, context?: string) {
       prompt,
     });
 
-    for await (const partialObject of partialObjectStream) {
-      stream.update(partialObject);
-    }
-
-    stream.done();
-  })();
-
-  return { object: stream.value };
+    return { object };
+  } catch (error) {
+    console.error("Error generating filters:", error);
+    return { object: {} };
+  }
 }

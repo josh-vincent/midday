@@ -18,7 +18,7 @@ export function TransactionSheet() {
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <SheetContent>
-        <TransactionDetails />
+        {/* <TransactionDetails /> */}
       </SheetContent>
     </Sheet>
   );

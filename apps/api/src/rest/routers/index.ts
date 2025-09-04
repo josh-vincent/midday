@@ -11,8 +11,6 @@ import { reportsRouter } from "./reports";
 import { searchRouter } from "./search";
 import { tagsRouter } from "./tags";
 import { teamsRouter } from "./teams";
-import { trackerEntriesRouter } from "./tracker-entries";
-import { trackerProjectsRouter } from "./tracker-projects";
 import { transactionsRouter } from "./transactions";
 import { usersRouter } from "./users";
 
@@ -37,7 +35,5 @@ routers.route("/inbox", inboxRouter);
 routers.route("/invoices", invoicesRouter);
 routers.route("/search", searchRouter);
 routers.route("/reports", reportsRouter);
-routers.route("/tracker-projects", trackerProjectsRouter);
-routers.route("/tracker-entries", trackerEntriesRouter);
 
 export { routers };

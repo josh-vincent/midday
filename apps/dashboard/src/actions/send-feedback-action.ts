@@ -1,13 +1,18 @@
 "use server";
 
 import { LogEvents } from "@midday/events/events";
-import { PlainClient } from "@team-plain/typescript-sdk";
+// import { PlainClient } from "@team-plain/typescript-sdk";
 import { z } from "zod";
 import { authActionClient } from "./safe-action";
 
-const client = new PlainClient({
-  apiKey: process.env.PLAIN_API_KEY!,
-});
+// const client = new PlainClient({
+//   apiKey: process.env.PLAIN_API_KEY!,
+// });
+
+const client = {
+  upsertCustomer: async () => ({ data: { customer: { id: "1" } } }),
+  createThread: async () => ({ data: { thread: { id: "1" } } }),
+};
 
 export const sendFeebackAction = authActionClient
   .schema(

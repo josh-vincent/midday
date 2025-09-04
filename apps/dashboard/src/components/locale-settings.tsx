@@ -2,7 +2,7 @@
 
 import { useUserMutation, useUserQuery } from "@/hooks/use-user";
 import { useI18n } from "@/locales/client";
-import { countries } from "@midday/location/countries-intl";
+// import { countries } from "@midday/location/countries-intl";
 import {
   Card,
   CardContent,
@@ -17,7 +17,7 @@ export function LocaleSettings() {
   const { data: user } = useUserQuery();
   const updateUserMutation = useUserMutation();
 
-  const localeItems = Object.values(countries).map((c, index) => ({
+  const localeItems = Object.values([{ name: "Australia", default_locale: "en-AU" }]).map((c, index) => ({
     id: index.toString(),
     label: `${c.name} (${c.default_locale})`,
     value: c.default_locale,

@@ -1,112 +1,214 @@
 import type { Database } from "@db/client";
 import { invoiceTemplates } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { createActivity } from "./activities";
 
-type DraftInvoiceTemplateParams = {
-  customerLabel?: string;
-  title?: string;
-  fromLabel?: string;
-  invoiceNoLabel?: string;
-  issueDateLabel?: string;
-  dueDateLabel?: string;
-  descriptionLabel?: string;
-  priceLabel?: string;
-  quantityLabel?: string;
-  totalLabel?: string;
-  totalSummaryLabel?: string;
-  vatLabel?: string;
-  subtotalLabel?: string;
-  taxLabel?: string;
-  discountLabel?: string;
-  sendCopy?: boolean;
-  timezone?: string;
-  paymentLabel?: string;
-  noteLabel?: string;
-  logoUrl?: string | null;
-  currency?: string;
-  paymentDetails?: string | null; // Stringified JSON
-  fromDetails?: string | null; // Stringified JSON
-  dateFormat?: string;
-  includeVat?: boolean;
-  includeTax?: boolean;
-  includeDiscount?: boolean;
-  includeDecimals?: boolean;
-  includeUnits?: boolean;
+type CreateInvoiceTemplateParams = {
+  teamId: string;
+  name: string;
+  description?: string;
+  isDefault?: boolean;
+  logoUrl?: string;
+  primaryColor?: string;
   includeQr?: boolean;
-  taxRate?: number;
-  vatRate?: number;
-  size?: "a4" | "letter";
-  deliveryType?: "create" | "create_and_send" | "scheduled";
-  locale?: string;
+  includeTaxNumber?: boolean;
+  includePaymentDetails?: boolean;
+  paymentTerms?: number;
+  note?: string;
+  terms?: string;
+  paymentDetails?: string;
+  createdBy?: string;
 };
 
-type UpdateInvoiceTemplateParams = {
+export async function createInvoiceTemplate(
+  db: Database,
+  params: CreateInvoiceTemplateParams,
+) {
+  const { createdBy, ...templateData } = params;
+
+  const [template] = await db
+    .insert(invoiceTemplates)
+    .values({
+      ...templateData,
+      isDefault: templateData.isDefault || false,
+      primaryColor: templateData.primaryColor || "#000000",
+      includeQr: templateData.includeQr || false,
+      includeTaxNumber: templateData.includeTaxNumber !== false,
+      includePaymentDetails: templateData.includePaymentDetails !== false,
+    })
+    .returning();
+
+  // Log activity
+  if (createdBy) {
+    await createActivity(db, {
+      teamId: params.teamId,
+      userId: createdBy,
+      action: "created",
+      entity: "invoice_template",
+      entityId: template.id,
+      metadata: {
+        templateName: template.name,
+      },
+    });
+  }
+
+  return template;
+}
+
+type UpdateInvoiceTemplateParams = Partial<CreateInvoiceTemplateParams> & {
+  id: string;
   teamId: string;
-} & DraftInvoiceTemplateParams;
+  updatedBy?: string;
+};
 
 export async function updateInvoiceTemplate(
   db: Database,
   params: UpdateInvoiceTemplateParams,
 ) {
-  const { teamId, ...rest } = params;
+  const { id, teamId, updatedBy, ...updateData } = params;
 
-  const [result] = await db
-    .insert(invoiceTemplates)
-    .values({
-      teamId: teamId,
-      ...rest,
+  // If setting as default, unset other defaults first
+  if (updateData.isDefault) {
+    await db
+      .update(invoiceTemplates)
+      .set({ isDefault: false })
+      .where(eq(invoiceTemplates.teamId, teamId));
+  }
+
+  const [template] = await db
+    .update(invoiceTemplates)
+    .set({
+      ...updateData,
+      updatedAt: new Date().toISOString(),
     })
-    .onConflictDoUpdate({
-      target: invoiceTemplates.teamId,
-      set: rest,
-    })
+    .where(
+      and(
+        eq(invoiceTemplates.id, id),
+        eq(invoiceTemplates.teamId, teamId)
+      )
+    )
     .returning();
 
-  return result;
+  // Log activity
+  if (updatedBy) {
+    await createActivity(db, {
+      teamId,
+      userId: updatedBy,
+      action: "updated",
+      entity: "invoice_template",
+      entityId: id,
+      metadata: {
+        templateName: template.name,
+        changes: Object.keys(updateData),
+      },
+    });
+  }
+
+  return template;
 }
 
-export async function getInvoiceTemplate(db: Database, teamId: string) {
-  const [result] = await db
-    .select({
-      id: invoiceTemplates.id,
-      customerLabel: invoiceTemplates.customerLabel,
-      fromLabel: invoiceTemplates.fromLabel,
-      invoiceNoLabel: invoiceTemplates.invoiceNoLabel,
-      issueDateLabel: invoiceTemplates.issueDateLabel,
-      dueDateLabel: invoiceTemplates.dueDateLabel,
-      descriptionLabel: invoiceTemplates.descriptionLabel,
-      priceLabel: invoiceTemplates.priceLabel,
-      quantityLabel: invoiceTemplates.quantityLabel,
-      totalLabel: invoiceTemplates.totalLabel,
-      vatLabel: invoiceTemplates.vatLabel,
-      taxLabel: invoiceTemplates.taxLabel,
-      paymentLabel: invoiceTemplates.paymentLabel,
-      noteLabel: invoiceTemplates.noteLabel,
-      logoUrl: invoiceTemplates.logoUrl,
-      currency: invoiceTemplates.currency,
-      subtotalLabel: invoiceTemplates.subtotalLabel,
-      paymentDetails: invoiceTemplates.paymentDetails,
-      fromDetails: invoiceTemplates.fromDetails,
-      size: invoiceTemplates.size,
-      dateFormat: invoiceTemplates.dateFormat,
-      includeVat: invoiceTemplates.includeVat,
-      includeTax: invoiceTemplates.includeTax,
-      taxRate: invoiceTemplates.taxRate,
-      deliveryType: invoiceTemplates.deliveryType,
-      discountLabel: invoiceTemplates.discountLabel,
-      includeDiscount: invoiceTemplates.includeDiscount,
-      includeDecimals: invoiceTemplates.includeDecimals,
-      includeQr: invoiceTemplates.includeQr,
-      totalSummaryLabel: invoiceTemplates.totalSummaryLabel,
-      title: invoiceTemplates.title,
-      vatRate: invoiceTemplates.vatRate,
-      includeUnits: invoiceTemplates.includeUnits,
-      includePdf: invoiceTemplates.includePdf,
-      sendCopy: invoiceTemplates.sendCopy,
-    })
+export async function getInvoiceTemplate(db: Database, id: string, teamId: string) {
+  const [template] = await db
+    .select()
+    .from(invoiceTemplates)
+    .where(
+      and(
+        eq(invoiceTemplates.id, id),
+        eq(invoiceTemplates.teamId, teamId)
+      )
+    );
+
+  return template;
+}
+
+export async function getInvoiceTemplates(db: Database, teamId: string) {
+  return db
+    .select()
     .from(invoiceTemplates)
     .where(eq(invoiceTemplates.teamId, teamId))
-    .limit(1);
+    .orderBy(invoiceTemplates.isDefault, invoiceTemplates.name);
+}
 
-  return result;
+export async function getDefaultInvoiceTemplate(db: Database, teamId: string) {
+  const [template] = await db
+    .select()
+    .from(invoiceTemplates)
+    .where(
+      and(
+        eq(invoiceTemplates.teamId, teamId),
+        eq(invoiceTemplates.isDefault, true)
+      )
+    );
+
+  return template;
+}
+
+export async function deleteInvoiceTemplate(
+  db: Database,
+  id: string,
+  teamId: string,
+  deletedBy?: string,
+) {
+  // Get template info before deletion
+  const [template] = await db
+    .select({ name: invoiceTemplates.name })
+    .from(invoiceTemplates)
+    .where(
+      and(
+        eq(invoiceTemplates.id, id),
+        eq(invoiceTemplates.teamId, teamId)
+      )
+    );
+
+  if (template) {
+    // Log activity before deletion
+    if (deletedBy) {
+      await createActivity(db, {
+        teamId,
+        userId: deletedBy,
+        action: "deleted",
+        entity: "invoice_template",
+        entityId: id,
+        metadata: {
+          templateName: template.name,
+        },
+      });
+    }
+
+    // Delete template
+    await db
+      .delete(invoiceTemplates)
+      .where(
+        and(
+          eq(invoiceTemplates.id, id),
+          eq(invoiceTemplates.teamId, teamId)
+        )
+      );
+  }
+
+  return template;
+}
+
+export async function ensureDefaultTemplate(db: Database, teamId: string) {
+  // Check if there's a default template
+  const defaultTemplate = await getDefaultInvoiceTemplate(db, teamId);
+  
+  if (!defaultTemplate) {
+    // Create a basic default template
+    const template = await createInvoiceTemplate(db, {
+      teamId,
+      name: "Default Template",
+      description: "Standard invoice template",
+      isDefault: true,
+      primaryColor: "#000000",
+      includeQr: false,
+      includeTaxNumber: true,
+      includePaymentDetails: true,
+      paymentTerms: 30,
+    });
+    
+    return template;
+  }
+  
+  return defaultTemplate;
 }

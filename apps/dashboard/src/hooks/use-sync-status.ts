@@ -1,4 +1,5 @@
-import { useRealtimeRun } from "@trigger.dev/react-hooks";
+// Disabled - trigger.dev
+// import { useRealtimeRun } from "@trigger.dev/react-hooks";
 import { useEffect, useState } from "react";
 
 type UseSyncStatusProps = {
@@ -17,32 +18,36 @@ export function useSyncStatus({
   const [status, setStatus] = useState<
     "FAILED" | "SYNCING" | "COMPLETED" | null
   >(null);
-  const { run, error } = useRealtimeRun(runId, {
-    enabled: !!runId && !!accessToken,
-    accessToken,
-  });
+  
+  // Disabled - trigger.dev
+  // const { run, error } = useRealtimeRun(runId, {
+  //   enabled: !!runId && !!accessToken,
+  //   accessToken,
+  // });
 
   useEffect(() => {
     if (initialRunId && initialAccessToken) {
       setAccessToken(initialAccessToken);
       setRunId(initialRunId);
-      setStatus("SYNCING");
+      // Disabled - trigger.dev - stub returns completed status
+      setStatus("COMPLETED");
     }
   }, [initialRunId, initialAccessToken]);
 
-  useEffect(() => {
-    if (error || run?.status === "FAILED") {
-      setStatus("FAILED");
-    }
+  // Disabled - trigger.dev - removed run/error dependency effects
+  // useEffect(() => {
+  //   if (error || run?.status === "FAILED") {
+  //     setStatus("FAILED");
+  //   }
 
-    if (run?.status === "COMPLETED") {
-      setStatus("COMPLETED");
-    }
-  }, [error, run]);
+  //   if (run?.status === "COMPLETED") {
+  //     setStatus("COMPLETED");
+  //   }
+  // }, [error, run]);
 
   return {
     status,
     setStatus,
-    result: run?.output,
+    result: null, // Disabled - trigger.dev - stub returns null
   };
 }

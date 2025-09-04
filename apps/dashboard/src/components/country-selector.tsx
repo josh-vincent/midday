@@ -1,4 +1,4 @@
-import countries from "@midday/location/country-flags";
+// import countries from "@midday/location/country-flags";
 import { Button } from "@midday/ui/button";
 import { cn } from "@midday/ui/cn";
 import {
@@ -20,6 +20,7 @@ type Props = {
 };
 
 export function CountrySelector({ defaultValue, onSelect }: Props) {
+  const countries = [{ code: "AU", name: "Australia" }];
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState(defaultValue);
 

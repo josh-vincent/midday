@@ -3,31 +3,40 @@ import { teams, userInvites, users, usersOnTeam } from "@db/schema";
 import { and, eq, inArray, or, sql } from "drizzle-orm";
 
 export async function getUserInvites(db: Database, email: string) {
-  return db.query.userInvites.findMany({
-    where: eq(userInvites.email, email),
-    with: {
-      user: {
-        columns: {
-          id: true,
-          fullName: true,
-          email: true,
-        },
-      },
-      team: {
-        columns: {
-          id: true,
-          name: true,
-          logoUrl: true,
-        },
-      },
-    },
-    columns: {
-      id: true,
-      email: true,
-      code: true,
-      role: true,
-    },
-  });
+  const results = await db
+    .select({
+      id: userInvites.id,
+      email: userInvites.email,
+      code: userInvites.code,
+      role: userInvites.role,
+      userId: users.id,
+      userFullName: users.fullName,
+      userEmail: users.email,
+      teamId: teams.id,
+      teamName: teams.name,
+      teamLogoUrl: teams.logoUrl,
+    })
+    .from(userInvites)
+    .leftJoin(users, eq(userInvites.invitedBy, users.id))
+    .leftJoin(teams, eq(userInvites.teamId, teams.id))
+    .where(eq(userInvites.email, email));
+
+  return results.map((row) => ({
+    id: row.id,
+    email: row.email,
+    code: row.code,
+    role: row.role,
+    user: row.userId ? {
+      id: row.userId,
+      fullName: row.userFullName,
+      email: row.userEmail,
+    } : null,
+    team: row.teamId ? {
+      id: row.teamId,
+      name: row.teamName,
+      logoUrl: row.teamLogoUrl,
+    } : null,
+  }));
 }
 
 type AcceptTeamInviteParams = {
@@ -39,14 +48,15 @@ export async function acceptTeamInvite(
   db: Database,
   params: AcceptTeamInviteParams,
 ) {
-  const inviteData = await db.query.userInvites.findFirst({
-    where: and(eq(userInvites.id, params.id)),
-    columns: {
-      id: true,
-      role: true,
-      teamId: true,
-    },
-  });
+  const [inviteData] = await db
+    .select({
+      id: userInvites.id,
+      role: userInvites.role,
+      teamId: userInvites.teamId,
+    })
+    .from(userInvites)
+    .where(eq(userInvites.id, params.id))
+    .limit(1);
 
   if (!inviteData) {
     throw new Error("Invite not found");
@@ -81,59 +91,77 @@ export async function declineTeamInvite(
 }
 
 export async function getTeamInvites(db: Database, teamId: string) {
-  return db.query.userInvites.findMany({
-    where: eq(userInvites.teamId, teamId),
-    columns: {
-      id: true,
-      email: true,
-      code: true,
-      role: true,
-    },
-    with: {
-      user: {
-        columns: {
-          id: true,
-          fullName: true,
-          email: true,
-        },
-      },
-      team: {
-        columns: {
-          id: true,
-          name: true,
-          logoUrl: true,
-        },
-      },
-    },
-  });
+  const results = await db
+    .select({
+      id: userInvites.id,
+      email: userInvites.email,
+      code: userInvites.code,
+      role: userInvites.role,
+      userId: users.id,
+      userFullName: users.fullName,
+      userEmail: users.email,
+      teamId: teams.id,
+      teamName: teams.name,
+      teamLogoUrl: teams.logoUrl,
+    })
+    .from(userInvites)
+    .leftJoin(users, eq(userInvites.invitedBy, users.id))
+    .leftJoin(teams, eq(userInvites.teamId, teams.id))
+    .where(eq(userInvites.teamId, teamId));
+
+  return results.map((row) => ({
+    id: row.id,
+    email: row.email,
+    code: row.code,
+    role: row.role,
+    user: row.userId ? {
+      id: row.userId,
+      fullName: row.userFullName,
+      email: row.userEmail,
+    } : null,
+    team: row.teamId ? {
+      id: row.teamId,
+      name: row.teamName,
+      logoUrl: row.teamLogoUrl,
+    } : null,
+  }));
 }
 
 export async function getInvitesByEmail(db: Database, email: string) {
-  return db.query.userInvites.findMany({
-    where: eq(userInvites.email, email),
-    columns: {
-      id: true,
-      email: true,
-      code: true,
-      role: true,
-    },
-    with: {
-      user: {
-        columns: {
-          id: true,
-          fullName: true,
-          email: true,
-        },
-      },
-      team: {
-        columns: {
-          id: true,
-          name: true,
-          logoUrl: true,
-        },
-      },
-    },
-  });
+  const results = await db
+    .select({
+      id: userInvites.id,
+      email: userInvites.email,
+      code: userInvites.code,
+      role: userInvites.role,
+      userId: users.id,
+      userFullName: users.fullName,
+      userEmail: users.email,
+      teamId: teams.id,
+      teamName: teams.name,
+      teamLogoUrl: teams.logoUrl,
+    })
+    .from(userInvites)
+    .leftJoin(users, eq(userInvites.invitedBy, users.id))
+    .leftJoin(teams, eq(userInvites.teamId, teams.id))
+    .where(eq(userInvites.email, email));
+
+  return results.map((row) => ({
+    id: row.id,
+    email: row.email,
+    code: row.code,
+    role: row.role,
+    user: row.userId ? {
+      id: row.userId,
+      fullName: row.userFullName,
+      email: row.userEmail,
+    } : null,
+    team: row.teamId ? {
+      id: row.teamId,
+      name: row.teamName,
+      logoUrl: row.teamLogoUrl,
+    } : null,
+  }));
 }
 
 type DeleteTeamInviteParams = {
@@ -313,13 +341,14 @@ export async function createTeamInvites(
       if (!row) return null;
 
       // Fetch team
-      const team = await db.query.teams.findFirst({
-        where: eq(teams.id, teamId),
-        columns: {
-          id: true,
-          name: true,
-        },
-      });
+      const [team] = await db
+        .select({
+          id: teams.id,
+          name: teams.name,
+        })
+        .from(teams)
+        .where(eq(teams.id, teamId))
+        .limit(1);
 
       return {
         email: row.email,

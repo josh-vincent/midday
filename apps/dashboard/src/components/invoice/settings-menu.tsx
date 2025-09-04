@@ -1,7 +1,7 @@
 "use client";
 
 import { useTRPC } from "@/trpc/client";
-import { uniqueCurrencies } from "@midday/location/currencies";
+// import { uniqueCurrencies } from "@midday/location/currencies";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -61,7 +61,7 @@ const menuItems = [
   {
     icon: Icons.CurrencyOutline,
     label: "Currency",
-    options: uniqueCurrencies.map((currency) => ({
+    options: ["AUD"].map((currency) => ({
       value: currency,
       label: currency,
     })),
@@ -134,7 +134,7 @@ export function SettingsMenu() {
                   <SelectCurrency
                     headless
                     className="text-xs"
-                    currencies={uniqueCurrencies}
+                    currencies={["AUD"]}
                     value={watch(watchKey)}
                     onChange={(value) => {
                       setValue(watchKey, value, {

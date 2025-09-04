@@ -1,16 +1,7 @@
-import { ChartSelectors } from "@/components/charts/chart-selectors";
-import { Charts } from "@/components/charts/charts";
-import { EmptyState } from "@/components/charts/empty-state";
-import { OverviewModal } from "@/components/modals/overview-modal";
-import { Widgets } from "@/components/widgets";
-import { defaultPeriod } from "@/components/widgets/spending/data";
-import { loadReportsParams } from "@/hooks/use-reports-params";
-import { HydrateClient, batchPrefetch, trpc } from "@/trpc/server";
-import { getQueryClient } from "@/trpc/server";
-import { Cookies } from "@/utils/constants";
+import { HydrateClient } from "@/trpc/server";
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import type { SearchParams } from "nuqs";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Overview | Midday",
@@ -21,82 +12,31 @@ type Props = {
 };
 
 export default async function Overview(props: Props) {
-  const queryClient = getQueryClient();
-  const searchParams = await props.searchParams;
-  const { from, to, currency } = loadReportsParams(searchParams);
-
-  const cookieStore = await cookies();
-  const hideConnectFlow =
-    cookieStore.get(Cookies.HideConnectFlow)?.value === "true";
-
-  batchPrefetch([
-    trpc.invoice.get.queryOptions({ pageSize: 10 }),
-    trpc.invoice.paymentStatus.queryOptions(),
-    trpc.reports.expense.queryOptions({
-      from,
-      to,
-      currency: currency ?? undefined,
-    }),
-    trpc.reports.profit.queryOptions({
-      from,
-      to,
-      currency: currency ?? undefined,
-    }),
-    trpc.reports.burnRate.queryOptions({
-      from,
-      to,
-      currency: currency ?? undefined,
-    }),
-    trpc.reports.runway.queryOptions({
-      from,
-      to,
-      currency: currency ?? undefined,
-    }),
-    trpc.inbox.get.queryOptions(),
-    trpc.bankAccounts.balances.queryOptions(),
-    trpc.documents.get.queryOptions({ pageSize: 10 }),
-    trpc.reports.spending.queryOptions({
-      from: defaultPeriod.from,
-      to: defaultPeriod.to,
-      currency: currency ?? undefined,
-    }),
-    trpc.transactions.get.queryOptions({
-      pageSize: 15,
-    }),
-  ]);
-
-  // Load the data for the first visible chart
-  await Promise.all([
-    queryClient.fetchQuery(
-      trpc.bankAccounts.get.queryOptions({
-        enabled: true,
-      }),
-    ),
-    queryClient.fetchQuery(
-      trpc.reports.revenue.queryOptions({
-        from,
-        to,
-        currency: currency ?? undefined,
-      }),
-    ),
-  ]);
-
   return (
     <HydrateClient>
-      <div>
-        <div className="h-[530px] mb-4">
-          <ChartSelectors />
-
-          <div className="mt-8 relative">
-            <EmptyState />
-            <Charts />
-          </div>
+      <div className="flex flex-col h-full">
+        <div className="mb-8">
+          <h1 className="text-3xl font-semibold mb-2">Welcome to Dirt Invoicing</h1>
+          <p className="text-muted-foreground">Manage your invoices, customers, and payments</p>
         </div>
 
-        <Widgets />
-      </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Link href="/invoices" className="group p-6 border rounded-lg hover:border-primary transition-colors">
+            <h3 className="font-semibold mb-2 group-hover:text-primary">Invoices</h3>
+            <p className="text-sm text-muted-foreground">Create and manage invoices</p>
+          </Link>
 
-      <OverviewModal hideConnectFlow={hideConnectFlow} />
+          <Link href="/customers" className="group p-6 border rounded-lg hover:border-primary transition-colors">
+            <h3 className="font-semibold mb-2 group-hover:text-primary">Customers</h3>
+            <p className="text-sm text-muted-foreground">Manage customer information</p>
+          </Link>
+
+          <Link href="/settings" className="group p-6 border rounded-lg hover:border-primary transition-colors">
+            <h3 className="font-semibold mb-2 group-hover:text-primary">Settings</h3>
+            <p className="text-sm text-muted-foreground">Configure your business details</p>
+          </Link>
+        </div>
+      </div>
     </HydrateClient>
   );
 }

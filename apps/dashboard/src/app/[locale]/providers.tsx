@@ -15,7 +15,8 @@ export function Providers({ locale, children }: ProviderProps) {
   return (
     <TRPCReactProvider>
       <I18nProviderClient locale={locale}>
-        <DesktopProvider />
+        {/* Disabled - desktop 
+        // <DesktopProvider /> */}
 
         <ThemeProvider
           attribute="class"

@@ -2,7 +2,7 @@
 
 import { useUserQuery } from "@/hooks/use-user";
 import { useTRPC } from "@/trpc/client";
-import { isDesktopApp } from "@midday/desktop-client/platform";
+// import { isDesktopApp } from "@midday/desktop-client/platform";
 import { cn } from "@midday/ui/cn";
 import { SubmitButton } from "@midday/ui/submit-button";
 import {
@@ -17,6 +17,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 export function Plans() {
+  const isDesktopApp = () => false;
   const isDesktop = isDesktopApp();
   const [isSubmitting, setIsSubmitting] = useState(0);
   const trpc = useTRPC();

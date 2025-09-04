@@ -5,7 +5,7 @@ import { useSyncStatus } from "@/hooks/use-sync-status";
 import { useTeamMutation } from "@/hooks/use-team";
 import { useTeamQuery } from "@/hooks/use-team";
 import { useTRPC } from "@/trpc/client";
-import { uniqueCurrencies } from "@midday/location/currencies";
+// import { uniqueCurrencies } from "@midday/location/currencies";
 import { Button } from "@midday/ui/button";
 import { useToast } from "@midday/ui/use-toast";
 import { useMutation } from "@tanstack/react-query";
@@ -27,8 +27,8 @@ export function SelectCurrency() {
       },
       onSuccess: (data) => {
         if (data) {
-          setRunId(data.id);
-          setAccessToken(data.publicAccessToken);
+          setRunId(data.id as string);
+          setAccessToken(data.publicAccessToken as string );
         }
       },
       onError: () => {
@@ -115,7 +115,7 @@ export function SelectCurrency() {
     <div className="w-[200px]">
       <SelectCurrencyBase
         onChange={handleChange}
-        currencies={uniqueCurrencies}
+        currencies={["AUD"]}
         value={team?.baseCurrency ?? undefined}
       />
     </div>

@@ -28,7 +28,7 @@ export function EmptyState() {
           your spending, analyze trends, and make informed decisions.
         </p>
 
-        <AddAccountButton />
+        {/* <AddAccountButton /> */}
       </div>
     </div>
   );

@@ -1,10 +1,10 @@
 "use client";
 
-import { getCurrentWindow, invoke } from "@midday/desktop-client/core";
-import {
-  isDesktopApp,
-  listenForDeepLinks,
-} from "@midday/desktop-client/platform";
+// import { getCurrentWindow, invoke } from "@midday/desktop-client/core";
+// import {
+//   isDesktopApp,
+//   listenForDeepLinks,
+// } from "@midday/desktop-client/platform";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
@@ -13,6 +13,10 @@ import { useEffect } from "react";
 export function DesktopProvider() {
   const router = useRouter();
   const pathname = usePathname();
+  const isDesktopApp = () => false;
+  const getCurrentWindow = () => ({ label: "main" });
+  const invoke = ( command: string ) => {};
+  const listenForDeepLinks = () => {};
 
   useEffect(() => {
     if (!isDesktopApp()) {

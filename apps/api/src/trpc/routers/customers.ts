@@ -6,10 +6,11 @@ import {
 } from "@api/schemas/customers";
 import { createTRPCRouter, protectedProcedure } from "@api/trpc/init";
 import {
+  createCustomer,
+  updateCustomer,
   deleteCustomer,
   getCustomerById,
   getCustomers,
-  upsertCustomer,
 } from "@midday/db/queries";
 
 export const customersRouter = createTRPCRouter({
@@ -43,10 +44,18 @@ export const customersRouter = createTRPCRouter({
   upsert: protectedProcedure
     .input(upsertCustomerSchema)
     .mutation(async ({ ctx: { db, teamId, session }, input }) => {
-      return upsertCustomer(db, {
-        ...input,
-        teamId: teamId!,
-        userId: session.user.id,
-      });
+      if (input.id) {
+        return updateCustomer(db, {
+          ...input,
+          teamId: teamId!,
+          userId: session.user.id,
+        });
+      } else {
+        return createCustomer(db, {
+          ...input,
+          teamId: teamId!,
+          userId: session.user.id,
+        });
+      }
     }),
 });

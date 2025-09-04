@@ -7,7 +7,8 @@ import { getInboxIdFromEmail, inboxWebhookPostSchema } from "@midday/inbox";
 import type { ProcessAttachmentPayload } from "@midday/jobs/schema";
 import { createClient } from "@midday/supabase/server";
 import { getExtensionFromMimeType } from "@midday/utils";
-import { tasks } from "@trigger.dev/sdk";
+// Disabled - trigger.dev
+// import { tasks } from "@trigger.dev/sdk";
 import { nanoid } from "nanoid";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
@@ -171,25 +172,27 @@ export async function POST(req: Request) {
 
     const insertData = await Promise.all(uploadedAttachments ?? []);
 
-    await tasks.batchTrigger(
-      "process-attachment",
-      insertData.map((item) => ({
-        payload: {
-          filePath: item.file_path!,
-          mimetype: item.content_type!,
-          size: item.size!,
-          teamId: teamId!,
-        } satisfies ProcessAttachmentPayload,
-      })),
-    );
+    // Disabled - trigger.dev
+    // await tasks.batchTrigger(
+    //   "process-attachment",
+    //   insertData.map((item) => ({
+    //     payload: {
+    //       filePath: item.file_path!,
+    //       mimetype: item.content_type!,
+    //       size: item.size!,
+    //       teamId: teamId!,
+    //     } satisfies ProcessAttachmentPayload,
+    //   })),
+    // );
 
+    // Disabled - trigger.dev
     // Send notification for email attachments
-    tasks.trigger("notification", {
-      type: "inbox_new",
-      teamId: teamId!,
-      totalCount: insertData.length,
-      inboxType: "email",
-    });
+    // tasks.trigger("notification", {
+    //   type: "inbox_new",
+    //   teamId: teamId!,
+    //   totalCount: insertData.length,
+    //   inboxType: "email",
+    // });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
 

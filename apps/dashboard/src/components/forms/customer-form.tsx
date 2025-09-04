@@ -375,10 +375,10 @@ export function CustomerForm({ data }: Props) {
 
                 <AccordionContent>
                   <div className="space-y-4">
-                    <SearchAddressInput
+                    {/* <SearchAddressInput
                       onSelect={onSelectAddress}
                       placeholder="Search for an address"
-                    />
+                    /> */}
 
                     <FormField
                       control={form.control}

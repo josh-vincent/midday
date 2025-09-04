@@ -1,6 +1,8 @@
 import type { Session } from "@api/utils/auth";
 import { teamCache } from "@midday/cache/team-cache";
 import type { Database } from "@midday/db/client";
+import { teams, users, usersOnTeam } from "@midday/db/schema";
+import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 export const withTeamPermission = async <TReturn>(opts: {
@@ -27,17 +29,31 @@ export const withTeamPermission = async <TReturn>(opts: {
     });
   }
 
-  const result = await ctx.db.query.users.findFirst({
-    with: {
-      team: true,
-    },
-    where: (users, { eq }) => eq(users.id, userId),
-  });
+  const [userResult] = await ctx.db
+    .select({
+      id: users.id,
+      teamId: users.teamId,
+      team: {
+        id: teams.id,
+        name: teams.name,
+      },
+    })
+    .from(users)
+    .leftJoin(teams, eq(users.teamId, teams.id))
+    .where(eq(users.id, userId))
+    .limit(1);
   
   // Get user's team memberships separately
-  const memberships = await ctx.db.query.usersOnTeam.findMany({
-    where: (usersOnTeam, { eq }) => eq(usersOnTeam.userId, userId),
-  });
+  const memberships = await ctx.db
+    .select({
+      teamId: usersOnTeam.teamId,
+      userId: usersOnTeam.userId,
+      role: usersOnTeam.role,
+    })
+    .from(usersOnTeam)
+    .where(eq(usersOnTeam.userId, userId));
+
+  const result = userResult || null;
 
   if (!result) {
     throw new TRPCError({
@@ -50,7 +66,7 @@ export const withTeamPermission = async <TReturn>(opts: {
   let teamId: string | null = null;
   
   // First check if user has a direct teamId
-  if (result.teamId) {
+  if (result?.teamId) {
     teamId = result.teamId;
   } 
   // Then check if user has any team memberships
@@ -73,7 +89,7 @@ export const withTeamPermission = async <TReturn>(opts: {
 
   if (hasAccess === undefined) {
     // Check if user has access to this specific team
-    hasAccess = result.teamId === teamId || 
+    hasAccess = result?.teamId === teamId || 
                 (memberships && memberships.some(
                   (membership) => membership.teamId === teamId
                 ));
@@ -91,7 +107,7 @@ export const withTeamPermission = async <TReturn>(opts: {
   return next({
     ctx: {
       session: ctx.session,
-      teamId,
+      teamId: teamId!,
       db: ctx.db,
     },
   });
