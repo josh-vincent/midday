@@ -29,15 +29,14 @@ export const withTeamPermission = async <TReturn>(opts: {
 
   const result = await ctx.db.query.users.findFirst({
     with: {
-      usersOnTeams: {
-        columns: {
-          teamId: true,
-          role: true,
-        },
-      },
       team: true,
     },
     where: (users, { eq }) => eq(users.id, userId),
+  });
+  
+  // Get user's team memberships separately
+  const memberships = await ctx.db.query.usersOnTeam.findMany({
+    where: (usersOnTeam, { eq }) => eq(usersOnTeam.userId, userId),
   });
 
   if (!result) {
@@ -55,9 +54,9 @@ export const withTeamPermission = async <TReturn>(opts: {
     teamId = result.teamId;
   } 
   // Then check if user has any team memberships
-  else if (result.usersOnTeams && result.usersOnTeams.length > 0) {
+  else if (memberships && memberships.length > 0) {
     // Use the first team membership (later we can add team switching)
-    teamId = result?.usersOnTeams[0]?.teamId || null;
+    teamId = memberships[0]?.teamId || null;
   }
 
   // If teamId is still null, user has no team - they need to create one
@@ -75,7 +74,7 @@ export const withTeamPermission = async <TReturn>(opts: {
   if (hasAccess === undefined) {
     // Check if user has access to this specific team
     hasAccess = result.teamId === teamId || 
-                (result.usersOnTeams && result.usersOnTeams.some(
+                (memberships && memberships.some(
                   (membership) => membership.teamId === teamId
                 ));
 
