@@ -31,10 +31,11 @@ export const withTeamPermission = async <TReturn>(opts: {
     with: {
       usersOnTeams: {
         columns: {
-          id: true,
           teamId: true,
+          role: true,
         },
       },
+      team: true,
     },
     where: (users, { eq }) => eq(users.id, userId),
   });
@@ -46,27 +47,46 @@ export const withTeamPermission = async <TReturn>(opts: {
     });
   }
 
-  const teamId = result.teamId;
+  // Check if user has a direct teamId or any team memberships
+  let teamId: string | null = null;
+  
+  // First check if user has a direct teamId
+  if (result.teamId) {
+    teamId = result.teamId;
+  } 
+  // Then check if user has any team memberships
+  else if (result.usersOnTeams && result.usersOnTeams.length > 0) {
+    // Use the first team membership (later we can add team switching)
+    teamId = result?.usersOnTeams[0]?.teamId || null;
+  }
 
-  // If teamId is null, user has no team assigned but this is now allowed
-  if (teamId !== null) {
-    const cacheKey = `user:${userId}:team:${teamId}`;
-    let hasAccess = await teamCache.get(cacheKey);
+  // If teamId is still null, user has no team - they need to create one
+  if (teamId === null) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "NO_TEAM", // Special message to trigger redirect to team creation
+    });
+  }
 
-    if (hasAccess === undefined) {
-      hasAccess = result.usersOnTeams.some(
-        (membership) => membership.teamId === teamId,
-      );
+  // Cache check for team access
+  const cacheKey = `user:${userId}:team:${teamId}`;
+  let hasAccess = await teamCache.get(cacheKey);
 
-      await teamCache.set(cacheKey, hasAccess);
-    }
+  if (hasAccess === undefined) {
+    // Check if user has access to this specific team
+    hasAccess = result.teamId === teamId || 
+                (result.usersOnTeams && result.usersOnTeams.some(
+                  (membership) => membership.teamId === teamId
+                ));
 
-    if (!hasAccess) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "No permission to access this team",
-      });
-    }
+    await teamCache.set(cacheKey, hasAccess);
+  }
+
+  if (!hasAccess) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "No permission to access this team",
+    });
   }
 
   return next({

@@ -15,7 +15,6 @@ export async function GET(req: NextRequest) {
   const client = requestUrl.searchParams.get("client");
   const returnTo = requestUrl.searchParams.get("return_to");
   const provider = requestUrl.searchParams.get("provider");
-  const mfaSetupVisited = cookieStore.has(Cookies.MfaSetupVisited);
 
   if (client === "desktop") {
     return NextResponse.redirect(`${requestUrl.origin}/verify?code=${code}`);
@@ -63,14 +62,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.redirect(`${requestUrl.origin}/teams/create`);
       }
     }
-  }
-
-  if (!mfaSetupVisited) {
-    cookieStore.set(Cookies.MfaSetupVisited, "true", {
-      expires: addYears(new Date(), 1),
-    });
-
-    return NextResponse.redirect(`${requestUrl.origin}/mfa/setup`);
   }
 
   if (returnTo) {

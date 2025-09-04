@@ -12,14 +12,17 @@ const connectionConfig = {
   connect_timeout: 10, // Quick connection timeout
 };
 
-const primaryPool = postgres(
-  process.env.DATABASE_PRIMARY_URL!,
-  connectionConfig,
-);
+// Use DATABASE_URL or fallback to Supabase URL
+const databaseUrl = process.env.DATABASE_PRIMARY_URL || 
+  process.env.DATABASE_URL || 
+  "postgresql://postgres.ulncfblvuijlgniydjju:MikeTheDogSupabase!@aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres";
 
-const fraPool = postgres(process.env.DATABASE_FRA_URL!, connectionConfig);
-const sjcPool = postgres(process.env.DATABASE_SJC_URL!, connectionConfig);
-const iadPool = postgres(process.env.DATABASE_IAD_URL!, connectionConfig);
+const primaryPool = postgres(databaseUrl, connectionConfig);
+
+// For now, use the same URL for all replicas
+const fraPool = postgres(databaseUrl, connectionConfig);
+const sjcPool = postgres(databaseUrl, connectionConfig);
+const iadPool = postgres(databaseUrl, connectionConfig);
 
 export const primaryDb = drizzle(primaryPool, {
   schema,

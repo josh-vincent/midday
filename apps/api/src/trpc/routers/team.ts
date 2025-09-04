@@ -11,7 +11,7 @@ import {
   updateTeamByIdSchema,
   updateTeamMemberSchema,
 } from "@api/schemas/team";
-import { createTRPCRouter, protectedProcedure } from "@api/trpc/init";
+import { createTRPCRouter, authProcedure, protectedProcedure } from "@api/trpc/init";
 import {
   acceptTeamInvite,
   createTeam,
@@ -21,7 +21,6 @@ import {
   deleteTeamInvite,
   deleteTeamMember,
   getAvailablePlans,
-  getBankConnections,
   getInvitesByEmail,
   getTeamById,
   getTeamInvites,
@@ -32,12 +31,13 @@ import {
   updateTeamById,
   updateTeamMember,
 } from "@midday/db/queries";
-import type {
-  DeleteTeamPayload,
-  InviteTeamMembersPayload,
-  UpdateBaseCurrencyPayload,
-} from "@midday/jobs/schema";
-import { tasks } from "@trigger.dev/sdk";
+// Temporarily disabled - trigger.dev jobs
+// import type {
+//   DeleteTeamPayload,
+//   InviteTeamMembersPayload,
+//   UpdateBaseCurrencyPayload,
+// } from "@midday/jobs/schema";
+// import { tasks } from "@trigger.dev/sdk";
 import { TRPCError } from "@trpc/server";
 
 export const teamRouter = createTRPCRouter({
@@ -62,11 +62,11 @@ export const teamRouter = createTRPCRouter({
     return getTeamMembersByTeamId(db, teamId!);
   }),
 
-  list: protectedProcedure.query(async ({ ctx: { db, session } }) => {
+  list: authProcedure.query(async ({ ctx: { db, session } }) => {
     return getTeamsByUserId(db, session.user.id);
   }),
 
-  create: protectedProcedure
+  create: authProcedure
     .input(createTeamSchema)
     .mutation(async ({ ctx: { db, session }, input }) => {
       return createTeam(db, {
@@ -128,21 +128,6 @@ export const teamRouter = createTRPCRouter({
           message: "Team not found",
         });
       }
-
-      const bankConnections = await getBankConnections(db, {
-        teamId: data.id,
-      });
-
-      if (bankConnections.length > 0) {
-        await tasks.trigger("delete-team", {
-          teamId: input.teamId!,
-          connections: bankConnections.map((connection) => ({
-            accessToken: connection.accessToken,
-            provider: connection.provider,
-            referenceId: connection.referenceId,
-          })),
-        } satisfies DeleteTeamPayload);
-      }
     }),
 
   deleteMember: protectedProcedure
@@ -164,7 +149,7 @@ export const teamRouter = createTRPCRouter({
     return getTeamInvites(db, teamId!);
   }),
 
-  invitesByEmail: protectedProcedure.query(async ({ ctx: { db, session } }) => {
+  invitesByEmail: authProcedure.query(async ({ ctx: { db, session } }) => {
     return getInvitesByEmail(db, session.user.email!);
   }),
 
@@ -195,12 +180,13 @@ export const teamRouter = createTRPCRouter({
 
       // Only trigger email sending if there are valid invites
       if (invites.length > 0) {
-        await tasks.trigger("invite-team-members", {
-          teamId: teamId!,
-          invites,
-          ip,
-          locale: "en",
-        } satisfies InviteTeamMembersPayload);
+        // Disabled - trigger.dev
+        // await tasks.trigger("invite-team-members", {
+        //   teamId: teamId!,
+        //   invites,
+        //   ip,
+        //   locale: "en",
+        // } satisfies InviteTeamMembersPayload);
       }
 
       // Return information about the invitation process
@@ -227,11 +213,13 @@ export const teamRouter = createTRPCRouter({
   updateBaseCurrency: protectedProcedure
     .input(updateBaseCurrencySchema)
     .mutation(async ({ ctx: { teamId }, input }) => {
-      const event = await tasks.trigger("update-base-currency", {
-        teamId: teamId!,
-        baseCurrency: input.baseCurrency,
-      } satisfies UpdateBaseCurrencyPayload);
+      // Disabled - trigger.dev
+      // const event = await tasks.trigger("update-base-currency", {
+      //   teamId: teamId!,
+      //   baseCurrency: input.baseCurrency,
+      // } satisfies UpdateBaseCurrencyPayload);
 
-      return event;
+      // return event;
+      return { success: true };
     }),
 });

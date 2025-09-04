@@ -54,36 +54,31 @@ export async function middleware(request: NextRequest) {
 
   // If authenticated, proceed with other checks
   if (session) {
-    if (newUrl.pathname !== "/teams/create" && newUrl.pathname !== "/teams") {
-      // Check if the URL contains an invite code
-      const inviteCodeMatch = newUrl.pathname.startsWith("/teams/invite/");
-
-      if (inviteCodeMatch) {
-        // Allow proceeding to invite page even without setup
-        // Redirecting with the original path including locale if present
-        return NextResponse.redirect(
-          `${url.origin}${request.nextUrl.pathname}`,
-        );
+    // 2. Check if user has a team (unless they're on team creation pages)
+    if (
+      newUrl.pathname !== "/teams/create" && 
+      newUrl.pathname !== "/teams" &&
+      !newUrl.pathname.startsWith("/teams/invite/")
+    ) {
+      // Get user data to check team membership
+      const { data: userData } = await supabase
+        .from("users")
+        .select("team_id")
+        .eq("id", session.user.id)
+        .single();
+      
+      // If user has no team, redirect to team creation
+      if (userData && !userData.team_id) {
+        const url = new URL("/teams/create", request.url);
+        return NextResponse.redirect(url);
       }
     }
 
-    // 3. Check MFA Verification
-    const { data: mfaData } =
-      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (
-      mfaData &&
-      mfaData.nextLevel === "aal2" &&
-      mfaData.nextLevel !== mfaData.currentLevel &&
-      newUrl.pathname !== "/mfa/verify"
-    ) {
-      const url = new URL("/mfa/verify", request.url);
-
-      if (encodedSearchParams) {
-        url.searchParams.append("return_to", encodedSearchParams);
-      }
-
-      // Redirect to MFA verification if needed and not already there
-      return NextResponse.redirect(url);
+    // Allow invite pages
+    if (newUrl.pathname.startsWith("/teams/invite/")) {
+      return NextResponse.redirect(
+        `${url.origin}${request.nextUrl.pathname}`,
+      );
     }
   }
 

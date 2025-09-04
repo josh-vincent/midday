@@ -4,7 +4,7 @@ import { revalidateAfterTeamChange } from "@/actions/revalidate-action";
 import { SelectCurrency } from "@/components/select-currency";
 import { useZodForm } from "@/hooks/use-zod-form";
 import { useTRPC } from "@/trpc/client";
-import { uniqueCurrencies } from "@midday/location/currencies";
+// import { uniqueCurrencies } from "@midday/location/currencies";
 import {
   Form,
   FormControl,
@@ -26,7 +26,6 @@ const formSchema = z.object({
     message: "Team name must be at least 2 characters.",
   }),
   countryCode: z.string(),
-  baseCurrency: z.string(),
 });
 
 type Props = {
@@ -38,8 +37,8 @@ export function CreateTeamForm({
   defaultCurrencyPromise,
   defaultCountryCodePromise,
 }: Props) {
-  const currency = use(defaultCurrencyPromise);
-  const countryCode = use(defaultCountryCodePromise);
+  const currency = "AUD";
+  const countryCode = "AU";
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
@@ -47,7 +46,8 @@ export function CreateTeamForm({
 
   const createTeamMutation = useMutation(
     trpc.team.create.mutationOptions({
-      onSuccess: async () => {
+      onSuccess: async (data) => {
+        console.log("Team created successfully:", data);
         // Lock the form permanently - never reset on success
         setIsLoading(true);
         isSubmittedRef.current = true;
@@ -63,7 +63,9 @@ export function CreateTeamForm({
         }
         // Note: We NEVER reset loading state on success - user should be redirected
       },
-      onError: () => {
+      onError: (error) => {
+        console.error("Team creation failed:", error);
+        alert(`Failed to create team: ${error.message}`);
         setIsLoading(false);
         isSubmittedRef.current = false; // Reset on error to allow retry
       },
@@ -73,8 +75,7 @@ export function CreateTeamForm({
   const form = useZodForm(formSchema, {
     defaultValues: {
       name: "",
-      baseCurrency: currency,
-      countryCode: countryCode ?? "",
+      countryCode: "AU",
     },
   });
 
@@ -82,16 +83,26 @@ export function CreateTeamForm({
   const isFormLocked = isLoading || isSubmittedRef.current;
 
   function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log("Form submitted with values:", values);
+    
     if (isFormLocked) {
+      console.log("Form is locked, returning");
       return;
     }
 
     setIsLoading(true);
     isSubmittedRef.current = true; // Permanent flag that survives re-renders
 
+    console.log("Calling createTeamMutation with:", {
+      name: values.name,
+      baseCurrency: "AUD",
+      countryCode: values.countryCode,
+      switchTeam: true,
+    });
+
     createTeamMutation.mutate({
       name: values.name,
-      baseCurrency: values.baseCurrency,
+      baseCurrency: "AUD",
       countryCode: values.countryCode,
       switchTeam: true, // Automatically switch to the new team
     });
@@ -99,7 +110,13 @@ export function CreateTeamForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        console.log("Form submit event triggered");
+        console.log("Form values:", form.getValues());
+        console.log("Form errors:", form.formState.errors);
+        form.handleSubmit(onSubmit)(e);
+      }}>
         <FormField
           control={form.control}
           name="name"
@@ -135,10 +152,9 @@ export function CreateTeamForm({
               </FormLabel>
               <FormControl className="w-full">
                 <CountrySelector
-                  defaultValue={field.value ?? ""}
+                  defaultValue={field.value ?? "AU"}
                   onSelect={(code, name) => {
-                    field.onChange(name);
-                    form.setValue("countryCode", code);
+                    field.onChange(code);
                   }}
                 />
               </FormControl>
@@ -147,7 +163,7 @@ export function CreateTeamForm({
           )}
         />
 
-        <FormField
+        {/* <FormField
           control={form.control}
           name="baseCurrency"
           render={({ field }) => (
@@ -156,7 +172,7 @@ export function CreateTeamForm({
                 Base currency
               </FormLabel>
               <FormControl>
-                <SelectCurrency currencies={uniqueCurrencies} {...field} />
+                <SelectCurrency {...field} />
               </FormControl>
 
               <FormDescription>
@@ -167,7 +183,7 @@ export function CreateTeamForm({
               <FormMessage />
             </FormItem>
           )}
-        />
+        /> */}
 
         <SubmitButton
           className="mt-6 w-full"

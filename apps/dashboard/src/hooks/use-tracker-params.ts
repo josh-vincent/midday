@@ -1,33 +1,10 @@
-import { formatISO } from "date-fns";
-import {
-  parseAsArrayOf,
-  parseAsBoolean,
-  parseAsString,
-  parseAsStringLiteral,
-  useQueryStates,
-} from "nuqs";
+import { useQueryStates } from "nuqs";
+import { parseAsBoolean, parseAsString } from "nuqs/server";
 
-type Props = {
-  initialDate?: string;
-};
-
-export function useTrackerParams({ initialDate }: Props = {}) {
+export function useTrackerParams() {
   const [params, setParams] = useQueryStates({
-    date: parseAsString.withDefault(
-      initialDate ?? formatISO(new Date(), { representation: "date" }),
-    ),
-    create: parseAsBoolean,
-    projectId: parseAsString,
-    update: parseAsBoolean,
-    selectedDate: parseAsString,
-    eventId: parseAsString,
-    range: parseAsArrayOf(parseAsString),
-    statuses: parseAsArrayOf(
-      parseAsStringLiteral(["completed", "in_progress"]),
-    ),
-    start: parseAsString,
-    end: parseAsString,
-    view: parseAsStringLiteral(["week", "month"]),
+    trackerId: parseAsString,
+    createTracker: parseAsBoolean,
   });
 
   return {
