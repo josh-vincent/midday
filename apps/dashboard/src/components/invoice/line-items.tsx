@@ -10,6 +10,7 @@ import { Reorder, useDragControls } from "framer-motion";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { AmountInput } from "./amount-input";
 import { Description } from "./description";
+import { DescriptionWithJobSearch } from "./description-with-job-search";
 import type { InvoiceFormValues } from "./form-context";
 import { Input } from "./input";
 import { LabelInput } from "./label-input";
@@ -135,7 +136,7 @@ export function LineItems() {
         onClick={() =>
           append({
             name: "",
-            quantity: 0,
+            quantity: 1,
             price: 0,
           })
         }
@@ -198,7 +199,7 @@ function LineItemRow({
         </Button>
       )}
 
-      <Description name={`lineItems.${index}.name`} />
+      <DescriptionWithJobSearch name={`lineItems.${index}.name`} index={index} />
 
       <QuantityInput name={`lineItems.${index}.quantity`} />
 

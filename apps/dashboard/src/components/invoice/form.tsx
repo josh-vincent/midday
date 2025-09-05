@@ -108,7 +108,7 @@ export function Form() {
   const [debouncedValue] = useDebounceValue(formValues, 500);
 
   useEffect(() => {
-    if (isDirty && form.watch("customerId") && invoiceNumberValid) {
+    if (isDirty && invoiceNumberValid) {
       const currentFormValues = form.getValues();
       draftInvoiceMutation.mutate(
         // @ts-expect-error

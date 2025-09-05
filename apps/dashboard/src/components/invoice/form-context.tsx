@@ -45,12 +45,13 @@ export const invoiceTemplateSchema = z.object({
 });
 
 export const lineItemSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1, "Description is required"),
   quantity: z.number().min(0, "Quantity must be at least 0"),
   unit: z.string().optional(),
   price: z.number(),
   vat: z.number().min(0, "VAT must be at least 0").optional(),
   tax: z.number().min(0, "Tax must be at least 0").optional(),
+  jobId: z.string().optional(),
 });
 
 export const invoiceFormSchema = z.object({
@@ -59,7 +60,7 @@ export const invoiceFormSchema = z.object({
   template: invoiceTemplateSchema,
   fromDetails: z.any(),
   customerDetails: z.any(),
-  customerId: z.string().uuid(),
+  customerId: z.string().uuid().optional(),
   customerName: z.string().optional(),
   paymentDetails: z.any(),
   noteDetails: z.any().optional(),
