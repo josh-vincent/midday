@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@midday/supabase/client";
 import { Button } from "@midday/ui/button";
-import { Input } from "@midday/ui/input";
-import { Icons } from "@midday/ui/icons";
 import { cn } from "@midday/ui/cn";
+import { Icons } from "@midday/ui/icons";
+import { Input } from "@midday/ui/input";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 type Props = {
   className?: string;
@@ -106,11 +106,9 @@ export function PasswordSignUp({ className }: Props) {
             className="h-12"
           />
         </div>
-        
+
         {error && (
-          <div className="text-sm text-red-500 text-center">
-            {error}
-          </div>
+          <div className="text-sm text-red-500 text-center">{error}</div>
         )}
 
         <Button

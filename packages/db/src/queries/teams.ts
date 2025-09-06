@@ -1,9 +1,5 @@
 import type { Database } from "@db/client";
-import {
-  teams,
-  users,
-  usersOnTeam,
-} from "@db/schema";
+import { teams, users, usersOnTeam } from "@db/schema";
 import { and, eq } from "drizzle-orm";
 
 export const getTeamById = async (db: Database, id: string) => {
@@ -65,7 +61,6 @@ type CreateTeamParams = {
   switchTeam?: boolean;
 };
 
-
 export const createTeam = async (db: Database, params: CreateTeamParams) => {
   try {
     const [newTeam] = await db
@@ -90,13 +85,12 @@ export const createTeam = async (db: Database, params: CreateTeamParams) => {
       role: "owner",
     });
 
-    // Optionally switch user to the new team
-    if (params.switchTeam) {
-      await db
-        .update(users)
-        .set({ teamId: newTeam.id })
-        .where(eq(users.id, params.userId));
-    }
+    // Always update user's teamId when creating a team
+    // (they can switch teams later if needed)
+    await db
+      .update(users)
+      .set({ teamId: newTeam.id })
+      .where(eq(users.id, params.userId));
 
     return newTeam.id;
   } catch (error) {

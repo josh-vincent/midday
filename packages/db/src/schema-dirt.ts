@@ -17,7 +17,7 @@ import { customers, invoices, teams, users } from "./schema";
 // Enums
 export const importStatusEnum = pgEnum("import_status", [
   "pending",
-  "validating", 
+  "validating",
   "validated",
   "processing",
   "processed",
@@ -39,10 +39,7 @@ export const paymentMethodEnum = pgEnum("payment_method", [
   "other",
 ]);
 
-export const reminderChannelEnum = pgEnum("reminder_channel", [
-  "email",
-  "sms",
-]);
+export const reminderChannelEnum = pgEnum("reminder_channel", ["email", "sms"]);
 
 export const jobStatusEnum = pgEnum("job_status", [
   "pending",
@@ -76,7 +73,10 @@ export const importBatches = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    processedAt: timestamp("processed_at", { withTimezone: true, mode: "string" }),
+    processedAt: timestamp("processed_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
   },
   (table) => [
     index("import_batches_team_id_idx").using("btree", table.teamId),
@@ -89,7 +89,7 @@ export const importBatches = pgTable(
       columns: [table.userId],
       foreignColumns: [users.id],
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const importRows = pgTable(
@@ -118,7 +118,7 @@ export const importRows = pgTable(
       columns: [table.invoiceId],
       foreignColumns: [invoices.id],
     }).onDelete("set null"),
-  ]
+  ],
 );
 
 export const mappingTemplates = pgTable(
@@ -135,8 +135,10 @@ export const mappingTemplates = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-      .defaultNow(),
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+      mode: "string",
+    }).defaultNow(),
   },
   (table) => [
     index("mapping_templates_team_id_idx").using("btree", table.teamId),
@@ -148,7 +150,7 @@ export const mappingTemplates = pgTable(
       columns: [table.customerId],
       foreignColumns: [customers.id],
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 // Payment tracking tables
@@ -179,7 +181,7 @@ export const payments = pgTable(
       columns: [table.createdBy],
       foreignColumns: [users.id],
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const refunds = pgTable(
@@ -211,7 +213,7 @@ export const refunds = pgTable(
       columns: [table.createdBy],
       foreignColumns: [users.id],
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 // Reminder and scheduling tables
@@ -226,8 +228,10 @@ export const invoiceReminderPolicies = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-      .defaultNow(),
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+      mode: "string",
+    }).defaultNow(),
   },
   (table) => [
     index("invoice_reminder_policies_team_id_idx").using("btree", table.teamId),
@@ -235,7 +239,7 @@ export const invoiceReminderPolicies = pgTable(
       columns: [table.teamId],
       foreignColumns: [teams.id],
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const scheduledJobs = pgTable(
@@ -244,19 +248,28 @@ export const scheduledJobs = pgTable(
     id: uuid().defaultRandom().primaryKey().notNull(),
     type: text().notNull(), // 'send_invoice', 'send_reminder'
     payload: jsonb().notNull(),
-    scheduledFor: timestamp("scheduled_for", { withTimezone: true, mode: "string" }).notNull(),
+    scheduledFor: timestamp("scheduled_for", {
+      withTimezone: true,
+      mode: "string",
+    }).notNull(),
     status: jobStatusEnum().default("pending").notNull(),
     attempts: integer().default(0).notNull(),
     lastError: text("last_error"),
-    completedAt: timestamp("completed_at", { withTimezone: true, mode: "string" }),
+    completedAt: timestamp("completed_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
   },
   (table) => [
-    index("scheduled_jobs_scheduled_for_idx").using("btree", table.scheduledFor),
+    index("scheduled_jobs_scheduled_for_idx").using(
+      "btree",
+      table.scheduledFor,
+    ),
     index("scheduled_jobs_status_idx").using("btree", table.status),
-  ]
+  ],
 );
 
 // Email tracking
@@ -271,7 +284,10 @@ export const emailDeliveries = pgTable(
     sentAt: timestamp("sent_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    deliveredAt: timestamp("delivered_at", { withTimezone: true, mode: "string" }),
+    deliveredAt: timestamp("delivered_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
     openedAt: timestamp("opened_at", { withTimezone: true, mode: "string" }),
     bouncedAt: timestamp("bounced_at", { withTimezone: true, mode: "string" }),
     errorMessage: text("error_message"),
@@ -283,7 +299,7 @@ export const emailDeliveries = pgTable(
       columns: [table.invoiceId],
       foreignColumns: [invoices.id],
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 // Attachments for line items
@@ -318,7 +334,7 @@ export const attachments = pgTable(
       columns: [table.uploadedBy],
       foreignColumns: [users.id],
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 // Accounting connections
@@ -333,12 +349,17 @@ export const accountingConnections = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true, mode: "string" }),
     config: jsonb(), // Provider-specific configuration
     isActive: boolean("is_active").default(true),
-    lastSyncAt: timestamp("last_sync_at", { withTimezone: true, mode: "string" }),
+    lastSyncAt: timestamp("last_sync_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
-      .defaultNow(),
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+      mode: "string",
+    }).defaultNow(),
   },
   (table) => [
     index("accounting_connections_team_id_idx").using("btree", table.teamId),
@@ -346,7 +367,7 @@ export const accountingConnections = pgTable(
       columns: [table.teamId],
       foreignColumns: [teams.id],
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 export const accountingLinks = pgTable(
@@ -358,19 +379,30 @@ export const accountingLinks = pgTable(
     entityId: uuid("entity_id").notNull(),
     provider: text().notNull(),
     externalId: text("external_id").notNull(),
-    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true, mode: "string" }),
+    lastSyncedAt: timestamp("last_synced_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
       .defaultNow()
       .notNull(),
   },
   (table) => [
-    index("accounting_links_entity_idx").using("btree", table.entityType, table.entityId),
-    index("accounting_links_provider_idx").using("btree", table.provider, table.externalId),
+    index("accounting_links_entity_idx").using(
+      "btree",
+      table.entityType,
+      table.entityId,
+    ),
+    index("accounting_links_provider_idx").using(
+      "btree",
+      table.provider,
+      table.externalId,
+    ),
     foreignKey({
       columns: [table.teamId],
       foreignColumns: [teams.id],
     }).onDelete("cascade"),
-  ]
+  ],
 );
 
 // Audit log for compliance
@@ -392,7 +424,11 @@ export const auditLog = pgTable(
       .notNull(),
   },
   (table) => [
-    index("audit_log_entity_idx").using("btree", table.entityType, table.entityId),
+    index("audit_log_entity_idx").using(
+      "btree",
+      table.entityType,
+      table.entityId,
+    ),
     index("audit_log_team_id_idx").using("btree", table.teamId),
     index("audit_log_created_at_idx").using("btree", table.createdAt),
     foreignKey({
@@ -403,5 +439,5 @@ export const auditLog = pgTable(
       columns: [table.userId],
       foreignColumns: [users.id],
     }).onDelete("set null"),
-  ]
+  ],
 );

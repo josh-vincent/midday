@@ -5,23 +5,25 @@ import superjson from "superjson";
 
 async function testTRPCEndpoints() {
   const supabase = createClient();
-  
+
   // Get the current session
-  const { data: { session } } = await supabase.auth.getSession();
-  
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
   if (!session) {
     console.error("❌ No authenticated session found. Please log in first.");
     return;
   }
-  
+
   console.log("✅ Authenticated as:", session.user.email);
   console.log("Session token:", session.access_token?.substring(0, 20) + "...");
-  
+
   // Create tRPC client
   const trpc = createTRPCClient<AppRouter>({
     links: [
       httpBatchLink({
-        url: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3334'}/trpc`,
+        url: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3334"}/trpc`,
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -29,9 +31,9 @@ async function testTRPCEndpoints() {
       }),
     ],
   });
-  
+
   console.log("\n=== Testing tRPC Endpoints ===\n");
-  
+
   // Test user.me endpoint (should work without team)
   console.log("1. Testing user.me endpoint...");
   try {
@@ -45,7 +47,7 @@ async function testTRPCEndpoints() {
     console.error("❌ user.me failed:", error.message);
     console.error("   Full error:", error);
   }
-  
+
   // Test user.invites endpoint (should work without team)
   console.log("\n2. Testing user.invites endpoint...");
   try {
@@ -56,7 +58,7 @@ async function testTRPCEndpoints() {
   } catch (error: any) {
     console.error("❌ user.invites failed:", error.message);
   }
-  
+
   // Test team endpoints (these should fail if no team)
   console.log("\n3. Testing team.current endpoint...");
   try {
@@ -69,7 +71,7 @@ async function testTRPCEndpoints() {
       console.log("   ℹ️  This is expected - user has no team");
     }
   }
-  
+
   // Test team.create endpoint
   console.log("\n4. Testing team.create endpoint...");
   try {
@@ -84,7 +86,7 @@ async function testTRPCEndpoints() {
     console.error("❌ team.create failed:", error.message);
     console.error("   Full error:", error);
   }
-  
+
   // Test invoice endpoints (these require a team)
   console.log("\n5. Testing invoice.list endpoint...");
   try {
@@ -99,7 +101,7 @@ async function testTRPCEndpoints() {
       console.log("   ℹ️  This is expected - invoice operations require a team");
     }
   }
-  
+
   // Test customer endpoints (these require a team)
   console.log("\n6. Testing customer.list endpoint...");
   try {
@@ -111,10 +113,12 @@ async function testTRPCEndpoints() {
   } catch (error: any) {
     console.error("❌ customer.list failed:", error.message);
     if (error.message.includes("team")) {
-      console.log("   ℹ️  This is expected - customer operations require a team");
+      console.log(
+        "   ℹ️  This is expected - customer operations require a team",
+      );
     }
   }
-  
+
   console.log("\n=== Test Complete ===");
 }
 

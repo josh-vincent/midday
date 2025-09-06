@@ -1,6 +1,6 @@
 "use client";
 
-import { useReportsParams } from "@/hooks/use-reports-params";
+import { useReportsParams } from "@/hooks/use-reports-params-client-client";
 import { useTRPC } from "@/trpc/client";
 import { cn } from "@midday/ui/cn";
 import { Icons } from "@midday/ui/icons";

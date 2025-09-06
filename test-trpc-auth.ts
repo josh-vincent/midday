@@ -5,8 +5,11 @@ async function testAuth() {
 
   // Test 1: Check Supabase auth
   const supabase = createClient();
-  const { data: { session }, error: authError } = await supabase.auth.getSession();
-  
+  const {
+    data: { session },
+    error: authError,
+  } = await supabase.auth.getSession();
+
   if (authError) {
     console.error("❌ Supabase auth error:", authError);
     return;
@@ -25,19 +28,19 @@ async function testAuth() {
 
   // Test 2: Direct API call to tRPC endpoint
   console.log("\nTesting tRPC user.me endpoint...");
-  
+
   try {
     const response = await fetch("http://localhost:3002/api/trpc/user.me", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "Cookie": document.cookie, // Include auth cookies
+        Cookie: document.cookie, // Include auth cookies
       },
       credentials: "include",
     });
 
     console.log("Response status:", response.status);
-    
+
     if (!response.ok) {
       const text = await response.text();
       console.error("❌ tRPC request failed:", text);
@@ -51,7 +54,7 @@ async function testAuth() {
 
   // Test 3: Check database user record
   console.log("\nChecking database records...");
-  
+
   const { data: authUser, error: userError } = await supabase
     .from("users")
     .select("*")
@@ -93,7 +96,9 @@ async function testAuth() {
 // Run test in browser console
 if (typeof window !== "undefined") {
   (window as any).testAuth = testAuth;
-  console.log("Test function ready. Run 'testAuth()' in the console to test authentication.");
+  console.log(
+    "Test function ready. Run 'testAuth()' in the console to test authentication.",
+  );
 }
 
 export { testAuth };

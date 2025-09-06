@@ -151,7 +151,10 @@ const handleDesktopNavigation = async (
   params?: Record<string, any>,
 ) => {
   const isDesktopApp = () => false;
-  const Window = { getByLabel: () => ({ label: "main" }), getCurrent: () => ({ label: "main" }) };
+  const Window = {
+    getByLabel: () => ({ label: "main" }),
+    getCurrent: () => ({ label: "main" }),
+  };
   const emit = () => {};
   const invoke = () => {};
   if (!isDesktopApp()) return false;
@@ -200,7 +203,10 @@ const useSearchNavigation = () => {
   const { setParams: setTransactionParams } = useTransactionParams();
   const { setParams: setDocumentParams } = useDocumentParams();
   const isDesktopApp = () => false;
-  const Window = { getCurrent: () => ({ label: "main" }), getByLabel: () => ({ label: "main" }) };
+  const Window = {
+    getCurrent: () => ({ label: "main" }),
+    getByLabel: () => ({ label: "main" }),
+  };
   const emit = () => {};
   const invoke = () => {};
 

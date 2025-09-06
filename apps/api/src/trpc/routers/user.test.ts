@@ -1,35 +1,30 @@
-// Set up environment variables
-process.env.RESEND_API_KEY = process.env.RESEND_API_KEY || "test_resend_key";
-process.env.RESEND_AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID || "test_audience_id";
-process.env.SUPABASE_URL = process.env.SUPABASE_URL || "http://localhost:54321";
-process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "test_anon_key";
-process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "test_service_key";
-process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/postgres";
+// Import test setup to configure all environment variables
+import "../__tests__/test-setup";
 
-import { describe, expect, it, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { connectDb } from "@midday/db/client";
+import { v4 as uuidv4 } from "uuid";
 import {
-  createTestCaller,
-  createTestUser,
   cleanupTestData,
+  createTestCaller,
   createTestTeam,
   createTestTeamMember,
+  createTestUser,
 } from "../__tests__/test-utils";
-import { v4 as uuidv4 } from "uuid";
 
 describe("user router", () => {
   let db: any;
   let caller: any;
-  const userId = `test-user-${uuidv4()}`;
-  const teamId = `test-team-${uuidv4()}`;
+  const userId = uuidv4();
+  const teamId = uuidv4();
 
   beforeEach(async () => {
     db = await connectDb();
-    
+
     await createTestUser(db, userId);
     await createTestTeam(db, teamId);
     await createTestTeamMember(db, teamId, userId);
-    
+
     caller = await createTestCaller({
       teamId: undefined,
       session: {
@@ -51,7 +46,7 @@ describe("user router", () => {
   describe("me", () => {
     it("should fetch current user profile", async () => {
       const result = await caller.user.me();
-      
+
       expect(result).toBeDefined();
       expect(result.id).toBe(userId);
       expect(result.email).toBe("test@example.com");
@@ -70,9 +65,9 @@ describe("user router", () => {
           role: "authenticated",
         },
       });
-      
+
       const result = await callerWithoutTeam.user.me();
-      
+
       expect(result).toBeDefined();
       expect(result.id).toBe(userId);
     });
@@ -87,9 +82,9 @@ describe("user router", () => {
         dateFormat: "dd/MM/yyyy",
         weekStartsOnMonday: true,
       };
-      
+
       const result = await caller.user.update(updateData);
-      
+
       expect(result).toBeDefined();
       expect(result.id).toBe(userId);
       expect(result.fullName).toBe(updateData.fullName);
@@ -103,9 +98,9 @@ describe("user router", () => {
       const partialUpdate = {
         fullName: "Partially Updated",
       };
-      
+
       const result = await caller.user.update(partialUpdate);
-      
+
       expect(result).toBeDefined();
       expect(result.id).toBe(userId);
       expect(result.fullName).toBe(partialUpdate.fullName);
@@ -116,9 +111,9 @@ describe("user router", () => {
       const updateData = {
         avatarUrl: "https://example.com/avatar.jpg",
       };
-      
+
       const result = await caller.user.update(updateData);
-      
+
       expect(result).toBeDefined();
       expect(result.avatarUrl).toBe(updateData.avatarUrl);
     });
@@ -127,9 +122,9 @@ describe("user router", () => {
       const updateData = {
         timeFormat: 24,
       };
-      
+
       const result = await caller.user.update(updateData);
-      
+
       expect(result).toBeDefined();
       expect(result.timeFormat).toBe(24);
     });
@@ -137,15 +132,15 @@ describe("user router", () => {
     it("should not allow updating another user's profile", async () => {
       const otherUserId = `other-user-${uuidv4()}`;
       await createTestUser(db, otherUserId);
-      
+
       const result = await caller.user.update({
         fullName: "Should Update Current User Only",
       });
-      
+
       expect(result.id).toBe(userId);
       expect(result.id).not.toBe(otherUserId);
-      
-      await db.execute(`DELETE FROM users WHERE id = $1`, [otherUserId]);
+
+      await db.execute(sql`DELETE FROM users WHERE id = ${otherUserId}`);
     });
   });
 
@@ -153,32 +148,35 @@ describe("user router", () => {
     it("should fetch user invites", async () => {
       const inviteTeamId = `invite-team-${uuidv4()}`;
       await createTestTeam(db, inviteTeamId);
-      
-      await db.execute(`
+
+      await db.execute(
+        `
         INSERT INTO team_invites (id, team_id, email, role, invited_by, code)
         VALUES ($1, $2, $3, $4, $5, $6)
-      `, [
-        uuidv4(),
-        inviteTeamId,
-        "test@example.com",
-        "member",
-        userId,
-        "invite-code-456",
-      ]);
-      
+      `,
+        [
+          uuidv4(),
+          inviteTeamId,
+          "test@example.com",
+          "member",
+          userId,
+          "invite-code-456",
+        ],
+      );
+
       const result = await caller.user.invites();
-      
+
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBeGreaterThanOrEqual(1);
       expect(result[0].email).toBe("test@example.com");
-      
+
       await cleanupTestData(db, inviteTeamId);
     });
 
     it("should return empty array when no invites", async () => {
       const result = await caller.user.invites();
-      
+
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
     });
@@ -195,9 +193,9 @@ describe("user router", () => {
           role: "authenticated",
         },
       });
-      
+
       const result = await noEmailCaller.user.invites();
-      
+
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBe(0);
@@ -208,7 +206,7 @@ describe("user router", () => {
     it("should delete user account", async () => {
       const deleteUserId = `delete-user-${uuidv4()}`;
       await createTestUser(db, deleteUserId);
-      
+
       const deleteCaller = await createTestCaller({
         teamId: undefined,
         session: {
@@ -220,15 +218,15 @@ describe("user router", () => {
           role: "authenticated",
         },
       });
-      
+
       const result = await deleteCaller.user.delete();
-      
+
       expect(result).toBeDefined();
       expect(result.id).toBe(deleteUserId);
-      
+
       const checkDeleted = await db.execute(
         `SELECT id FROM users WHERE id = $1`,
-        [deleteUserId]
+        [deleteUserId],
       );
       expect(checkDeleted.rows.length).toBe(0);
     });
@@ -236,22 +234,22 @@ describe("user router", () => {
     it("should only delete the authenticated user", async () => {
       const otherUserId = `other-user-${uuidv4()}`;
       await createTestUser(db, otherUserId);
-      
+
       await caller.user.delete();
-      
+
       const userDeleted = await db.execute(
         `SELECT id FROM users WHERE id = $1`,
-        [userId]
+        [userId],
       );
       expect(userDeleted.rows.length).toBe(0);
-      
+
       const otherUserExists = await db.execute(
         `SELECT id FROM users WHERE id = $1`,
-        [otherUserId]
+        [otherUserId],
       );
       expect(otherUserExists.rows.length).toBe(1);
-      
-      await db.execute(`DELETE FROM users WHERE id = $1`, [otherUserId]);
+
+      await db.execute(sql`DELETE FROM users WHERE id = ${otherUserId}`);
     });
   });
 
@@ -261,28 +259,28 @@ describe("user router", () => {
         teamId: undefined,
         session: null,
       });
-      
+
       try {
         await unauthenticatedCaller.user.me();
         expect(true).toBe(false);
       } catch (error: any) {
         expect(error.code).toBe("UNAUTHORIZED");
       }
-      
+
       try {
         await unauthenticatedCaller.user.update({ fullName: "Test" });
         expect(true).toBe(false);
       } catch (error: any) {
         expect(error.code).toBe("UNAUTHORIZED");
       }
-      
+
       try {
         await unauthenticatedCaller.user.invites();
         expect(true).toBe(false);
       } catch (error: any) {
         expect(error.code).toBe("UNAUTHORIZED");
       }
-      
+
       try {
         await unauthenticatedCaller.user.delete();
         expect(true).toBe(false);
@@ -303,17 +301,17 @@ describe("user router", () => {
           role: "authenticated",
         },
       });
-      
+
       const meResult = await userOnlyCaller.user.me();
       expect(meResult).toBeDefined();
       expect(meResult.id).toBe(userId);
-      
+
       const updateResult = await userOnlyCaller.user.update({
         fullName: "No Team Required",
       });
       expect(updateResult).toBeDefined();
       expect(updateResult.fullName).toBe("No Team Required");
-      
+
       const invitesResult = await userOnlyCaller.user.invites();
       expect(invitesResult).toBeDefined();
       expect(Array.isArray(invitesResult)).toBe(true);
@@ -325,7 +323,7 @@ describe("user router", () => {
       const validLocale = {
         locale: "en-US",
       };
-      
+
       const result = await caller.user.update(validLocale);
       expect(result.locale).toBe(validLocale.locale);
     });
@@ -334,7 +332,7 @@ describe("user router", () => {
       const validTimezone = {
         timezone: "America/New_York",
       };
-      
+
       const result = await caller.user.update(validTimezone);
       expect(result.timezone).toBe(validTimezone.timezone);
     });
@@ -346,7 +344,7 @@ describe("user router", () => {
         "yyyy-MM-dd",
         "dd.MM.yyyy",
       ];
-      
+
       for (const dateFormat of validDateFormats) {
         const result = await caller.user.update({ dateFormat });
         expect(result.dateFormat).toBe(dateFormat);
@@ -355,7 +353,7 @@ describe("user router", () => {
 
     it("should validate time format", async () => {
       const validTimeFormats = [12, 24];
-      
+
       for (const timeFormat of validTimeFormats) {
         const result = await caller.user.update({ timeFormat });
         expect(result.timeFormat).toBe(timeFormat);
@@ -366,14 +364,14 @@ describe("user router", () => {
       const booleanUpdate = {
         weekStartsOnMonday: true,
       };
-      
+
       const result = await caller.user.update(booleanUpdate);
       expect(result.weekStartsOnMonday).toBe(true);
-      
+
       const falseBooleanUpdate = {
         weekStartsOnMonday: false,
       };
-      
+
       const falseResult = await caller.user.update(falseBooleanUpdate);
       expect(falseResult.weekStartsOnMonday).toBe(false);
     });

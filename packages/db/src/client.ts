@@ -1,20 +1,21 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { withReplicas } from "./replicas";
+// import { withReplicas } from "./replicas";
 import * as schema from "./schema";
 
 // Optimized connection configuration for stateful Fly VMs (3 instances)
 const connectionConfig = {
   prepare: false,
-  max: 2, // Very conservative - 2 connections per pool per VM
+  max: 10, // Increased connections for development
   idle_timeout: 90, // fewer disconnects
   max_lifetime: 0, // disable forced recycling
-  connect_timeout: 10, // Quick connection timeout
+  connect_timeout: 30, // Longer timeout for development
 };
 
 // Use DATABASE_URL or fallback to Supabase URL
-const databaseUrl = process.env.DATABASE_PRIMARY_URL || 
-  process.env.DATABASE_URL || 
+const databaseUrl =
+  process.env.DATABASE_PRIMARY_URL ||
+  process.env.DATABASE_URL ||
   "postgresql://postgres.ulncfblvuijlgniydjju:MikeTheDogSupabase!@aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres";
 
 const primaryPool = postgres(databaseUrl, connectionConfig);
@@ -43,27 +44,8 @@ const getReplicaIndexForRegion = () => {
 };
 
 export const connectDb = async () => {
-  const replicaIndex = getReplicaIndexForRegion();
-
-  return withReplicas(
-    primaryDb,
-    [
-      // Order of replicas is important
-      drizzle(fraPool, {
-        schema,
-        casing: "snake_case",
-      }),
-      drizzle(iadPool, {
-        schema,
-        casing: "snake_case",
-      }),
-      drizzle(sjcPool, {
-        schema,
-        casing: "snake_case",
-      }),
-    ],
-    (replicas) => replicas[replicaIndex]!,
-  );
+  // Temporarily disable replicas - use primary only
+  return primaryDb as any;
 };
 
 export type Database = Awaited<ReturnType<typeof connectDb>>;

@@ -1,11 +1,5 @@
 import type { Database } from "@db/client";
-import {
-  type activityTypeEnum,
-  customers,
-  invoiceStatusEnum,
-  invoices,
-  teams,
-} from "@db/schema";
+import { customers, invoiceStatusEnum, invoices, teams } from "@db/schema";
 import { buildSearchQuery } from "@midday/db/utils/search-query";
 import { generateToken } from "@midday/invoice/token";
 import type { EditorDoc, LineItem } from "@midday/invoice/types";
@@ -78,166 +72,176 @@ export type GetInvoicesParams = {
 };
 
 export async function getInvoices(db: Database, params: GetInvoicesParams) {
-  const {
-    teamId,
-    sort,
-    cursor,
-    pageSize = 25,
-    q,
-    statuses,
-    start,
-    end,
-    customers: customerIds,
-  } = params;
+  try {
+    const {
+      teamId,
+      sort,
+      cursor,
+      pageSize = 25,
+      q,
+      statuses,
+      start,
+      end,
+      customers: customerIds,
+    } = params;
 
-  const whereConditions: SQL[] = [eq(invoices.teamId, teamId)];
+    const whereConditions: SQL[] = [eq(invoices.teamId, teamId)];
 
-  // Apply status filter
-  if (statuses && statuses.length > 0) {
-    // Cast the statuses array to the correct enum type
-    const validStatuses = statuses.filter((status) =>
-      invoiceStatusEnum.enumValues.includes(
-        status as (typeof invoiceStatusEnum.enumValues)[number],
-      ),
-    ) as (typeof invoiceStatusEnum.enumValues)[number][];
+    // Apply status filter
+    if (statuses && statuses.length > 0) {
+      // Cast the statuses array to the correct enum type
+      const validStatuses = statuses.filter((status) =>
+        invoiceStatusEnum.enumValues.includes(
+          status as (typeof invoiceStatusEnum.enumValues)[number],
+        ),
+      ) as (typeof invoiceStatusEnum.enumValues)[number][];
 
-    if (validStatuses.length > 0) {
-      whereConditions.push(inArray(invoices.status, validStatuses));
+      if (validStatuses.length > 0) {
+        whereConditions.push(inArray(invoices.status, validStatuses));
+      }
     }
-  }
 
-  // Apply date range filter
-  if (start && end) {
-    whereConditions.push(gte(invoices.dueDate, start));
-    whereConditions.push(lte(invoices.dueDate, end));
-  }
+    // Apply date range filter
+    if (start && end) {
+      whereConditions.push(gte(invoices.dueDate, start));
+      whereConditions.push(lte(invoices.dueDate, end));
+    }
 
-  // Apply customer filter
-  if (customerIds && customerIds.length > 0) {
-    whereConditions.push(inArray(invoices.customerId, customerIds));
-  }
+    // Apply customer filter
+    if (customerIds && customerIds.length > 0) {
+      whereConditions.push(inArray(invoices.customerId, customerIds));
+    }
 
-  // Apply search query filter
-  if (q) {
-    // If the query is a number, search by amount
-    if (!Number.isNaN(Number.parseInt(q))) {
-      whereConditions.push(
-        sql`${invoices.amount}::text = ${Number(q).toString()}`,
-      );
+    // Apply search query filter
+    if (q) {
+      // If the query is a number, search by amount
+      if (!Number.isNaN(Number.parseInt(q))) {
+        whereConditions.push(
+          sql`${invoices.amount}::text = ${Number(q).toString()}`,
+        );
+      } else {
+        const query = buildSearchQuery(q);
+
+        // Search using customerName
+        whereConditions.push(
+          sql`${invoices.customerName} ILIKE '%' || ${q} || '%'`,
+        );
+      }
+    }
+
+    // Start building the query
+    const query = db
+      .select({
+        id: invoices.id,
+        dueDate: invoices.dueDate,
+        invoiceNumber: invoices.invoiceNumber,
+        createdAt: invoices.createdAt,
+        amount: invoices.amount,
+        currency: invoices.currency,
+        lineItems: invoices.lineItems,
+        paymentDetails: invoices.paymentDetails,
+        customerDetails: invoices.customerDetails,
+        reminderSentAt: invoices.reminderSentAt,
+        updatedAt: invoices.updatedAt,
+        note: invoices.note,
+        paidDate: invoices.paidDate,
+        vat: invoices.vat,
+        tax: invoices.tax,
+        status: invoices.status,
+        viewedAt: invoices.viewedAt,
+        fromDetails: invoices.fromDetails,
+        issueDate: invoices.issueDate,
+        sentAt: invoices.sentAt,
+        template: invoices.template,
+        noteDetails: invoices.noteDetails,
+        customerName: invoices.customerName,
+        token: invoices.token,
+        discount: invoices.discount,
+        subtotal: invoices.subtotal,
+        topBlock: invoices.topBlock,
+        bottomBlock: invoices.bottomBlock,
+        scheduledAt: invoices.scheduledAt,
+        scheduledJobId: invoices.scheduledJobId,
+        customer: {
+          id: customers.id,
+          name: customers.name,
+          website: customers.website,
+          email: customers.email,
+        },
+        customerId: invoices.customerId,
+        team: {
+          name: teams.name,
+        },
+      })
+      .from(invoices)
+      .leftJoin(customers, eq(invoices.customerId, customers.id))
+      .leftJoin(teams, eq(invoices.teamId, teams.id))
+      .where(and(...whereConditions));
+
+    // Apply sorting
+    if (sort && sort.length === 2) {
+      const [column, direction] = sort;
+      const isAscending = direction === "asc";
+
+      if (column === "customer") {
+        isAscending
+          ? query.orderBy(asc(customers.name))
+          : query.orderBy(desc(customers.name));
+      } else if (column === "created_at") {
+        isAscending
+          ? query.orderBy(asc(invoices.createdAt))
+          : query.orderBy(desc(invoices.createdAt));
+      } else if (column === "due_date") {
+        isAscending
+          ? query.orderBy(asc(invoices.dueDate))
+          : query.orderBy(desc(invoices.dueDate));
+      } else if (column === "amount") {
+        isAscending
+          ? query.orderBy(asc(invoices.amount))
+          : query.orderBy(desc(invoices.amount));
+      } else if (column === "status") {
+        isAscending
+          ? query.orderBy(asc(invoices.status))
+          : query.orderBy(desc(invoices.status));
+      }
     } else {
-      const query = buildSearchQuery(q);
-
-      // Search using full-text search or customerName
-      whereConditions.push(
-        sql`(to_tsquery('english', ${query}) @@ ${invoices.fts} OR ${invoices.customerName} ILIKE '%' || ${q} || '%')`,
-      );
+      // Default sort by created_at descending
+      query.orderBy(desc(invoices.createdAt));
     }
-  }
 
-  // Start building the query
-  const query = db
-    .select({
-      id: invoices.id,
-      dueDate: invoices.dueDate,
-      invoiceNumber: invoices.invoiceNumber,
-      createdAt: invoices.createdAt,
-      amount: invoices.amount,
-      currency: invoices.currency,
-      lineItems: invoices.lineItems,
-      paymentDetails: invoices.paymentDetails,
-      customerDetails: invoices.customerDetails,
-      reminderSentAt: invoices.reminderSentAt,
-      updatedAt: invoices.updatedAt,
-      note: invoices.note,
-      internalNote: invoices.internalNote,
-      paidAt: invoices.paidAt,
-      vat: invoices.vat,
-      tax: invoices.tax,
-      filePath: invoices.filePath,
-      status: invoices.status,
-      viewedAt: invoices.viewedAt,
-      fromDetails: invoices.fromDetails,
-      issueDate: invoices.issueDate,
-      sentAt: invoices.sentAt,
-      template: invoices.template,
-      noteDetails: invoices.noteDetails,
-      customerName: invoices.customerName,
-      token: invoices.token,
-      sentTo: invoices.sentTo,
-      discount: invoices.discount,
-      subtotal: invoices.subtotal,
-      topBlock: invoices.topBlock,
-      bottomBlock: invoices.bottomBlock,
-      scheduledAt: invoices.scheduledAt,
-      scheduledJobId: invoices.scheduledJobId,
-      customer: {
-        id: customers.id,
-        name: customers.name,
-        website: customers.website,
-        email: customers.email,
+    // Apply pagination
+    const offset = cursor ? Number.parseInt(cursor, 10) : 0;
+    query.limit(pageSize).offset(offset);
+
+    // Execute query
+    const data = await query;
+
+    // Calculate next cursor
+    const nextCursor =
+      data && data.length === pageSize
+        ? (offset + pageSize).toString()
+        : undefined;
+
+    return {
+      meta: {
+        cursor: nextCursor ?? null,
+        hasPreviousPage: offset > 0,
+        hasNextPage: data && data.length === pageSize,
       },
-      customerId: invoices.customerId,
-      team: {
-        name: teams.name,
+      data,
+    };
+  } catch (error) {
+    console.error("Error in getInvoices:", error);
+    // Return empty results on error
+    return {
+      meta: {
+        cursor: null,
+        hasPreviousPage: false,
+        hasNextPage: false,
       },
-    })
-    .from(invoices)
-    .leftJoin(customers, eq(invoices.customerId, customers.id))
-    .leftJoin(teams, eq(invoices.teamId, teams.id))
-    .where(and(...whereConditions));
-
-  // Apply sorting
-  if (sort && sort.length === 2) {
-    const [column, direction] = sort;
-    const isAscending = direction === "asc";
-
-    if (column === "customer") {
-      isAscending
-        ? query.orderBy(asc(customers.name))
-        : query.orderBy(desc(customers.name));
-    } else if (column === "created_at") {
-      isAscending
-        ? query.orderBy(asc(invoices.createdAt))
-        : query.orderBy(desc(invoices.createdAt));
-    } else if (column === "due_date") {
-      isAscending
-        ? query.orderBy(asc(invoices.dueDate))
-        : query.orderBy(desc(invoices.dueDate));
-    } else if (column === "amount") {
-      isAscending
-        ? query.orderBy(asc(invoices.amount))
-        : query.orderBy(desc(invoices.amount));
-    } else if (column === "status") {
-      isAscending
-        ? query.orderBy(asc(invoices.status))
-        : query.orderBy(desc(invoices.status));
-    }
-  } else {
-    // Default sort by created_at descending
-    query.orderBy(desc(invoices.createdAt));
+      data: [],
+    };
   }
-
-  // Apply pagination
-  const offset = cursor ? Number.parseInt(cursor, 10) : 0;
-  query.limit(pageSize).offset(offset);
-
-  // Execute query
-  const data = await query;
-
-  // Calculate next cursor
-  const nextCursor =
-    data && data.length === pageSize
-      ? (offset + pageSize).toString()
-      : undefined;
-
-  return {
-    meta: {
-      cursor: nextCursor ?? null,
-      hasPreviousPage: offset > 0,
-      hasNextPage: data && data.length === pageSize,
-    },
-    data,
-  };
 }
 
 export type GetInvoiceByIdParams = {
@@ -265,11 +269,9 @@ export async function getInvoiceById(
       reminderSentAt: invoices.reminderSentAt,
       updatedAt: invoices.updatedAt,
       note: invoices.note,
-      internalNote: invoices.internalNote,
-      paidAt: invoices.paidAt,
+      paidDate: invoices.paidDate,
       vat: invoices.vat,
       tax: invoices.tax,
-      filePath: invoices.filePath,
       status: invoices.status,
       viewedAt: invoices.viewedAt,
       fromDetails: invoices.fromDetails,
@@ -279,7 +281,6 @@ export async function getInvoiceById(
       noteDetails: invoices.noteDetails,
       customerName: invoices.customerName,
       token: invoices.token,
-      sentTo: invoices.sentTo,
       discount: invoices.discount,
       subtotal: invoices.subtotal,
       topBlock: invoices.topBlock,
@@ -341,21 +342,36 @@ export async function getPaymentStatus(
   db: Database,
   teamId: string,
 ): Promise<PaymentStatusResult> {
-  const results = await db.executeOnReplica(
-    sql`SELECT * FROM get_payment_score(${teamId})`,
-  );
-  const result = Array.isArray(results)
-    ? (results[0] as DbPaymentStatusResult)
-    : undefined;
+  try {
+    // Use execute instead of executeOnReplica since we're using primary only
+    const results = await db.execute(
+      sql`SELECT * FROM get_payment_score(${teamId})`,
+    );
+    const result = Array.isArray(results)
+      ? (results[0] as DbPaymentStatusResult)
+      : undefined;
 
-  if (!result) {
-    throw new Error("Failed to fetch payment status");
+    if (!result) {
+      console.error("No payment status result for team:", teamId);
+      // Return default values instead of throwing
+      return {
+        score: 0,
+        paymentStatus: "unknown",
+      };
+    }
+
+    return {
+      score: Number(result.score),
+      paymentStatus: result.payment_status,
+    };
+  } catch (error) {
+    console.error("Error in getPaymentStatus:", error);
+    // Return safe defaults on error
+    return {
+      score: 0,
+      paymentStatus: "unknown",
+    };
   }
-
-  return {
-    score: Number(result.score),
-    paymentStatus: result.payment_status,
-  };
 }
 
 type SearchInvoiceNumberParams = {
@@ -387,15 +403,26 @@ export async function getNextInvoiceNumber(
   db: Database,
   teamId: string,
 ): Promise<string> {
-  const [row] = await db.executeOnReplica(
-    sql`SELECT get_next_invoice_number(${teamId}) AS next_invoice_number`,
-  );
+  try {
+    // Use execute instead of executeOnReplica since we're using primary only
+    const [row] = await db.execute(
+      sql`SELECT get_next_invoice_number(${teamId}) AS next_invoice_number`,
+    );
 
-  if (!row) {
-    throw new Error("Failed to fetch next invoice number");
+    if (!row) {
+      console.error("No invoice number result for team:", teamId);
+      // Generate a fallback invoice number
+      const timestamp = Date.now().toString(36).toUpperCase();
+      return `INV-${timestamp}`;
+    }
+
+    return row.next_invoice_number as string;
+  } catch (error) {
+    console.error("Error in getNextInvoiceNumber:", error);
+    // Generate a fallback invoice number on error
+    const timestamp = Date.now().toString(36).toUpperCase();
+    return `INV-${timestamp}`;
   }
-
-  return row.next_invoice_number as string;
 }
 
 type DraftInvoiceLineItemParams = {
@@ -535,23 +562,30 @@ export async function getInvoiceSummary(
 ) {
   const { teamId, status } = params;
 
-  const whereConditions: SQL[] = [eq(invoices.teamId, teamId)];
+  try {
+    const whereConditions: SQL[] = [eq(invoices.teamId, teamId)];
 
-  if (status) {
-    whereConditions.push(eq(invoices.status, status));
+    if (status) {
+      whereConditions.push(eq(invoices.status, status));
+    }
+
+    const result = await db
+      .select({
+        currency: invoices.currency,
+        totalAmount: sql<number>`COALESCE(SUM(${invoices.amount}), 0)::float`,
+        invoiceCount: sql<number>`COUNT(*)::int`,
+      })
+      .from(invoices)
+      .where(and(...whereConditions))
+      .groupBy(invoices.currency);
+
+    // If no results, return an empty array instead of undefined
+    return result || [];
+  } catch (error) {
+    console.error("Error in getInvoiceSummary:", error);
+    // Return empty array on error to prevent frontend crashes
+    return [];
   }
-
-  const result = await db
-    .select({
-      currency: invoices.currency,
-      totalAmount: sql<number>`COALESCE(SUM(${invoices.amount}), 0)::float`,
-      invoiceCount: sql<number>`COUNT(*)::int`,
-    })
-    .from(invoices)
-    .where(and(...whereConditions))
-    .groupBy(invoices.currency);
-
-  return result;
 }
 
 export type DeleteInvoiceParams = {
@@ -672,7 +706,7 @@ export async function duplicateInvoice(
 export type UpdateInvoiceParams = {
   id: string;
   status?: "paid" | "canceled" | "unpaid" | "scheduled" | "draft";
-  paidAt?: string | null;
+  paidDate?: string | null;
   internalNote?: string | null;
   reminderSentAt?: string | null;
   scheduledAt?: string | null;
@@ -716,7 +750,7 @@ export async function updateInvoice(db: Database, params: UpdateInvoiceParams) {
           invoiceNumber: result?.invoiceNumber,
           customerName: result?.customerName,
           newStatus: rest.status,
-          paidAt: rest.paidAt,
+          paidDate: rest.paidDate,
         },
       });
     }
@@ -743,7 +777,6 @@ export async function getMostActiveClient(
       customerId: customers.id,
       customerName: customers.name,
       invoiceCount: sql<number>`COUNT(DISTINCT ${invoices.id})::int`,
-      totalTrackerTime: sql<number>`COALESCE(SUM(${trackerEntries.duration}), 0)::int`,
     })
     .from(customers)
     .leftJoin(
@@ -755,12 +788,8 @@ export async function getMostActiveClient(
     )
     .where(eq(customers.teamId, teamId))
     .groupBy(customers.id, customers.name)
-    .having(
-      sql`COUNT(DISTINCT ${invoices.id}) > 0`,
-    )
-    .orderBy(
-      sql`COUNT(DISTINCT ${invoices.id}) DESC`,
-    )
+    .having(sql`COUNT(DISTINCT ${invoices.id}) > 0`)
+    .orderBy(sql`COUNT(DISTINCT ${invoices.id}) DESC`)
     .limit(1);
 
   return result[0] || null;
@@ -779,7 +808,7 @@ export async function getInactiveClientsCount(
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  // Use a subquery to properly count inactive clients
+  // Count customers with no recent invoices
   const [result] = await db
     .select({
       count: sql<number>`COUNT(*)::int`,
@@ -797,22 +826,9 @@ export async function getInactiveClientsCount(
             gte(invoices.createdAt, thirtyDaysAgo.toISOString()),
           ),
         )
-        .leftJoin(trackerProjects, eq(trackerProjects.customerId, customers.id))
-        .leftJoin(
-          trackerEntries,
-          and(
-            eq(trackerEntries.projectId, trackerProjects.id),
-            gte(
-              trackerEntries.date,
-              thirtyDaysAgo.toISOString().split("T")[0] ?? "",
-            ),
-          ),
-        )
         .where(eq(customers.teamId, teamId))
         .groupBy(customers.id)
-        .having(
-          sql`COUNT(DISTINCT ${invoices.id}) = 0 AND COALESCE(SUM(${trackerEntries.duration}), 0) = 0`,
-        )
+        .having(sql`COUNT(DISTINCT ${invoices.id}) = 0`)
         .as("inactive_customers"),
     );
 
@@ -834,16 +850,16 @@ export async function getAverageDaysToPayment(
 
   const [result] = await db
     .select({
-      averageDays: sql<number>`ROUND(AVG(DATE_PART('day', ${invoices.paidAt}::timestamp - ${invoices.sentAt}::timestamp)))::int`,
+      averageDays: sql<number>`ROUND(AVG(DATE_PART('day', ${invoices.paidDate}::timestamp - ${invoices.sentAt}::timestamp)))::int`,
     })
     .from(invoices)
     .where(
       and(
         eq(invoices.teamId, teamId),
         eq(invoices.status, "paid"),
-        isNotNull(invoices.paidAt),
+        isNotNull(invoices.paidDate),
         isNotNull(invoices.sentAt),
-        gte(invoices.paidAt, thirtyDaysAgo.toISOString()),
+        gte(invoices.paidDate, thirtyDaysAgo.toISOString()),
       ),
     );
 

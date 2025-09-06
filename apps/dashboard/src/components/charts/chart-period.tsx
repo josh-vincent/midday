@@ -3,7 +3,7 @@
 import {
   chartPeriodOptions,
   useReportsParams,
-} from "@/hooks/use-reports-params";
+} from "@/hooks/use-reports-params-client";
 import { useUserQuery } from "@/hooks/use-user";
 import { Button } from "@midday/ui/button";
 import { Calendar } from "@midday/ui/calendar";

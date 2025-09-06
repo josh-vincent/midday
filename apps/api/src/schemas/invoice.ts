@@ -50,11 +50,11 @@ export const draftLineItemSchema = z.object({
 
 export const draftInvoiceSchema = z
   .object({
-    id: z.string().uuid().openapi({
+    id: z.string().uuid().optional().openapi({
       description: "Unique identifier for the draft invoice",
       example: "b3b7e6e2-8c2a-4e2a-9b1a-2e4b5c6d7f8a",
     }),
-    template: upsertInvoiceTemplateSchema.openapi({
+    template: upsertInvoiceTemplateSchema.optional().openapi({
       description: "Invoice template details for the draft invoice",
     }),
     fromDetails: z.string().nullable().optional().openapi({
@@ -81,15 +81,15 @@ export const draftInvoiceSchema = z
       description: "Additional notes for the invoice",
       example: "Thank you for your business.",
     }),
-    dueDate: z.string().openapi({
+    dueDate: z.string().optional().openapi({
       description: "Due date of the invoice in ISO 8601 format",
       example: "2024-06-30T23:59:59.000Z",
     }),
-    issueDate: z.string().openapi({
+    issueDate: z.string().optional().openapi({
       description: "Issue date of the invoice in ISO 8601 format",
       example: "2024-06-01T00:00:00.000Z",
     }),
-    invoiceNumber: z.string().openapi({
+    invoiceNumber: z.string().optional().openapi({
       description: "Invoice number as shown to the customer",
       example: "INV-2024-001",
     }),

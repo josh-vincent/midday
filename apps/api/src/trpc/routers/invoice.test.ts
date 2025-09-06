@@ -1,41 +1,36 @@
-// Set up environment variables
-process.env.RESEND_API_KEY = process.env.RESEND_API_KEY || "test_resend_key";
-process.env.RESEND_AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID || "test_audience_id";
-process.env.SUPABASE_URL = process.env.SUPABASE_URL || "http://localhost:54321";
-process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "test_anon_key";
-process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "test_service_key";
-process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/postgres";
+// Import test setup to configure all environment variables
+import "../__tests__/test-setup";
 
-import { describe, expect, it, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { connectDb } from "@midday/db/client";
+import { TRPCError } from "@trpc/server";
+import { v4 as uuidv4 } from "uuid";
 import {
+  cleanupTestData,
   createTestCaller,
-  createTestTeam,
-  createTestUser,
-  createTestTeamMember,
   createTestCustomer,
   createTestInvoice,
-  cleanupTestData,
+  createTestTeam,
+  createTestTeamMember,
+  createTestUser,
 } from "../__tests__/test-utils";
-import { v4 as uuidv4 } from "uuid";
-import { TRPCError } from "@trpc/server";
 
 describe("invoice router", () => {
   let db: any;
   let caller: any;
-  const teamId = `test-team-${uuidv4()}`;
-  const userId = `test-user-${uuidv4()}`;
-  const customerId = `test-customer-${uuidv4()}`;
-  const invoiceId = `test-invoice-${uuidv4()}`;
+  const teamId = uuidv4();
+  const userId = uuidv4();
+  const customerId = uuidv4();
+  const invoiceId = uuidv4();
 
   beforeEach(async () => {
     db = await connectDb();
-    
+
     await createTestUser(db, userId);
     await createTestTeam(db, teamId);
     await createTestTeamMember(db, teamId, userId);
     await createTestCustomer(db, teamId, customerId);
-    
+
     caller = await createTestCaller({
       teamId,
       session: {
@@ -56,9 +51,9 @@ describe("invoice router", () => {
   describe("get", () => {
     it("should fetch invoices for the team", async () => {
       await createTestInvoice(db, teamId, invoiceId);
-      
+
       const result = await caller.invoice.get();
-      
+
       expect(result).toBeDefined();
       expect(Array.isArray(result.data)).toBe(true);
       expect(result.data.length).toBeGreaterThanOrEqual(1);
@@ -66,19 +61,21 @@ describe("invoice router", () => {
 
     it("should filter invoices by status", async () => {
       await createTestInvoice(db, teamId, invoiceId);
-      
+
       const result = await caller.invoice.get({ status: "draft" });
-      
+
       expect(result).toBeDefined();
       expect(result.data).toBeInstanceOf(Array);
-      expect(result.data.every((inv: any) => inv.status === "draft")).toBe(true);
+      expect(result.data.every((inv: any) => inv.status === "draft")).toBe(
+        true,
+      );
     });
 
     it("should paginate invoices", async () => {
       await createTestInvoice(db, teamId, invoiceId);
-      
+
       const result = await caller.invoice.get({ limit: 5, offset: 0 });
-      
+
       expect(result).toBeDefined();
       expect(result.data.length).toBeLessThanOrEqual(5);
     });
@@ -87,9 +84,9 @@ describe("invoice router", () => {
   describe("getById", () => {
     it("should fetch an invoice by ID", async () => {
       await createTestInvoice(db, teamId, invoiceId);
-      
+
       const result = await caller.invoice.getById({ id: invoiceId });
-      
+
       expect(result).toBeDefined();
       expect(result.id).toBe(invoiceId);
       expect(result.teamId).toBe(teamId);
@@ -104,7 +101,7 @@ describe("invoice router", () => {
   describe("paymentStatus", () => {
     it("should fetch payment status for the team", async () => {
       const result = await caller.invoice.paymentStatus();
-      
+
       expect(result).toBeDefined();
       expect(result).toHaveProperty("total");
       expect(result).toHaveProperty("paid");
@@ -116,9 +113,9 @@ describe("invoice router", () => {
   describe("searchInvoiceNumber", () => {
     it("should search for invoices by number", async () => {
       await createTestInvoice(db, teamId, invoiceId);
-      
+
       const result = await caller.invoice.searchInvoiceNumber({ query: "INV" });
-      
+
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
     });
@@ -127,9 +124,9 @@ describe("invoice router", () => {
   describe("invoiceSummary", () => {
     it("should fetch invoice summary", async () => {
       await createTestInvoice(db, teamId, invoiceId);
-      
+
       const result = await caller.invoice.invoiceSummary();
-      
+
       expect(result).toBeDefined();
       expect(result).toHaveProperty("totalInvoices");
       expect(result).toHaveProperty("totalAmount");
@@ -139,9 +136,9 @@ describe("invoice router", () => {
 
     it("should filter summary by status", async () => {
       await createTestInvoice(db, teamId, invoiceId);
-      
+
       const result = await caller.invoice.invoiceSummary({ status: "draft" });
-      
+
       expect(result).toBeDefined();
       expect(result).toHaveProperty("totalInvoices");
     });
@@ -150,7 +147,7 @@ describe("invoice router", () => {
   describe("defaultSettings", () => {
     it("should return default invoice settings", async () => {
       const result = await caller.invoice.defaultSettings();
-      
+
       expect(result).toBeDefined();
       expect(result).toHaveProperty("id");
       expect(result).toHaveProperty("currency");
@@ -172,10 +169,8 @@ describe("invoice router", () => {
         customerName: "New Customer",
         invoiceNumber: "INV-002",
         currency: "USD",
-        amount: 200.00,
-        lineItems: [
-          { name: "Service", quantity: 2, price: 100, vat: 0 }
-        ],
+        amount: 200.0,
+        lineItems: [{ name: "Service", quantity: 2, price: 100, vat: 0 }],
         issueDate: new Date().toISOString(),
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         template: {
@@ -186,9 +181,9 @@ describe("invoice router", () => {
           includeTax: false,
         },
       };
-      
+
       const result = await caller.invoice.draft(draftData);
-      
+
       expect(result).toBeDefined();
       expect(result.id).toBe(draftData.id);
       expect(result.status).toBe("draft");
@@ -199,18 +194,18 @@ describe("invoice router", () => {
   describe("update", () => {
     it("should update an existing invoice", async () => {
       await createTestInvoice(db, teamId, invoiceId);
-      
+
       const updateData = {
         id: invoiceId,
-        amount: 150.00,
+        amount: 150.0,
         customerName: "Updated Customer",
       };
-      
+
       const result = await caller.invoice.update(updateData);
-      
+
       expect(result).toBeDefined();
       expect(result.id).toBe(invoiceId);
-      expect(result.amount).toBe(150.00);
+      expect(result.amount).toBe(150.0);
       expect(result.customerName).toBe("Updated Customer");
     });
   });
@@ -218,12 +213,12 @@ describe("invoice router", () => {
   describe("delete", () => {
     it("should delete an invoice", async () => {
       await createTestInvoice(db, teamId, invoiceId);
-      
+
       const result = await caller.invoice.delete({ id: invoiceId });
-      
+
       expect(result).toBeDefined();
       expect(result.id).toBe(invoiceId);
-      
+
       const checkDeleted = await caller.invoice.getById({ id: invoiceId });
       expect(checkDeleted).toBeNull();
     });
@@ -232,9 +227,9 @@ describe("invoice router", () => {
   describe("duplicate", () => {
     it("should duplicate an existing invoice", async () => {
       await createTestInvoice(db, teamId, invoiceId);
-      
+
       const result = await caller.invoice.duplicate({ id: invoiceId });
-      
+
       expect(result).toBeDefined();
       expect(result.id).not.toBe(invoiceId);
       expect(result.status).toBe("draft");
@@ -252,10 +247,8 @@ describe("invoice router", () => {
         customerName: "Test Customer",
         invoiceNumber: "INV-003",
         currency: "USD",
-        amount: 300.00,
-        lineItems: [
-          { name: "Product", quantity: 3, price: 100, vat: 0 }
-        ],
+        amount: 300.0,
+        lineItems: [{ name: "Product", quantity: 3, price: 100, vat: 0 }],
         issueDate: new Date().toISOString(),
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         template: {
@@ -264,12 +257,12 @@ describe("invoice router", () => {
           size: "a4",
         },
       });
-      
+
       const result = await caller.invoice.create({
         id: draftId,
         deliveryType: "create",
       });
-      
+
       expect(result).toBeDefined();
       expect(result.id).toBe(draftId);
       expect(result.status).toBe("unpaid");
@@ -284,10 +277,8 @@ describe("invoice router", () => {
         customerName: "Test Customer",
         invoiceNumber: "INV-004",
         currency: "USD",
-        amount: 400.00,
-        lineItems: [
-          { name: "Product", quantity: 4, price: 100, vat: 0 }
-        ],
+        amount: 400.0,
+        lineItems: [{ name: "Product", quantity: 4, price: 100, vat: 0 }],
         issueDate: new Date().toISOString(),
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         template: {
@@ -296,15 +287,17 @@ describe("invoice router", () => {
           size: "a4",
         },
       });
-      
-      const scheduledAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-      
+
+      const scheduledAt = new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000,
+      ).toISOString();
+
       const result = await caller.invoice.create({
         id: draftId,
         deliveryType: "scheduled",
         scheduledAt,
       });
-      
+
       expect(result).toBeDefined();
       expect(result.id).toBe(draftId);
       expect(result.status).toBe("scheduled");
@@ -320,10 +313,8 @@ describe("invoice router", () => {
         customerName: "Test Customer",
         invoiceNumber: "INV-005",
         currency: "USD",
-        amount: 500.00,
-        lineItems: [
-          { name: "Product", quantity: 5, price: 100, vat: 0 }
-        ],
+        amount: 500.0,
+        lineItems: [{ name: "Product", quantity: 5, price: 100, vat: 0 }],
         issueDate: new Date().toISOString(),
         dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         template: {
@@ -332,7 +323,7 @@ describe("invoice router", () => {
           size: "a4",
         },
       });
-      
+
       try {
         await caller.invoice.create({
           id: draftId,
@@ -348,12 +339,12 @@ describe("invoice router", () => {
   describe("remind", () => {
     it("should send a reminder for an invoice", async () => {
       await createTestInvoice(db, teamId, invoiceId);
-      
+
       const result = await caller.invoice.remind({
         id: invoiceId,
         date: new Date().toISOString(),
       });
-      
+
       expect(result).toBeDefined();
       expect(result.id).toBe(invoiceId);
       expect(result.reminderSentAt).toBeDefined();
@@ -400,7 +391,7 @@ describe("invoice router", () => {
         teamId: undefined,
         session: null,
       });
-      
+
       try {
         await publicCaller.invoice.getInvoiceByToken({
           token: "invalid-token",

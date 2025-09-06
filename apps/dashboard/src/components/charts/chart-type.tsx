@@ -1,6 +1,6 @@
 "use client";
 
-import { chartTypeOptions, useReportsParams } from "@/hooks/use-reports-params";
+import { chartTypeOptions, useReportsParams } from "@/hooks/use-reports-params-client";
 import { useI18n } from "@/locales/client";
 import {
   Select,

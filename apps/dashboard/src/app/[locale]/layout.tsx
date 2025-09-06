@@ -84,7 +84,7 @@ export default async function Layout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const isDesktop = false //await isDesktopApp();
+  const isDesktop = false; //await isDesktopApp();
 
   return (
     <html

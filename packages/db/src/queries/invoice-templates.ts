@@ -82,10 +82,7 @@ export async function updateInvoiceTemplate(
       updatedAt: new Date().toISOString(),
     })
     .where(
-      and(
-        eq(invoiceTemplates.id, id),
-        eq(invoiceTemplates.teamId, teamId)
-      )
+      and(eq(invoiceTemplates.id, id), eq(invoiceTemplates.teamId, teamId)),
     )
     .returning();
 
@@ -107,15 +104,16 @@ export async function updateInvoiceTemplate(
   return template;
 }
 
-export async function getInvoiceTemplate(db: Database, id: string, teamId: string) {
+export async function getInvoiceTemplate(
+  db: Database,
+  id: string,
+  teamId: string,
+) {
   const [template] = await db
     .select()
     .from(invoiceTemplates)
     .where(
-      and(
-        eq(invoiceTemplates.id, id),
-        eq(invoiceTemplates.teamId, teamId)
-      )
+      and(eq(invoiceTemplates.id, id), eq(invoiceTemplates.teamId, teamId)),
     );
 
   return template;
@@ -136,8 +134,8 @@ export async function getDefaultInvoiceTemplate(db: Database, teamId: string) {
     .where(
       and(
         eq(invoiceTemplates.teamId, teamId),
-        eq(invoiceTemplates.isDefault, true)
-      )
+        eq(invoiceTemplates.isDefault, true),
+      ),
     );
 
   return template;
@@ -154,10 +152,7 @@ export async function deleteInvoiceTemplate(
     .select({ name: invoiceTemplates.name })
     .from(invoiceTemplates)
     .where(
-      and(
-        eq(invoiceTemplates.id, id),
-        eq(invoiceTemplates.teamId, teamId)
-      )
+      and(eq(invoiceTemplates.id, id), eq(invoiceTemplates.teamId, teamId)),
     );
 
   if (template) {
@@ -179,10 +174,7 @@ export async function deleteInvoiceTemplate(
     await db
       .delete(invoiceTemplates)
       .where(
-        and(
-          eq(invoiceTemplates.id, id),
-          eq(invoiceTemplates.teamId, teamId)
-        )
+        and(eq(invoiceTemplates.id, id), eq(invoiceTemplates.teamId, teamId)),
       );
   }
 
@@ -192,7 +184,7 @@ export async function deleteInvoiceTemplate(
 export async function ensureDefaultTemplate(db: Database, teamId: string) {
   // Check if there's a default template
   const defaultTemplate = await getDefaultInvoiceTemplate(db, teamId);
-  
+
   if (!defaultTemplate) {
     // Create a basic default template
     const template = await createInvoiceTemplate(db, {
@@ -206,9 +198,9 @@ export async function ensureDefaultTemplate(db: Database, teamId: string) {
       includePaymentDetails: true,
       paymentTerms: 30,
     });
-    
+
     return template;
   }
-  
+
   return defaultTemplate;
 }

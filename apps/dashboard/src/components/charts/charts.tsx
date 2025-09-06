@@ -1,12 +1,15 @@
 "use client";
 
-import { useReportsParams } from "@/hooks/use-reports-params";
+import { useReportsParams } from "@/hooks/use-reports-params-client";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { BurnRateChart } from "./burn-rate-chart";
 import { ExpenseChart } from "./expense-chart";
+import { InvoiceChart } from "./invoice-chart";
+import { JobsChart } from "./jobs-chart";
 import { ProfitChart } from "./profit-chart";
 import { RevenueChart } from "./revenue-chart";
+import { VolumeChart } from "./volume-chart";
 
 export function Charts() {
   const { params } = useReportsParams();
@@ -30,6 +33,12 @@ export function Charts() {
       return <BurnRateChart disabled={disabled} />;
     case "expense":
       return <ExpenseChart disabled={disabled} />;
+    case "invoice":
+      return <InvoiceChart disabled={disabled} />;
+    case "jobs":
+      return <JobsChart disabled={disabled} />;
+    case "volume":
+      return <VolumeChart disabled={disabled} />;
     default:
       return null;
   }

@@ -1,6 +1,10 @@
 import { updateUserSchema } from "@api/schemas/users";
 import { resend } from "@api/services/resend";
-import { createTRPCRouter, authProcedure, protectedProcedure } from "@api/trpc/init";
+import {
+  authProcedure,
+  createTRPCRouter,
+  protectedProcedure,
+} from "@api/trpc/init";
 import {
   deleteUser,
   getUserById,
@@ -23,20 +27,18 @@ export const userRouter = createTRPCRouter({
       });
     }),
 
-  delete: authProcedure.mutation(
-    async ({ ctx: { supabase, db, session } }) => {
-      const [data] = await Promise.all([
-        deleteUser(db, session.user.id),
-        supabase.auth.admin.deleteUser(session.user.id),
-        resend.contacts.remove({
-          email: session.user.email!,
-          audienceId: process.env.RESEND_AUDIENCE_ID!,
-        }),
-      ]);
+  delete: authProcedure.mutation(async ({ ctx: { supabase, db, session } }) => {
+    const [data] = await Promise.all([
+      deleteUser(db, session.user.id),
+      supabase.auth.admin.deleteUser(session.user.id),
+      resend.contacts.remove({
+        email: session.user.email!,
+        audienceId: process.env.RESEND_AUDIENCE_ID!,
+      }),
+    ]);
 
-      return data;
-    },
-  ),
+    return data;
+  }),
 
   invites: authProcedure.query(async ({ ctx: { db, session } }) => {
     if (!session.user.email) {

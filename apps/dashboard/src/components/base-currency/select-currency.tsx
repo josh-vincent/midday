@@ -28,7 +28,7 @@ export function SelectCurrency() {
       onSuccess: (data) => {
         if (data) {
           setRunId(data.id as string);
-          setAccessToken(data.publicAccessToken as string );
+          setAccessToken(data.publicAccessToken as string);
         }
       },
       onError: () => {

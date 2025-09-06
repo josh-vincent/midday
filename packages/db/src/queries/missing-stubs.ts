@@ -207,7 +207,6 @@ export async function getTrackerProjectsByTeam(db: Database, params: any) {
   return [];
 }
 
-
 export async function getTeamSettings(db: Database, params: any) {
   return null;
 }
@@ -273,7 +272,6 @@ export async function getCurrentTimer(db: Database, params: any) {
   return null;
 }
 
-
 export async function updateActivityStatus(db: Database, params: any) {
   return null;
 }
@@ -285,7 +283,6 @@ export async function getActivityById(db: Database, params: any) {
 export async function getActivities(db: Database, params: any) {
   return [];
 }
-
 
 export async function sendInvoice(db: Database, params: any) {
   return null;
@@ -338,5 +335,3 @@ export async function updateTransactions(db: Database, params: any) {
 export async function getNewCustomersCount(db: Database, params: any) {
   return { data: { count: 0, previousCount: 0 } };
 }
-
-

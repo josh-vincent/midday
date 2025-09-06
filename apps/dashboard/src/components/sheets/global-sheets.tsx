@@ -13,8 +13,8 @@ type Props = {
 };
 
 export function GlobalSheets({ currencyPromise, countryCodePromise }: Props) {
-  const currency = currencyPromise
-  const countryCode = countryCodePromise
+  const currency = currencyPromise;
+  const countryCode = countryCodePromise;
 
   return (
     <>

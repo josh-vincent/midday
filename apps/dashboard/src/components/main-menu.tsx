@@ -9,7 +9,9 @@ import { useEffect, useState } from "react";
 const icons = {
   "/": () => <Icons.Overview size={20} />,
   "/invoices": () => <Icons.Invoice size={20} />,
+  "/jobs": () => <Icons.Apps size={20} />,
   "/customers": () => <Icons.Customers size={20} />,
+  "/reports": () => <Icons.Amount size={20} />,
   "/inbox": () => <Icons.Inbox2 size={20} />,
   "/settings": () => <Icons.Settings size={20} />,
 } as const;
@@ -31,9 +33,29 @@ const items = [
     ],
   },
   {
+    path: "/jobs",
+    name: "Jobs",
+    children: [
+      { path: "/jobs?status=pending", name: "Pending" },
+      { path: "/jobs?status=in_progress", name: "In Progress" },
+      { path: "/jobs?status=completed", name: "Completed" },
+      { path: "/jobs/new", name: "Create new" },
+    ],
+  },
+  {
     path: "/customers",
     name: "Customers",
     children: [{ path: "/customers?createCustomer=true", name: "Create new" }],
+  },
+  {
+    path: "/reports",
+    name: "Reports",
+    children: [
+      { path: "/reports", name: "Overview" },
+      { path: "/reports?view=revenue", name: "Revenue" },
+      { path: "/reports?view=jobs", name: "Jobs" },
+      { path: "/reports?view=volume", name: "Volume" },
+    ],
   },
   {
     path: "/inbox",
@@ -154,7 +176,7 @@ const Item = ({
           {/* Background that expands */}
           <div
             className={cn(
-              "border border-transparent h-[40px] transition-all duration-200 ease-&lsqb;cubic-bezier(0.4,0,0.2,1)&rsqb; ml-[15px] mr-[15px]",
+              "border border-transparent h-[40px] transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] ml-[15px] mr-[15px]",
               isActive &&
                 "bg-[#F2F1EF] dark:bg-secondary border-[#DCDAD2] dark:border-[#2C2C2C]",
               isExpanded ? "w-[calc(100%-30px)]" : "w-[40px]",

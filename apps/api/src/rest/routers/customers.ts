@@ -11,10 +11,10 @@ import { validateResponse } from "@api/utils/validate-response";
 import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 import {
   createCustomer,
-  updateCustomer,
   deleteCustomer,
   getCustomerById,
   getCustomers,
+  updateCustomer,
 } from "@midday/db/queries";
 
 const app = new OpenAPIHono<Context>();

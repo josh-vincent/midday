@@ -1,7 +1,6 @@
 import type { Database } from "@db/client";
 import { customers, invoices, jobs } from "@db/schema";
 import { buildSearchQuery } from "@midday/db/utils/search-query";
-import { generateToken } from "@midday/invoice/token";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm/sql/sql";
 import { createActivity } from "./activities";
@@ -11,10 +10,7 @@ type GetJobByIdParams = {
   teamId: string;
 };
 
-export const getJobById = async (
-  db: Database,
-  params: GetJobByIdParams,
-) => {
+export const getJobById = async (db: Database, params: GetJobByIdParams) => {
   const [result] = await db
     .select({
       id: jobs.id,
@@ -42,9 +38,7 @@ export const getJobById = async (
       customerId: jobs.customerId,
     })
     .from(jobs)
-    .where(
-      and(eq(jobs.id, params.id), eq(jobs.teamId, params.teamId)),
-    )
+    .where(and(eq(jobs.id, params.id), eq(jobs.teamId, params.teamId)))
     .leftJoin(invoices, eq(jobs.invoiceId, invoices.id))
     .groupBy(jobs.id);
 
@@ -60,10 +54,7 @@ type GetJobsParams = {
   sortDirection?: string;
 };
 
-export const getJobs = async (
-  db: Database,
-  params: GetJobsParams,
-) => {
+export const getJobs = async (db: Database, params: GetJobsParams) => {
   const {
     teamId,
     searchQuery,
@@ -78,19 +69,12 @@ export const getJobs = async (
   let whereConditions: SQL[] = [eq(jobs.teamId, teamId)];
 
   if (searchQuery) {
-    const searchCondition = buildSearchQuery({
-      searchColumn: jobs.jobNumber,
-      searchQuery,
-    });
-    if (searchCondition) {
-      whereConditions.push(searchCondition);
-    }
+    const searchPattern = buildSearchQuery(searchQuery);
+    whereConditions.push(sql`${jobs.jobNumber} ILIKE ${`%${searchQuery}%`}`);
   }
 
-  const orderBySql =
-    sortDirection === "desc"
-      ? desc(jobs[orderBy as keyof typeof jobs])
-      : asc(jobs[orderBy as keyof typeof jobs]);
+  const column = jobs[orderBy as keyof typeof jobs] as any;
+  const orderBySql = sortDirection === "desc" ? desc(column) : asc(column);
 
   const results = await db
     .select({
@@ -122,37 +106,78 @@ export const getJobs = async (
 };
 
 type CreateJobParams = {
-  name: string;
   teamId: string;
-  customerId: string;
-  jobNumber: string;
-  sourceLocation: string;
-  sourceAddress: string;
-  destinationSite: string;
-  dirtType: string;
-  quantityCubicMeters: number;
-  weightKg: number;
-  pricePerCubicMeter: number;
-  totalAmount: number;
-  status: string;
-  scheduledDate: string;
-  truckNumber: string;
-  driverName: string;
-  notes: string;
-  photos: string[];
+  customerId?: string | null;
+  jobNumber?: string | null;
+  contactPerson?: string;
+  contactNumber?: string;
+  rego?: string;
+  loadNumber?: number;
+  companyName?: string;
+  addressSite?: string;
+  equipmentType?: string;
+  materialType?: string;
+  pricePerUnit?: number;
+  cubicMetreCapacity?: number;
+  jobDate?: string;
+  scheduledDate?: string;
+  arrivalTime?: string;
+  completedTime?: string;
+  status?: string;
+  truckNumber?: string;
+  driverName?: string;
+  notes?: string | null;
+
+  // Legacy optional fields
+  sourceLocation?: string;
+  sourceAddress?: string;
+  destinationSite?: string;
+  dirtType?: string;
+  quantityCubicMeters?: number;
+  weightKg?: number;
+  pricePerCubicMeter?: number;
+  totalAmount?: number;
+  photos?: string[];
+
   createdBy: string;
 };
 
-export async function createJob(
-  db: Database,
-  params: CreateJobParams,
-) {
-  const token = await generateToken();
-
+export async function createJob(db: Database, params: CreateJobParams) {
   const [job] = await db
     .insert(jobs)
     .values({
-      ...params,
+      teamId: params.teamId,
+      customerId: params.customerId || null,
+      jobNumber: params.jobNumber || null,
+      contactPerson: params.contactPerson,
+      contactNumber: params.contactNumber,
+      rego: params.rego,
+      loadNumber: params.loadNumber,
+      companyName: params.companyName,
+      addressSite: params.addressSite,
+      equipmentType: params.equipmentType,
+      materialType: params.materialType,
+      pricePerUnit: params.pricePerUnit,
+      cubicMetreCapacity: params.cubicMetreCapacity,
+      jobDate: params.jobDate,
+      scheduledDate: params.scheduledDate,
+      arrivalTime: params.arrivalTime,
+      completedTime: params.completedTime,
+      status: params.status || "pending",
+      truckNumber: params.truckNumber,
+      driverName: params.driverName,
+      notes: params.notes || null,
+      // Legacy optional fields
+      sourceLocation: params.sourceLocation,
+      sourceAddress: params.sourceAddress,
+      destinationSite: params.destinationSite,
+      dirtType: params.dirtType,
+      quantityCubicMeters: params.quantityCubicMeters,
+      weightKg: params.weightKg,
+      pricePerCubicMeter: params.pricePerCubicMeter,
+      totalAmount: params.totalAmount,
+      photos: params.photos || [],
+      createdBy: params.createdBy,
     })
     .returning();
 
@@ -166,7 +191,7 @@ export async function createJob(
       entityId: job.id,
       metadata: {
         jobNumber: job.jobNumber,
-        customerId: job.customerId
+        customerId: job.customerId,
       },
     });
   }
@@ -174,24 +199,100 @@ export async function createJob(
   return job;
 }
 
-type UpdateJobParams = Partial<CreateJobParams> & {
+type UpdateJobParams = {
   id: string;
-  teamId: string;
+  teamId: string; // Required for scoping
+  customerId?: string | null;
+  jobNumber?: string | null;
+  contactPerson?: string;
+  contactNumber?: string;
+  rego?: string;
+  loadNumber?: number;
+  companyName?: string;
+  addressSite?: string;
+  equipmentType?: string;
+  materialType?: string;
+  pricePerUnit?: number;
+  cubicMetreCapacity?: number;
+  jobDate?: string;
+  scheduledDate?: string;
+  arrivalTime?: string;
+  completedTime?: string;
+  status?: string;
+  truckNumber?: string;
+  driverName?: string;
+  notes?: string | null;
+
+  // Legacy optional fields
+  sourceLocation?: string;
+  sourceAddress?: string;
+  destinationSite?: string;
+  dirtType?: string;
+  quantityCubicMeters?: number;
+  weightKg?: number;
+  pricePerCubicMeter?: number;
+  totalAmount?: number;
+  photos?: string[];
+
   updatedBy?: string;
 };
 
-export async function updateJob(
-  db: Database,
-  params: UpdateJobParams,
-) {
-  const { id, teamId, updatedBy, ...updateData } = params;
+export async function updateJob(db: Database, params: UpdateJobParams) {
+  const { id, teamId, updatedBy, ...rest } = params;
+
+  // Build update data with only defined fields
+  const updateData: any = {
+    updatedAt: new Date().toISOString(),
+  };
+
+  // Only include fields that are defined in params
+  if (rest.customerId !== undefined) updateData.customerId = rest.customerId;
+  if (rest.jobNumber !== undefined) updateData.jobNumber = rest.jobNumber;
+  if (rest.contactPerson !== undefined)
+    updateData.contactPerson = rest.contactPerson;
+  if (rest.contactNumber !== undefined)
+    updateData.contactNumber = rest.contactNumber;
+  if (rest.rego !== undefined) updateData.rego = rest.rego;
+  if (rest.loadNumber !== undefined) updateData.loadNumber = rest.loadNumber;
+  if (rest.companyName !== undefined) updateData.companyName = rest.companyName;
+  if (rest.addressSite !== undefined) updateData.addressSite = rest.addressSite;
+  if (rest.equipmentType !== undefined)
+    updateData.equipmentType = rest.equipmentType;
+  if (rest.materialType !== undefined)
+    updateData.materialType = rest.materialType;
+  if (rest.pricePerUnit !== undefined)
+    updateData.pricePerUnit = rest.pricePerUnit;
+  if (rest.cubicMetreCapacity !== undefined)
+    updateData.cubicMetreCapacity = rest.cubicMetreCapacity;
+  if (rest.jobDate !== undefined) updateData.jobDate = rest.jobDate;
+  if (rest.scheduledDate !== undefined)
+    updateData.scheduledDate = rest.scheduledDate;
+  if (rest.arrivalTime !== undefined) updateData.arrivalTime = rest.arrivalTime;
+  if (rest.completedTime !== undefined)
+    updateData.completedTime = rest.completedTime;
+  if (rest.status !== undefined) updateData.status = rest.status;
+  if (rest.truckNumber !== undefined) updateData.truckNumber = rest.truckNumber;
+  if (rest.driverName !== undefined) updateData.driverName = rest.driverName;
+  if (rest.notes !== undefined) updateData.notes = rest.notes;
+  // Legacy fields
+  if (rest.sourceLocation !== undefined)
+    updateData.sourceLocation = rest.sourceLocation;
+  if (rest.sourceAddress !== undefined)
+    updateData.sourceAddress = rest.sourceAddress;
+  if (rest.destinationSite !== undefined)
+    updateData.destinationSite = rest.destinationSite;
+  if (rest.dirtType !== undefined) updateData.dirtType = rest.dirtType;
+  if (rest.quantityCubicMeters !== undefined)
+    updateData.quantityCubicMeters = rest.quantityCubicMeters;
+  if (rest.weightKg !== undefined) updateData.weightKg = rest.weightKg;
+  if (rest.pricePerCubicMeter !== undefined)
+    updateData.pricePerCubicMeter = rest.pricePerCubicMeter;
+  if (rest.totalAmount !== undefined) updateData.totalAmount = rest.totalAmount;
+  if (rest.photos !== undefined) updateData.photos = rest.photos;
 
   const [job] = await db
     .update(jobs)
-    .set({
-      ...updateData,
-      updatedAt: new Date().toISOString(),
-    })
+    .set(updateData)
     .where(and(eq(jobs.id, id), eq(jobs.teamId, teamId)))
     .returning();
 
@@ -224,12 +325,7 @@ export async function getJobsByIds(
   return db
     .select()
     .from(jobs)
-    .where(
-      and(
-        inArray(jobs.id, jobIds),
-        eq(jobs.teamId, teamId)
-      )
-    );
+    .where(and(inArray(jobs.id, jobIds), eq(jobs.teamId, teamId)));
 }
 
 export async function searchJobs(
@@ -238,14 +334,10 @@ export async function searchJobs(
   search: string,
   limit = 10,
 ) {
-  const searchCondition = buildSearchQuery({
-    searchColumn: jobs.jobNumber,
-    searchQuery: search,
-  });
-
   const conditions: SQL[] = [eq(jobs.teamId, teamId)];
-  if (searchCondition) {
-    conditions.push(searchCondition);
+  if (search) {
+    const searchPattern = buildSearchQuery(search);
+    conditions.push(sql`${jobs.jobNumber} ILIKE ${`%${search}%`}`);
   }
 
   return db

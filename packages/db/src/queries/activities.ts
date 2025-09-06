@@ -56,12 +56,7 @@ export async function getActivitiesByUser(
   return db
     .select()
     .from(activities)
-    .where(
-      and(
-        eq(activities.userId, userId),
-        eq(activities.teamId, teamId)
-      )
-    )
+    .where(and(eq(activities.userId, userId), eq(activities.teamId, teamId)))
     .orderBy(desc(activities.createdAt))
     .limit(limit);
 }
@@ -79,8 +74,8 @@ export async function getActivitiesByEntity(
       and(
         eq(activities.entity, entity),
         eq(activities.entityId, entityId),
-        eq(activities.teamId, teamId)
-      )
+        eq(activities.teamId, teamId),
+      ),
     )
     .orderBy(desc(activities.createdAt));
 }
@@ -92,15 +87,15 @@ export async function getRecentActivities(
 ) {
   const since = new Date();
   since.setDate(since.getDate() - days);
-  
+
   return db
     .select()
     .from(activities)
     .where(
       and(
         eq(activities.teamId, teamId),
-        gte(activities.createdAt, since.toISOString())
-      )
+        gte(activities.createdAt, since.toISOString()),
+      ),
     )
     .orderBy(desc(activities.createdAt));
 }
@@ -112,12 +107,7 @@ export async function deleteActivityById(
 ) {
   const [result] = await db
     .delete(activities)
-    .where(
-      and(
-        eq(activities.id, activityId),
-        eq(activities.teamId, teamId)
-      )
-    )
+    .where(and(eq(activities.id, activityId), eq(activities.teamId, teamId)))
     .returning();
 
   return result;
@@ -135,7 +125,7 @@ export async function deleteActivitiesForEntity(
       and(
         eq(activities.entity, entity),
         eq(activities.entityId, entityId),
-        eq(activities.teamId, teamId)
-      )
+        eq(activities.teamId, teamId),
+      ),
     );
 }

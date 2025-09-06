@@ -1,2 +1,2 @@
-// Stub for jobs package
-export default {};
+// Jobs package exports
+export * from "./schema";

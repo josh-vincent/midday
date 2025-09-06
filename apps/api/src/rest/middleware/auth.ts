@@ -35,23 +35,24 @@ export const withAuth: MiddlewareHandler = async (c, next) => {
   if (token.startsWith("mid_access_token_")) {
     const tokenData = await validateAccessToken(db, token);
 
-    if (!tokenData || !tokenData.user) {
+    if (!tokenData || !(tokenData as any).user) {
       throw new HTTPException(401, {
         message: "Invalid or expired access token",
       });
     }
 
+    const tokenWithUser = tokenData as any;
     const session = {
-      teamId: tokenData.teamId,
+      teamId: tokenWithUser.teamId,
       user: {
-        id: tokenData.user.id,
-        email: tokenData.user.email,
-        full_name: tokenData.user.fullName,
+        id: tokenWithUser.user.id,
+        email: tokenWithUser.user.email,
+        full_name: tokenWithUser.user.fullName,
       },
       oauth: {
-        applicationId: tokenData.applicationId,
-        clientId: tokenData.application?.clientId,
-        applicationName: tokenData.application?.name,
+        applicationId: tokenWithUser.applicationId,
+        clientId: tokenWithUser.application?.clientId,
+        applicationName: tokenWithUser.application?.name,
       },
     };
 

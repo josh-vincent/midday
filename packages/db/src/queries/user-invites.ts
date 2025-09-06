@@ -26,16 +26,20 @@ export async function getUserInvites(db: Database, email: string) {
     email: row.email,
     code: row.code,
     role: row.role,
-    user: row.userId ? {
-      id: row.userId,
-      fullName: row.userFullName,
-      email: row.userEmail,
-    } : null,
-    team: row.teamId ? {
-      id: row.teamId,
-      name: row.teamName,
-      logoUrl: row.teamLogoUrl,
-    } : null,
+    user: row.userId
+      ? {
+          id: row.userId,
+          fullName: row.userFullName,
+          email: row.userEmail,
+        }
+      : null,
+    team: row.teamId
+      ? {
+          id: row.teamId,
+          name: row.teamName,
+          logoUrl: row.teamLogoUrl,
+        }
+      : null,
   }));
 }
 
@@ -114,16 +118,20 @@ export async function getTeamInvites(db: Database, teamId: string) {
     email: row.email,
     code: row.code,
     role: row.role,
-    user: row.userId ? {
-      id: row.userId,
-      fullName: row.userFullName,
-      email: row.userEmail,
-    } : null,
-    team: row.teamId ? {
-      id: row.teamId,
-      name: row.teamName,
-      logoUrl: row.teamLogoUrl,
-    } : null,
+    user: row.userId
+      ? {
+          id: row.userId,
+          fullName: row.userFullName,
+          email: row.userEmail,
+        }
+      : null,
+    team: row.teamId
+      ? {
+          id: row.teamId,
+          name: row.teamName,
+          logoUrl: row.teamLogoUrl,
+        }
+      : null,
   }));
 }
 
@@ -151,16 +159,20 @@ export async function getInvitesByEmail(db: Database, email: string) {
     email: row.email,
     code: row.code,
     role: row.role,
-    user: row.userId ? {
-      id: row.userId,
-      fullName: row.userFullName,
-      email: row.userEmail,
-    } : null,
-    team: row.teamId ? {
-      id: row.teamId,
-      name: row.teamName,
-      logoUrl: row.teamLogoUrl,
-    } : null,
+    user: row.userId
+      ? {
+          id: row.userId,
+          fullName: row.userFullName,
+          email: row.userEmail,
+        }
+      : null,
+    team: row.teamId
+      ? {
+          id: row.teamId,
+          name: row.teamName,
+          logoUrl: row.teamLogoUrl,
+        }
+      : null,
   }));
 }
 

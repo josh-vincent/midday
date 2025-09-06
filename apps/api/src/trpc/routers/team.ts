@@ -11,7 +11,11 @@ import {
   updateTeamByIdSchema,
   updateTeamMemberSchema,
 } from "@api/schemas/team";
-import { createTRPCRouter, authProcedure, protectedProcedure } from "@api/trpc/init";
+import {
+  authProcedure,
+  createTRPCRouter,
+  protectedProcedure,
+} from "@api/trpc/init";
 import {
   acceptTeamInvite,
   createTeam,
@@ -52,14 +56,23 @@ export const teamRouter = createTRPCRouter({
   update: protectedProcedure
     .input(updateTeamByIdSchema)
     .mutation(async ({ ctx: { db, teamId }, input }) => {
+      if (!teamId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "No team selected",
+        });
+      }
       return updateTeamById(db, {
-        id: teamId!,
+        id: teamId,
         data: input,
       });
     }),
 
   members: protectedProcedure.query(async ({ ctx: { db, teamId } }) => {
-    return getTeamMembersByTeamId(db, teamId!);
+    if (!teamId) {
+      return [];
+    }
+    return getTeamMembersByTeamId(db, teamId);
   }),
 
   list: authProcedure.query(async ({ ctx: { db, session } }) => {
@@ -146,7 +159,10 @@ export const teamRouter = createTRPCRouter({
     }),
 
   teamInvites: protectedProcedure.query(async ({ ctx: { db, teamId } }) => {
-    return getTeamInvites(db, teamId!);
+    if (!teamId) {
+      return [];
+    }
+    return getTeamInvites(db, teamId);
   }),
 
   invitesByEmail: authProcedure.query(async ({ ctx: { db, session } }) => {

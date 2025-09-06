@@ -1,6 +1,6 @@
-const { createClient } = require('@supabase/supabase-js');
-const postgres = require('postgres');
-require('dotenv').config({ path: '.env.local' });
+const { createClient } = require("@supabase/supabase-js");
+const postgres = require("postgres");
+require("dotenv").config({ path: ".env.local" });
 
 // Initialize connections
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -11,47 +11,49 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const sql = postgres(databaseUrl);
 
 async function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function testInvoiceRelationships() {
-  console.log('🚀 Testing Invoice Relationships & Features\n');
-  console.log('=' .repeat(60));
-  
+  console.log("🚀 Testing Invoice Relationships & Features\n");
+  console.log("=".repeat(60));
+
   let adminUserId;
   let teamId;
   let customerId;
   let invoiceId;
   let templateId;
-  
+
   try {
     // Step 1: Authenticate
-    console.log('\n📋 Step 1: Authenticating as admin...');
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email: 'admin@tocld.com',
-      password: 'Admin123'
-    });
-    
-    if (authError) throw new Error(`Authentication failed: ${authError.message}`);
-    
+    console.log("\n📋 Step 1: Authenticating as admin...");
+    const { data: authData, error: authError } =
+      await supabase.auth.signInWithPassword({
+        email: "admin@tocld.com",
+        password: "Admin123",
+      });
+
+    if (authError)
+      throw new Error(`Authentication failed: ${authError.message}`);
+
     adminUserId = authData.user.id;
     console.log(`   ✅ Authenticated as admin`);
-    
+
     // Get team
     const [team] = await sql`
       SELECT team_id FROM users_on_team WHERE user_id = ${adminUserId} LIMIT 1
     `;
     teamId = team.team_id;
     console.log(`   ✅ Found team (ID: ${teamId})`);
-    
+
     // Step 2: Invoice Templates
-    console.log('\n📋 Step 2: Testing Invoice Templates...');
-    
+    console.log("\n📋 Step 2: Testing Invoice Templates...");
+
     // Check existing templates
     const templates = await sql`
       SELECT * FROM invoice_templates WHERE team_id = ${teamId}
     `;
-    
+
     if (templates.length === 0) {
       // Create a template
       const [newTemplate] = await sql`
@@ -76,10 +78,10 @@ async function testInvoiceRelationships() {
       templateId = templates[0].id;
       console.log(`   ✅ Found ${templates.length} existing template(s)`);
     }
-    
+
     // Step 3: Customer Management
-    console.log('\n📋 Step 3: Testing Customer Management...');
-    
+    console.log("\n📋 Step 3: Testing Customer Management...");
+
     // Get or create customer
     const [customer] = await sql`
       SELECT * FROM customers 
@@ -87,11 +89,11 @@ async function testInvoiceRelationships() {
       ORDER BY created_at DESC
       LIMIT 1
     `;
-    
+
     if (customer) {
       customerId = customer.id;
       console.log(`   ✅ Using customer: ${customer.name}`);
-      
+
       // Check customer's invoice history
       const [invoiceCount] = await sql`
         SELECT COUNT(*) as count, 
@@ -102,16 +104,20 @@ async function testInvoiceRelationships() {
       `;
       console.log(`      📊 Customer has ${invoiceCount.count} invoices`);
       if (invoiceCount.total_revenue) {
-        console.log(`      💰 Total revenue: $${(invoiceCount.total_revenue / 100).toFixed(2)}`);
-        console.log(`      📈 Average invoice: $${(invoiceCount.avg_invoice / 100).toFixed(2)}`);
+        console.log(
+          `      💰 Total revenue: $${(invoiceCount.total_revenue / 100).toFixed(2)}`,
+        );
+        console.log(
+          `      📈 Average invoice: $${(invoiceCount.avg_invoice / 100).toFixed(2)}`,
+        );
       }
     } else {
-      throw new Error('No customers found. Run test-api-endpoints.js first');
+      throw new Error("No customers found. Run test-api-endpoints.js first");
     }
-    
+
     // Step 4: Create Invoice with Template
-    console.log('\n📋 Step 4: Creating Invoice with Template...');
-    
+    console.log("\n📋 Step 4: Creating Invoice with Template...");
+
     const timestamp = Date.now();
     const [invoice] = await sql`
       INSERT INTO invoices (
@@ -125,8 +131,18 @@ async function testInvoiceRelationships() {
         CURRENT_DATE, CURRENT_DATE + INTERVAL '30 days',
         300000, 8.25, 24750, 324750, 'USD',
         ${JSON.stringify([
-          { description: 'Dirt Receiving - Site A', quantity: 100, price: 2000, total: 200000 },
-          { description: 'Dirt Processing Fee', quantity: 1, price: 100000, total: 100000 }
+          {
+            description: "Dirt Receiving - Site A",
+            quantity: 100,
+            price: 2000,
+            total: 200000,
+          },
+          {
+            description: "Dirt Processing Fee",
+            quantity: 1,
+            price: 100000,
+            total: 100000,
+          },
         ])},
         'Payment due within 30 days',
         'Wire transfer to Account: 123456789',
@@ -134,16 +150,18 @@ async function testInvoiceRelationships() {
       )
       RETURNING *
     `;
-    
+
     invoiceId = invoice.id;
     console.log(`   ✅ Created invoice: ${invoice.invoice_number}`);
-    console.log(`      Template: ${templateId ? 'Using template' : 'No template'}`);
+    console.log(
+      `      Template: ${templateId ? "Using template" : "No template"}`,
+    );
     console.log(`      Amount: $${(invoice.total_amount / 100).toFixed(2)}`);
     console.log(`      Line items: ${JSON.parse(invoice.line_items).length}`);
-    
+
     // Step 5: Payment Management
-    console.log('\n📋 Step 5: Testing Payment Management...');
-    
+    console.log("\n📋 Step 5: Testing Payment Management...");
+
     // Record a partial payment
     const [payment1] = await sql`
       INSERT INTO payments (
@@ -156,8 +174,10 @@ async function testInvoiceRelationships() {
       )
       RETURNING *
     `;
-    console.log(`   ✅ Recorded payment: $${(payment1.amount / 100).toFixed(2)} via ${payment1.payment_method}`);
-    
+    console.log(
+      `   ✅ Recorded payment: $${(payment1.amount / 100).toFixed(2)} via ${payment1.payment_method}`,
+    );
+
     // Update invoice with payment
     await sql`
       UPDATE invoices
@@ -175,7 +195,7 @@ async function testInvoiceRelationships() {
         updated_at = NOW()
       WHERE id = ${invoiceId}
     `;
-    
+
     // Record another payment
     const [payment2] = await sql`
       INSERT INTO payments (
@@ -188,8 +208,10 @@ async function testInvoiceRelationships() {
       )
       RETURNING *
     `;
-    console.log(`   ✅ Recorded payment: $${(payment2.amount / 100).toFixed(2)} via ${payment2.payment_method}`);
-    
+    console.log(
+      `   ✅ Recorded payment: $${(payment2.amount / 100).toFixed(2)} via ${payment2.payment_method}`,
+    );
+
     // Update invoice to paid
     const [paidInvoice] = await sql`
       UPDATE invoices
@@ -201,11 +223,13 @@ async function testInvoiceRelationships() {
       WHERE id = ${invoiceId}
       RETURNING *
     `;
-    console.log(`   ✅ Invoice fully paid: $${(paidInvoice.paid_amount / 100).toFixed(2)} on ${paidInvoice.paid_date}`);
-    
+    console.log(
+      `   ✅ Invoice fully paid: $${(paidInvoice.paid_amount / 100).toFixed(2)} on ${paidInvoice.paid_date}`,
+    );
+
     // Step 6: Invoice Comments
-    console.log('\n📋 Step 6: Testing Invoice Comments...');
-    
+    console.log("\n📋 Step 6: Testing Invoice Comments...");
+
     // Add comments
     await sql`
       INSERT INTO invoice_comments (
@@ -215,20 +239,20 @@ async function testInvoiceRelationships() {
         (${invoiceId}, ${teamId}, ${adminUserId}, 'First payment received via wire transfer', NOW()),
         (${invoiceId}, ${teamId}, ${adminUserId}, 'Invoice paid in full', NOW())
     `;
-    
+
     const comments = await sql`
       SELECT * FROM invoice_comments 
       WHERE invoice_id = ${invoiceId}
       ORDER BY created_at DESC
     `;
     console.log(`   ✅ Added ${comments.length} comments to invoice`);
-    comments.forEach(c => {
+    comments.forEach((c) => {
       console.log(`      💬 "${c.content}"`);
     });
-    
+
     // Step 7: Activity Tracking
-    console.log('\n📋 Step 7: Testing Activity Tracking...');
-    
+    console.log("\n📋 Step 7: Testing Activity Tracking...");
+
     // Record activities
     await sql`
       INSERT INTO activities (
@@ -242,20 +266,20 @@ async function testInvoiceRelationships() {
         (${teamId}, ${adminUserId}, 'invoice_paid', 'invoice', ${invoiceId},
          ${JSON.stringify({ total_paid: paidInvoice.paid_amount })}, NOW())
     `;
-    
+
     const activities = await sql`
       SELECT * FROM activities 
       WHERE entity = 'invoice' AND entity_id = ${invoiceId}
       ORDER BY created_at DESC
     `;
     console.log(`   ✅ Recorded ${activities.length} activities for invoice`);
-    activities.forEach(a => {
+    activities.forEach((a) => {
       console.log(`      📝 ${a.action} - ${JSON.stringify(a.metadata)}`);
     });
-    
+
     // Step 8: Analytics & Reporting
-    console.log('\n📋 Step 8: Testing Analytics & Reporting...');
-    
+    console.log("\n📋 Step 8: Testing Analytics & Reporting...");
+
     // Invoice summary by status
     const summary = await sql`
       SELECT 
@@ -268,13 +292,15 @@ async function testInvoiceRelationships() {
       GROUP BY status
       ORDER BY total DESC
     `;
-    
-    console.log('   📊 Invoice Summary:');
-    summary.forEach(s => {
+
+    console.log("   📊 Invoice Summary:");
+    summary.forEach((s) => {
       const outstanding = s.total - s.paid;
-      console.log(`      ${s.status}: ${s.count} invoices, $${(s.total / 100).toFixed(2)} total, $${(outstanding / 100).toFixed(2)} outstanding`);
+      console.log(
+        `      ${s.status}: ${s.count} invoices, $${(s.total / 100).toFixed(2)} total, $${(outstanding / 100).toFixed(2)} outstanding`,
+      );
     });
-    
+
     // Customer ranking
     const topCustomers = await sql`
       SELECT 
@@ -291,15 +317,19 @@ async function testInvoiceRelationships() {
       ORDER BY total_revenue DESC
       LIMIT 3
     `;
-    
-    console.log('   🏆 Top Customers:');
+
+    console.log("   🏆 Top Customers:");
     topCustomers.forEach((c, idx) => {
-      console.log(`      ${idx + 1}. ${c.name} - ${c.invoice_count} invoices, $${(c.total_revenue / 100).toFixed(2)} revenue`);
+      console.log(
+        `      ${idx + 1}. ${c.name} - ${c.invoice_count} invoices, $${(c.total_revenue / 100).toFixed(2)} revenue`,
+      );
       if (c.avg_payment_days) {
-        console.log(`         Avg payment time: ${Math.round(c.avg_payment_days)} days`);
+        console.log(
+          `         Avg payment time: ${Math.round(c.avg_payment_days)} days`,
+        );
       }
     });
-    
+
     // Payment methods breakdown
     const paymentMethods = await sql`
       SELECT 
@@ -312,15 +342,17 @@ async function testInvoiceRelationships() {
       GROUP BY payment_method
       ORDER BY total DESC
     `;
-    
-    console.log('   💳 Payment Methods:');
-    paymentMethods.forEach(p => {
-      console.log(`      ${p.payment_method}: ${p.count} payments, $${(p.total / 100).toFixed(2)} total`);
+
+    console.log("   💳 Payment Methods:");
+    paymentMethods.forEach((p) => {
+      console.log(
+        `      ${p.payment_method}: ${p.count} payments, $${(p.total / 100).toFixed(2)} total`,
+      );
     });
-    
+
     // Step 9: Invoice Tracking Features
-    console.log('\n📋 Step 9: Testing Invoice Tracking Features...');
-    
+    console.log("\n📋 Step 9: Testing Invoice Tracking Features...");
+
     // Mark invoice as viewed
     await sql`
       UPDATE invoices
@@ -328,7 +360,7 @@ async function testInvoiceRelationships() {
       WHERE id = ${invoiceId} AND viewed_at IS NULL
     `;
     console.log(`   ✅ Marked invoice as viewed`);
-    
+
     // Mark invoice as downloaded
     await sql`
       UPDATE invoices
@@ -336,7 +368,7 @@ async function testInvoiceRelationships() {
       WHERE id = ${invoiceId} AND downloaded_at IS NULL
     `;
     console.log(`   ✅ Marked invoice as downloaded`);
-    
+
     // Mark reminder sent
     await sql`
       UPDATE invoices
@@ -344,47 +376,48 @@ async function testInvoiceRelationships() {
       WHERE id = ${invoiceId} AND reminder_sent_at IS NULL
     `;
     console.log(`   ✅ Marked reminder as sent`);
-    
+
     // Check tracking status
     const [tracked] = await sql`
       SELECT viewed_at, downloaded_at, reminder_sent_at, sent_at
       FROM invoices
       WHERE id = ${invoiceId}
     `;
-    console.log('   📍 Tracking Status:');
-    console.log(`      Viewed: ${tracked.viewed_at ? '✅' : '❌'}`);
-    console.log(`      Downloaded: ${tracked.downloaded_at ? '✅' : '❌'}`);
-    console.log(`      Reminder sent: ${tracked.reminder_sent_at ? '✅' : '❌'}`);
-    
+    console.log("   📍 Tracking Status:");
+    console.log(`      Viewed: ${tracked.viewed_at ? "✅" : "❌"}`);
+    console.log(`      Downloaded: ${tracked.downloaded_at ? "✅" : "❌"}`);
+    console.log(
+      `      Reminder sent: ${tracked.reminder_sent_at ? "✅" : "❌"}`,
+    );
   } catch (error) {
-    console.error('\n❌ Test failed:', error.message);
+    console.error("\n❌ Test failed:", error.message);
     console.error(error);
   } finally {
     await sql.end();
     await supabase.auth.signOut();
   }
-  
-  console.log('\n' + '=' .repeat(60));
-  console.log('✅ Invoice Relationships Testing Complete!');
-  console.log('=' .repeat(60));
-  
-  console.log('\n🔗 Relationship Summary:');
-  console.log('   • Invoices ← → Customers (many-to-one)');
-  console.log('   • Invoices ← → Templates (many-to-one)');  
-  console.log('   • Invoices ← → Payments (one-to-many)');
-  console.log('   • Invoices ← → Comments (one-to-many)');
-  console.log('   • Invoices ← → Activities (one-to-many)');
-  console.log('   • Teams → Invoices → Customers (hierarchy)');
-  
-  console.log('\n📊 Features Tested:');
-  console.log('   ✅ Invoice templates for consistent formatting');
-  console.log('   ✅ Payment tracking with multiple payments per invoice');
-  console.log('   ✅ Comment system for invoice notes');
-  console.log('   ✅ Activity logging for audit trail');
-  console.log('   ✅ Analytics and customer insights');
-  console.log('   ✅ Invoice tracking (viewed, downloaded, reminders)');
-  console.log('   ✅ Customer invoice history');
-  console.log('   ✅ Payment method analytics');
+
+  console.log("\n" + "=".repeat(60));
+  console.log("✅ Invoice Relationships Testing Complete!");
+  console.log("=".repeat(60));
+
+  console.log("\n🔗 Relationship Summary:");
+  console.log("   • Invoices ← → Customers (many-to-one)");
+  console.log("   • Invoices ← → Templates (many-to-one)");
+  console.log("   • Invoices ← → Payments (one-to-many)");
+  console.log("   • Invoices ← → Comments (one-to-many)");
+  console.log("   • Invoices ← → Activities (one-to-many)");
+  console.log("   • Teams → Invoices → Customers (hierarchy)");
+
+  console.log("\n📊 Features Tested:");
+  console.log("   ✅ Invoice templates for consistent formatting");
+  console.log("   ✅ Payment tracking with multiple payments per invoice");
+  console.log("   ✅ Comment system for invoice notes");
+  console.log("   ✅ Activity logging for audit trail");
+  console.log("   ✅ Analytics and customer insights");
+  console.log("   ✅ Invoice tracking (viewed, downloaded, reminders)");
+  console.log("   ✅ Customer invoice history");
+  console.log("   ✅ Payment method analytics");
 }
 
 // Run the tests

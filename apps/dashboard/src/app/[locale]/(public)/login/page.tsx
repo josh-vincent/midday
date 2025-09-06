@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { ConsentBanner } from "@/components/consent-banner";
 import { PasswordSignIn } from "@/components/password-sign-in";
 import { PasswordSignUp } from "@/components/password-sign-up";
-import { ConsentBanner } from "@/components/consent-banner";
 import { Cookies } from "@/utils/constants";
 import { isEU } from "@midday/location";
-import { Icons } from "@midday/ui/icons";
 import { Button } from "@midday/ui/button";
+import { Icons } from "@midday/ui/icons";
 import Image from "next/image";
 import Link from "next/link";
 import backgroundDark from "public/assets/bg-login-dark.jpg";
 import backgroundLight from "public/assets/bg-login.jpg";
+import { useState } from "react";
 
 export default function Page() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -56,8 +56,8 @@ export default function Page() {
                   {isSignUp ? "Create Your Account" : "Welcome Back"}
                 </h1>
                 <p className="text-[#878787] text-sm mb-8">
-                  {isSignUp 
-                    ? "Sign up to start managing your invoices" 
+                  {isSignUp
+                    ? "Sign up to start managing your invoices"
                     : "Sign in to your account to continue"}
                 </p>
               </div>
@@ -65,22 +65,22 @@ export default function Page() {
               {/* Sign In/Up Form */}
               <div className="space-y-4">
                 {isSignUp ? <PasswordSignUp /> : <PasswordSignIn />}
-                
+
                 <div className="text-center">
                   <Button
                     variant="link"
                     onClick={() => setIsSignUp(!isSignUp)}
                     className="text-sm text-[#878787] hover:text-primary"
                   >
-                    {isSignUp 
-                      ? "Already have an account? Sign in" 
+                    {isSignUp
+                      ? "Already have an account? Sign in"
                       : "Don't have an account? Sign up"}
                   </Button>
                 </div>
 
                 <div className="text-center">
-                  <Link 
-                    href="/forgot-password" 
+                  <Link
+                    href="/forgot-password"
                     className="text-sm text-[#878787] hover:text-primary underline"
                   >
                     Forgot your password?

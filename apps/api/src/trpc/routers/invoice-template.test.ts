@@ -1,35 +1,30 @@
-// Set up environment variables
-process.env.RESEND_API_KEY = process.env.RESEND_API_KEY || "test_resend_key";
-process.env.RESEND_AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID || "test_audience_id";
-process.env.SUPABASE_URL = process.env.SUPABASE_URL || "http://localhost:54321";
-process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "test_anon_key";
-process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "test_service_key";
-process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/postgres";
+// Import test setup to configure all environment variables
+import "../__tests__/test-setup";
 
-import { describe, expect, it, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { connectDb } from "@midday/db/client";
+import { v4 as uuidv4 } from "uuid";
 import {
+  cleanupTestData,
   createTestCaller,
   createTestTeam,
-  createTestUser,
   createTestTeamMember,
-  cleanupTestData,
+  createTestUser,
 } from "../__tests__/test-utils";
-import { v4 as uuidv4 } from "uuid";
 
 describe("invoiceTemplate router", () => {
   let db: any;
   let caller: any;
-  const teamId = `test-team-${uuidv4()}`;
-  const userId = `test-user-${uuidv4()}`;
+  const teamId = uuidv4();
+  const userId = uuidv4();
 
   beforeEach(async () => {
     db = await connectDb();
-    
+
     await createTestUser(db, userId);
     await createTestTeam(db, teamId);
     await createTestTeamMember(db, teamId, userId);
-    
+
     caller = await createTestCaller({
       teamId,
       session: {
@@ -103,9 +98,9 @@ describe("invoiceTemplate router", () => {
         }),
         logoUrl: "https://example.com/logo.png",
       };
-      
+
       const result = await caller.invoiceTemplate.upsert(templateData);
-      
+
       expect(result).toBeDefined();
       expect(result.teamId).toBe(teamId);
       expect(result.title).toBe(templateData.title);
@@ -127,9 +122,9 @@ describe("invoiceTemplate router", () => {
         taxRate: 5,
         vatRate: 0,
       };
-      
+
       await caller.invoiceTemplate.upsert(initialData);
-      
+
       const updatedData = {
         title: "Updated Invoice",
         currency: "GBP",
@@ -144,9 +139,9 @@ describe("invoiceTemplate router", () => {
           instructions: "Pay by bank transfer",
         }),
       };
-      
+
       const result = await caller.invoiceTemplate.upsert(updatedData);
-      
+
       expect(result).toBeDefined();
       expect(result.teamId).toBe(teamId);
       expect(result.title).toBe(updatedData.title);
@@ -164,9 +159,9 @@ describe("invoiceTemplate router", () => {
       const minimalData = {
         title: "Basic Invoice",
       };
-      
+
       const result = await caller.invoiceTemplate.upsert(minimalData);
-      
+
       expect(result).toBeDefined();
       expect(result.teamId).toBe(teamId);
       expect(result.title).toBe(minimalData.title);
@@ -199,9 +194,9 @@ describe("invoiceTemplate router", () => {
           },
         }),
       };
-      
+
       const result = await caller.invoiceTemplate.upsert(complexData);
-      
+
       expect(result).toBeDefined();
       expect(result.fromDetails).toBeDefined();
       expect(result.paymentDetails).toBeDefined();
@@ -212,7 +207,7 @@ describe("invoiceTemplate router", () => {
         title: "Invalid Size",
         size: "invalid" as any,
       };
-      
+
       try {
         await caller.invoiceTemplate.upsert(invalidSizeData);
         expect(true).toBe(false);
@@ -226,7 +221,7 @@ describe("invoiceTemplate router", () => {
         title: "Invalid Delivery",
         deliveryType: "invalid" as any,
       };
-      
+
       try {
         await caller.invoiceTemplate.upsert(invalidDeliveryData);
         expect(true).toBe(false);
@@ -241,9 +236,9 @@ describe("invoiceTemplate router", () => {
         taxRate: 12.5,
         vatRate: 25.75,
       };
-      
+
       const result = await caller.invoiceTemplate.upsert(numberData);
-      
+
       expect(result).toBeDefined();
       expect(result.taxRate).toBe(12.5);
       expect(result.vatRate).toBe(25.75);
@@ -261,9 +256,9 @@ describe("invoiceTemplate router", () => {
         includePdf: true,
         sendCopy: false,
       };
-      
+
       const result = await caller.invoiceTemplate.upsert(booleanData);
-      
+
       expect(result).toBeDefined();
       expect(result.includeVat).toBe(true);
       expect(result.includeTax).toBe(false);
@@ -295,9 +290,9 @@ describe("invoiceTemplate router", () => {
         paymentLabel: "Payment Info",
         noteLabel: "Notes",
       };
-      
+
       const result = await caller.invoiceTemplate.upsert(labelData);
-      
+
       expect(result).toBeDefined();
       Object.entries(labelData).forEach(([key, value]) => {
         expect(result[key]).toBe(value);
@@ -312,9 +307,9 @@ describe("invoiceTemplate router", () => {
         timezone: "Europe/Berlin",
         locale: "de-DE",
       };
-      
+
       const result = await caller.invoiceTemplate.upsert(localizationData);
-      
+
       expect(result).toBeDefined();
       expect(result.currency).toBe(localizationData.currency);
       expect(result.dateFormat).toBe(localizationData.dateFormat);
@@ -329,7 +324,7 @@ describe("invoiceTemplate router", () => {
         teamId: undefined,
         session: null,
       });
-      
+
       try {
         await unauthenticatedCaller.invoiceTemplate.upsert({
           title: "Unauthorized",
@@ -352,7 +347,7 @@ describe("invoiceTemplate router", () => {
           role: "authenticated",
         },
       });
-      
+
       try {
         await callerWithoutTeam.invoiceTemplate.upsert({
           title: "No Team",

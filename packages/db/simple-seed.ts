@@ -26,8 +26,10 @@ async function seedAdmin() {
 
   try {
     // Get or create auth user
-    const { data: { users: existingUsers } } = await supabase.auth.admin.listUsers();
-    let authUser = existingUsers?.find(u => u.email === "admin@tocld.com");
+    const {
+      data: { users: existingUsers },
+    } = await supabase.auth.admin.listUsers();
+    let authUser = existingUsers?.find((u) => u.email === "admin@tocld.com");
 
     if (!authUser) {
       console.log("Creating new auth user...");
@@ -42,14 +44,13 @@ async function seedAdmin() {
       console.log(`✅ Created auth user: ${authUser.id}`);
     } else {
       console.log(`✅ Found existing auth user: ${authUser.id}`);
-      
+
       // Update password
       console.log("Updating password...");
-      const { error } = await supabase.auth.admin.updateUserById(
-        authUser.id,
-        { password: "Admin123" }
-      );
-      
+      const { error } = await supabase.auth.admin.updateUserById(authUser.id, {
+        password: "Admin123",
+      });
+
       if (error) {
         console.error("Warning: Could not update password:", error.message);
       } else {
@@ -61,7 +62,7 @@ async function seedAdmin() {
     const existingUser = await sql`
       SELECT id FROM users WHERE id = ${authUser.id}
     `;
-    
+
     if (existingUser.length === 0) {
       console.log("Creating user in database with raw SQL...");
       await sql`
@@ -81,12 +82,12 @@ async function seedAdmin() {
     } else {
       console.log("✅ User already exists in database");
     }
-    
+
     // Check and create team if needed
     const existingMembership = await sql`
       SELECT team_id FROM users_on_team WHERE user_id = ${authUser.id}
     `;
-    
+
     if (existingMembership.length === 0) {
       console.log("Creating team...");
       const [team] = await sql`
@@ -110,9 +111,9 @@ async function seedAdmin() {
         )
         RETURNING id
       `;
-      
+
       console.log(`✅ Created team: ${team.id}`);
-      
+
       // Add user to team
       console.log("Adding user to team...");
       await sql`
@@ -124,7 +125,7 @@ async function seedAdmin() {
           ${new Date().toISOString()}
         )
       `;
-      
+
       console.log("✅ Added user as team owner");
     } else {
       console.log("✅ User already belongs to a team");
@@ -136,7 +137,6 @@ async function seedAdmin() {
     console.log("📧 Email: admin@tocld.com");
     console.log("🔑 Password: Admin123");
     console.log("=".repeat(50));
-
   } catch (error) {
     console.error("❌ Error:", error);
     process.exit(1);

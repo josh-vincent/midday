@@ -8,7 +8,7 @@ import { DataTable } from "@/components/tables/customers/data-table";
 import { CustomersSkeleton } from "@/components/tables/customers/skeleton";
 import { TopRevenueClient } from "@/components/top-revenue-client";
 import { loadCustomerFilterParams } from "@/hooks/use-customer-filter-params";
-import { loadSortParams } from "@/hooks/use-sort-params";
+import { loadSortParams } from "@/hooks/use-sort-params.server";
 import {
   HydrateClient,
   batchPrefetch,
@@ -21,7 +21,7 @@ import type { SearchParams } from "nuqs";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Customers | Midday",
+  title: "Customers | ToCLD",
 };
 
 type Props = {

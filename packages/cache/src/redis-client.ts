@@ -10,7 +10,7 @@ export class RedisCache {
     this.defaultTTL = defaultTTL;
   }
 
-  private async getRedisClient(): Promise<RedisClientType> {
+  private async getRedisClient(): Promise<RedisClientType | null> {
     if (this.redis?.isOpen) {
       return this.redis;
     }
@@ -19,6 +19,10 @@ export class RedisCache {
     const redisUrl = process.env.REDIS_URL;
 
     if (!redisUrl) {
+      // In development without Redis, just return null
+      if (process.env.NODE_ENV !== "production") {
+        return null;
+      }
       throw new Error("REDIS_URL environment variable is required");
     }
 
@@ -69,6 +73,10 @@ export class RedisCache {
   async get<T>(key: string): Promise<T | undefined> {
     try {
       const redis = await this.getRedisClient();
+      if (!redis) {
+        // No Redis in development, just return undefined (cache miss)
+        return undefined;
+      }
       const value = await redis.get(this.getKey(key));
       return this.parseValue<T>(value);
     } catch (error) {
@@ -85,6 +93,10 @@ export class RedisCache {
   async set(key: string, value: any, ttlSeconds?: number): Promise<void> {
     try {
       const redis = await this.getRedisClient();
+      if (!redis) {
+        // No Redis in development, just skip caching
+        return;
+      }
       const serializedValue = this.stringifyValue(value);
       const redisKey = this.getKey(key);
       const ttl = ttlSeconds ?? this.defaultTTL;

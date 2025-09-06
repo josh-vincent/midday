@@ -17,7 +17,9 @@ export function LocaleSettings() {
   const { data: user } = useUserQuery();
   const updateUserMutation = useUserMutation();
 
-  const localeItems = Object.values([{ name: "Australia", default_locale: "en-AU" }]).map((c, index) => ({
+  const localeItems = Object.values([
+    { name: "Australia", default_locale: "en-AU" },
+  ]).map((c, index) => ({
     id: index.toString(),
     label: `${c.name} (${c.default_locale})`,
     value: c.default_locale,

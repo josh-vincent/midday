@@ -1,15 +1,15 @@
 "use client";
 
+import { useTRPC } from "@/trpc/client";
+import { formatAmount } from "@/utils/format";
 import { isValidJSON } from "@midday/invoice/content";
 import { cn } from "@midday/ui/cn";
+import { useQuery } from "@tanstack/react-query";
 import type { JSONContent } from "@tiptap/react";
+import { Briefcase } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { Editor } from "./editor";
-import { useState, useEffect, useRef } from "react";
-import { useTRPC } from "@/trpc/client";
-import { useQuery } from "@tanstack/react-query";
-import { formatAmount } from "@/utils/format";
-import { Briefcase } from "lucide-react";
 
 interface Job {
   id: string;
@@ -36,38 +36,47 @@ export function DescriptionWithJobSearch({
   const [showJobSearch, setShowJobSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [plainTextContent, setPlainTextContent] = useState("");
-  const [selectedJobDescription, setSelectedJobDescription] = useState<string | null>(null);
+  const [selectedJobDescription, setSelectedJobDescription] = useState<
+    string | null
+  >(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
-  
+
   const currency = watch("template.currency");
   const locale = watch("template.locale");
   const customerId = watch("customerId");
-  
+
   const trpc = useTRPC();
 
   // Query jobs for search - filter by customer if selected and uninvoiced jobs
   const { data: jobsData } = useQuery(
-    trpc.job.get.queryOptions({
-      q: searchQuery,
-      customerId: customerId || undefined,
-      status: ["pending", "in_progress", "completed"], // Only show uninvoiced jobs
-      pageSize: 10,
-    }, {
-      enabled: searchQuery.length > 0,
-    })
+    trpc.job.get.queryOptions(
+      {
+        q: searchQuery,
+        customerId: customerId || undefined,
+        status: ["pending", "in_progress", "completed"], // Only show uninvoiced jobs
+        pageSize: 10,
+      },
+      {
+        enabled: searchQuery.length > 0,
+      },
+    ),
   );
 
   // Handle click outside to close job search
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target as Node)
+      ) {
         setShowJobSearch(false);
       }
     };
 
     if (showJobSearch) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [showJobSearch]);
 
@@ -78,7 +87,7 @@ export function DescriptionWithJobSearch({
     if (content?.content?.[0]?.content?.[0]?.text) {
       const text = content.content[0].content[0].text;
       setPlainTextContent(text);
-      
+
       // Only set search query if not from a job selection
       if (!selectedJobDescription) {
         setSearchQuery(text);
@@ -100,7 +109,7 @@ export function DescriptionWithJobSearch({
       shouldDirty: true,
       shouldTouch: true,
     });
-    
+
     // Clear selected job description after it's been saved to form
     if (selectedJobDescription) {
       setSelectedJobDescription(null);
@@ -109,11 +118,16 @@ export function DescriptionWithJobSearch({
 
   const handleJobSelect = (job: Job) => {
     console.log("Selected job:", job);
-    console.log("Job details - Capacity:", job.cubicMetreCapacity, "Price:", job.pricePerUnit);
-    
+    console.log(
+      "Job details - Capacity:",
+      job.cubicMetreCapacity,
+      "Price:",
+      job.pricePerUnit,
+    );
+
     // Create description from job details
     const description = `Job #${job.jobNumber}${job.addressSite ? ` - ${job.addressSite}` : ""}${job.materialType ? ` - ${job.materialType}` : ""}${job.equipmentType ? ` (${job.equipmentType})` : ""}`;
-    
+
     // Create the description content
     const descriptionContent = {
       type: "doc",
@@ -129,33 +143,35 @@ export function DescriptionWithJobSearch({
         },
       ],
     };
-    
+
     // Close search dropdown
     setShowJobSearch(false);
     setSearchQuery("");
     setSelectedJobDescription(description);
-    
+
     // Set the description immediately
     setValue(name, JSON.stringify(descriptionContent), {
       shouldValidate: true,
       shouldDirty: true,
       shouldTouch: true,
     });
-    
+
     // Set quantity - this is the cubic metre capacity (e.g., 22 for a 22m³ truck)
-    const quantity = job.cubicMetreCapacity ? Number(job.cubicMetreCapacity) : 1;
+    const quantity = job.cubicMetreCapacity
+      ? Number(job.cubicMetreCapacity)
+      : 1;
     console.log("Setting quantity to:", quantity);
-    
+
     setValue(`lineItems.${index}.quantity`, quantity, {
       shouldValidate: true,
-      shouldDirty: true, 
+      shouldDirty: true,
       shouldTouch: true,
     });
 
     // Set price per unit (e.g., $15 per m³)
     const price = job.pricePerUnit ? Number(job.pricePerUnit) : 0;
     console.log("Setting price per m³ to:", price);
-    
+
     setValue(`lineItems.${index}.price`, price, {
       shouldValidate: true,
       shouldDirty: true,
@@ -177,18 +193,25 @@ export function DescriptionWithJobSearch({
       shouldDirty: true,
       shouldTouch: true,
     });
-    
+
     // Trigger all fields to update
     requestAnimationFrame(() => {
       trigger([
         name,
-        `lineItems.${index}.quantity`, 
+        `lineItems.${index}.quantity`,
         `lineItems.${index}.price`,
         `lineItems.${index}.unit`,
       ]).then(() => {
         const values = getValues(`lineItems.${index}`);
         console.log("Final line item values:", values);
-        console.log("Should show:", quantity, "×", price, "= $", quantity * price);
+        console.log(
+          "Should show:",
+          quantity,
+          "×",
+          price,
+          "= $",
+          quantity * price,
+        );
       });
     });
   };
@@ -200,7 +223,7 @@ export function DescriptionWithJobSearch({
   };
 
   // Use selected job description or existing field value
-  const editorContent = selectedJobDescription 
+  const editorContent = selectedJobDescription
     ? {
         type: "doc",
         content: [
@@ -215,12 +238,14 @@ export function DescriptionWithJobSearch({
           },
         ],
       }
-    : (isValidJSON(fieldValue) ? JSON.parse(fieldValue) : fieldValue);
+    : isValidJSON(fieldValue)
+      ? JSON.parse(fieldValue)
+      : fieldValue;
 
   return (
     <div className="relative" ref={searchContainerRef}>
       <Editor
-        key={`${name}-${selectedJobDescription || ''}`}
+        key={`${name}-${selectedJobDescription || ""}`}
         initialContent={editorContent}
         onChange={handleOnChange}
         onFocus={handleFocus}
@@ -232,7 +257,7 @@ export function DescriptionWithJobSearch({
         placeholder="Type to search jobs or enter description..."
         {...props}
       />
-      
+
       {showJobSearch && searchQuery && (
         <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-auto rounded-md border bg-popover shadow-lg">
           {jobsData?.data && jobsData.data.length > 0 ? (
@@ -253,15 +278,21 @@ export function DescriptionWithJobSearch({
                       <div className="font-medium">
                         Job #{job.jobNumber}
                         {job.companyName && (
-                          <span className="text-muted-foreground ml-1">• {job.companyName}</span>
+                          <span className="text-muted-foreground ml-1">
+                            • {job.companyName}
+                          </span>
                         )}
                       </div>
                       {job.addressSite && (
-                        <div className="text-muted-foreground mt-0.5">{job.addressSite}</div>
+                        <div className="text-muted-foreground mt-0.5">
+                          {job.addressSite}
+                        </div>
                       )}
                       <div className="text-muted-foreground mt-0.5">
                         {job.materialType && <span>{job.materialType}</span>}
-                        {job.equipmentType && <span className="ml-2">• {job.equipmentType}</span>}
+                        {job.equipmentType && (
+                          <span className="ml-2">• {job.equipmentType}</span>
+                        )}
                       </div>
                     </div>
                     {job.pricePerUnit && job.cubicMetreCapacity && (
@@ -275,7 +306,8 @@ export function DescriptionWithJobSearch({
                           })}
                         </div>
                         <div className="text-muted-foreground text-[10px]">
-                          {job.cubicMetreCapacity} m³ × {formatAmount({
+                          {job.cubicMetreCapacity} m³ ×{" "}
+                          {formatAmount({
                             amount: job.pricePerUnit,
                             currency,
                             locale,
@@ -286,12 +318,17 @@ export function DescriptionWithJobSearch({
                     )}
                   </div>
                   <div className="mt-1">
-                    <span className={cn(
-                      "inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium",
-                      job.status === "completed" && "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400",
-                      job.status === "in_progress" && "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
-                      job.status === "pending" && "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400",
-                    )}>
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium",
+                        job.status === "completed" &&
+                          "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400",
+                        job.status === "in_progress" &&
+                          "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
+                        job.status === "pending" &&
+                          "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400",
+                      )}
+                    >
                       {job.status.replace("_", " ")}
                     </span>
                   </div>

@@ -84,7 +84,7 @@ export function CreateTeamForm({
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log("Form submitted with values:", values);
-    
+
     if (isFormLocked) {
       console.log("Form is locked, returning");
       return;
@@ -110,13 +110,15 @@ export function CreateTeamForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={(e) => {
-        e.preventDefault();
-        console.log("Form submit event triggered");
-        console.log("Form values:", form.getValues());
-        console.log("Form errors:", form.formState.errors);
-        form.handleSubmit(onSubmit)(e);
-      }}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          console.log("Form submit event triggered");
+          console.log("Form values:", form.getValues());
+          console.log("Form errors:", form.formState.errors);
+          form.handleSubmit(onSubmit)(e);
+        }}
+      >
         <FormField
           control={form.control}
           name="name"

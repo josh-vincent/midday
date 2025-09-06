@@ -20,6 +20,12 @@ const badgeVariants = cva(
           "font-mono text-[#878787] bg-[#F2F1EF] text-[12px] dark:bg-[#1D1D1D] font-normal px-3 py-1 border-none",
         "tag-outline":
           "border-transparent bg-zinc-700 text-zinc-200 hover:bg-zinc-700/80",
+        success:
+          "border-transparent bg-green-500 text-green-500-foreground hover:bg-green-500/80",
+        warning:
+          "border-transparent bg-yellow-500 text-yellow-500-foreground hover:bg-yellow-500/80",
+        error:
+          "border-transparent bg-red-500 text-red-500-foreground hover:bg-red-500/80",
       },
     },
     defaultVariants: {

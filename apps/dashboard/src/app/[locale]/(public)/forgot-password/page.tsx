@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@midday/supabase/client";
 import { Button } from "@midday/ui/button";
-import { Input } from "@midday/ui/input";
 import { Icons } from "@midday/ui/icons";
-import Link from "next/link";
+import { Input } from "@midday/ui/input";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import backgroundDark from "public/assets/bg-login-dark.jpg";
 import backgroundLight from "public/assets/bg-login.jpg";
+import { useState } from "react";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -78,9 +78,12 @@ export default function ForgotPasswordPage() {
             <div className="w-full max-w-md space-y-8">
               {/* Header */}
               <div className="text-center">
-                <h1 className="text-2xl mb-4 font-serif">Reset Your Password</h1>
+                <h1 className="text-2xl mb-4 font-serif">
+                  Reset Your Password
+                </h1>
                 <p className="text-[#878787] text-sm mb-8">
-                  Enter your email address and we'll send you a link to reset your password.
+                  Enter your email address and we'll send you a link to reset
+                  your password.
                 </p>
               </div>
 
@@ -112,7 +115,7 @@ export default function ForgotPasswordPage() {
                       disabled={isLoading}
                       className="h-12"
                     />
-                    
+
                     {error && (
                       <div className="text-sm text-red-500 text-center">
                         {error}
@@ -135,8 +138,8 @@ export default function ForgotPasswordPage() {
                     </Button>
 
                     <div className="text-center">
-                      <Link 
-                        href="/login" 
+                      <Link
+                        href="/login"
                         className="text-sm text-[#878787] hover:text-primary underline"
                       >
                         Back to login

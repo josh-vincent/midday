@@ -54,31 +54,36 @@ export async function middleware(request: NextRequest) {
 
   // If authenticated, proceed with other checks
   if (session) {
-    // 2. Check if user has a team (unless they're on team creation pages)
+    // 2. Check if user has a team (unless they're on team-related or setup pages)
     if (
-      newUrl.pathname !== "/teams/create" && 
+      newUrl.pathname !== "/teams/create" &&
       newUrl.pathname !== "/teams" &&
+      newUrl.pathname !== "/setup" &&
       !newUrl.pathname.startsWith("/teams/invite/")
     ) {
       // Get user data to check team membership
       const { data: userData } = await supabase
         .from("users")
-        .select("team_id")
+        .select("team_id, full_name")
         .eq("id", session.user.id)
         .single();
-      
+
+      // If user has no full name, redirect to setup
+      if (userData && !userData.full_name) {
+        const url = new URL("/setup", request.url);
+        return NextResponse.redirect(url);
+      }
+
       // If user has no team, redirect to team creation
       if (userData && !userData.team_id) {
-        const url = new URL("/teams/create", request.url);
+        const url = new URL("/teams", request.url);
         return NextResponse.redirect(url);
       }
     }
 
     // Allow invite pages
     if (newUrl.pathname.startsWith("/teams/invite/")) {
-      return NextResponse.redirect(
-        `${url.origin}${request.nextUrl.pathname}`,
-      );
+      return NextResponse.redirect(`${url.origin}${request.nextUrl.pathname}`);
     }
   }
 

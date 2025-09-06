@@ -17,6 +17,7 @@
     "./queries": "./src/queries/index.ts",
     "./schema": "./src/schema.ts",
     "./schema-dirt": "./src/schema-dirt.ts",
+    "./types": "./src/types/index.ts",
     "./utils/api-keys": "./src/utils/api-keys.ts",
     "./utils/search-query": "./src/utils/search-query.ts",
     "./utils/health": "./src/utils/health.ts",

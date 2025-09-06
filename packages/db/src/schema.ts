@@ -21,6 +21,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import tsvector from "./tsvector";
+import { invoiceDeliveryTypeEnum, invoiceSizeEnum } from "./schema-old";
 
 // Custom types
 export const numericCasted = customType<{
@@ -38,10 +39,17 @@ export const numericCasted = customType<{
   toDriver: (value: number) => value.toString(),
 });
 export const plans = pgEnum("plans", ["trial", "free", "pro", "enterprise"]);
+export const reportTypesEnum = pgEnum("reportTypes", [
+  "profit",
+  "revenue",
+  "burn_rate",
+  "expense",
+]);
+
 // Enums
 export const invoiceStatusEnum = pgEnum("invoice_status", [
   "draft",
-  "unpaid", 
+  "unpaid",
   "paid",
   "canceled",
   "overdue",
@@ -79,7 +87,7 @@ export const inviteStatusEnum = pgEnum("invite_status", [
 export const currencyEnum = pgEnum("currency", [
   "USD",
   "EUR",
-  "GBP", 
+  "GBP",
   "AUD",
   "CAD",
   "NZD",
@@ -92,7 +100,6 @@ export const documentProcessingStatusEnum = pgEnum(
   "document_processing_status",
   ["pending", "processing", "completed", "failed"],
 );
-
 
 // Tables
 
@@ -264,12 +271,14 @@ export const teams = pgTable(
     nextInvoiceNumber: integer("next_invoice_number").default(1).notNull(),
     paymentTerms: integer("payment_terms").default(30), // days
     invoiceNotes: text("invoice_notes"),
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
   },
-  (table) => [
-    index("teams_name_idx").on(table.name),
-  ]
+  (table) => [index("teams_name_idx").on(table.name)],
 );
 
 export const usersOnTeam = pgTable(
@@ -346,13 +355,15 @@ export const userInvites = pgTable(
     status: inviteStatusEnum().default("pending").notNull(),
     invitedBy: uuid("invited_by").references(() => users.id),
     expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
     unique().on(table.teamId, table.email),
     index("user_invites_email_idx").on(table.email),
     index("user_invites_code_idx").on(table.code),
-  ]
+  ],
 );
 
 export const customers = pgTable(
@@ -364,26 +375,79 @@ export const customers = pgTable(
       .notNull(),
     name: varchar({ length: 255 }).notNull(),
     email: varchar({ length: 255 }),
+    billingEmail: text(),
     phone: varchar({ length: 50 }),
     website: varchar({ length: 255 }),
-    contactName: varchar("contact_name", { length: 255 }),
-    address: text(),
+    addressLine1: text("address_line_1"),
+    addressLine2: text("address_line_2"),
     city: varchar({ length: 100 }),
     state: varchar({ length: 100 }),
-    country: varchar({ length: 100 }),
+    country: text(),
+    countryCode: text("country_code").default("AU"),
     postalCode: varchar("postal_code", { length: 20 }),
     taxNumber: varchar("tax_number", { length: 50 }),
+    abn: varchar("abn", { length: 50 }),
     currency: currencyEnum().default("AUD"),
+    token: text().default("").notNull(),
     note: text(),
     tags: jsonb().default([]),
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+    contact: text(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    fts: tsvector("fts")
+      .notNull()
+      .generatedAlwaysAs(
+        (): SQL => sql`
+				to_tsvector(
+					'english'::regconfig,
+					COALESCE(name, ''::text) || ' ' ||
+					COALESCE(contact, ''::text) || ' ' ||
+					COALESCE(phone, ''::text) || ' ' ||
+					COALESCE(email, ''::text) || ' ' ||
+          COALESCE(billingEmail, ''::text) || ' ' ||
+          COALESCE(abn, ''::text) || ' ' ||
+					COALESCE(address_line_1, ''::text) || ' ' ||
+					COALESCE(address_line_2, ''::text) || ' ' ||
+					COALESCE(city, ''::text) || ' ' ||
+					COALESCE(state, ''::text) || ' ' ||
+					COALESCE(postalCode, ''::text) || ' ' ||
+					COALESCE(country, ''::text)
+				)
+			`,
+      ),
   },
   (table) => [
     index("customers_team_idx").on(table.teamId),
     index("customers_name_idx").on(table.name),
     index("customers_email_idx").on(table.email),
-  ]
+  ],
+);
+
+export const tags = pgTable(
+  "tags",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    teamId: uuid("team_id")
+      .references(() => teams.id, { onDelete: "cascade" })
+      .notNull(),
+    name: varchar({ length: 100 }).notNull(),
+    color: varchar({ length: 7 }), // Hex color code
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    unique().on(table.teamId, table.name), // Unique tag name per team
+    index("tags_team_idx").on(table.teamId),
+    index("tags_name_idx").on(table.name),
+  ],
 );
 
 export const invoices = pgTable(
@@ -403,33 +467,89 @@ export const invoices = pgTable(
     paidDate: date("paid_date", { mode: "string" }),
     status: invoiceStatusEnum().default("draft").notNull(),
     currency: currencyEnum().default("AUD").notNull(),
-    exchangeRate: numericCasted("exchange_rate", { precision: 10, scale: 4 }).default(1),
-    
+    exchangeRate: numericCasted("exchange_rate", {
+      precision: 10,
+      scale: 4,
+    }).default(1),
+
     // Amounts
     subtotal: integer().default(0).notNull(), // in cents
     taxRate: numericCasted("tax_rate", { precision: 5, scale: 2 }).default(0),
     taxAmount: integer("tax_amount").default(0).notNull(), // in cents
-    discountRate: numericCasted("discount_rate", { precision: 5, scale: 2 }).default(0),
+    discountRate: numericCasted("discount_rate", {
+      precision: 5,
+      scale: 2,
+    }).default(0),
     discountAmount: integer("discount_amount").default(0).notNull(), // in cents
     totalAmount: integer("total_amount").default(0).notNull(), // in cents
     paidAmount: integer("paid_amount").default(0).notNull(), // in cents
-    
+
     // Content
     lineItems: jsonb("line_items").default([]).notNull(),
     note: text(),
     terms: text(),
     paymentDetails: text("payment_details"),
-    
+    fromDetails: text("from_details"),
+    customerDetails: text("customer_details"),
+    noteDetails: text("note_details"),
+    template: jsonb(),
+    token: text(),
+    amount: integer().default(0),
+    userId: uuid("user_id").references(() => users.id),
+    customerName: text("customer_name"),
+    invoiceDate: date("invoice_date", { mode: "string" }),
+    tax: integer().default(0),
+    vat: integer().default(0),
+    discount: integer().default(0),
+    topBlock: text("top_block"),
+    bottomBlock: text("bottom_block"),
+    scheduledAt: timestamp("scheduled_at", { mode: "string" }),
+    scheduledJobId: text("scheduled_job_id"),
+    logoUrl: text("logo_url"),
+
+    invoiceNoLabel: text("invoice_no_label"),
+    issueDateLabel: text("issue_date_label"),
+    dueDateLabel: text("due_date_label"),
+    descriptionLabel: text("description_label"),
+    priceLabel: text("price_label"),
+    quantityLabel: text("quantity_label"),
+    totalLabel: text("total_label"),
+    vatLabel: text("vat_label"),
+    taxLabel: text("tax_label"),
+    paymentLabel: text("payment_label"),
+    noteLabel: text("note_label"),
+    size: invoiceSizeEnum().default("a4"),
+    dateFormat: text("date_format"),
+    includeVat: boolean("include_vat"),
+    includeTax: boolean("include_tax"),
+    deliveryType: invoiceDeliveryTypeEnum("delivery_type")
+      .default("create")
+      .notNull(),
+    discountLabel: text("discount_label"),
+    includeDiscount: boolean("include_discount"),
+    includeDecimals: boolean("include_decimals"),
+    totalSummaryLabel: text("total_summary_label"),
+    title: text(),
+    vatRate: numericCasted("vat_rate", { precision: 10, scale: 2 }),
+    includeUnits: boolean("include_units"),
+    subtotalLabel: text("subtotal_label"),
+    includePdf: boolean("include_pdf"),
+    sendCopy: boolean("send_copy"),
+
     // Metadata
     sentAt: timestamp("sent_at", { mode: "string" }),
     reminderSentAt: timestamp("reminder_sent_at", { mode: "string" }),
     viewedAt: timestamp("viewed_at", { mode: "string" }),
     downloadedAt: timestamp("downloaded_at", { mode: "string" }),
     metadata: jsonb().default({}),
-    
+
     createdBy: uuid("created_by").references(() => users.id),
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
     unique().on(table.teamId, table.invoiceNumber),
@@ -437,7 +557,7 @@ export const invoices = pgTable(
     index("invoices_customer_idx").on(table.customerId),
     index("invoices_status_idx").on(table.status),
     index("invoices_due_date_idx").on(table.dueDate),
-  ]
+  ],
 );
 
 export const invoiceTemplates = pgTable(
@@ -450,26 +570,82 @@ export const invoiceTemplates = pgTable(
     name: varchar({ length: 255 }).notNull(),
     description: text(),
     isDefault: boolean("is_default").default(false).notNull(),
-    
+
     // Template settings
+    title: varchar({ length: 255 }).default("Invoice"),
     logoUrl: text("logo_url"),
     primaryColor: varchar("primary_color", { length: 7 }).default("#000000"),
+    currency: varchar({ length: 3 }).default("AUD"),
+    dateFormat: varchar("date_format", { length: 20 }).default("dd/MM/yyyy"),
+    size: varchar({ length: 10 }).default("a4"),
     includeQr: boolean("include_qr").default(false),
     includeTaxNumber: boolean("include_tax_number").default(true),
     includePaymentDetails: boolean("include_payment_details").default(true),
-    
+    includeVat: boolean("include_vat").default(false),
+    includeTax: boolean("include_tax").default(false),
+    includeDiscount: boolean("include_discount").default(false),
+    includeDecimals: boolean("include_decimals").default(true),
+    includePdf: boolean("include_pdf").default(true),
+    includeUnits: boolean("include_units").default(false),
+    sendCopy: boolean("send_copy").default(false),
+
+    // Labels
+    customerLabel: varchar("customer_label", { length: 255 }).default("To"),
+    fromLabel: varchar("from_label", { length: 255 }).default("From"),
+    invoiceNoLabel: varchar("invoice_no_label", { length: 255 }).default(
+      "Invoice No",
+    ),
+    issueDateLabel: varchar("issue_date_label", { length: 255 }).default(
+      "Issue Date",
+    ),
+    dueDateLabel: varchar("due_date_label", { length: 255 }).default(
+      "Due Date",
+    ),
+    descriptionLabel: varchar("description_label", { length: 255 }).default(
+      "Description",
+    ),
+    priceLabel: varchar("price_label", { length: 255 }).default("Price"),
+    quantityLabel: varchar("quantity_label", { length: 255 }).default(
+      "Quantity",
+    ),
+    totalLabel: varchar("total_label", { length: 255 }).default("Total"),
+    totalSummaryLabel: varchar("total_summary_label", { length: 255 }).default(
+      "Total",
+    ),
+    vatLabel: varchar("vat_label", { length: 255 }).default("VAT"),
+    taxLabel: varchar("tax_label", { length: 255 }).default("Tax"),
+    subtotalLabel: varchar("subtotal_label", { length: 255 }).default(
+      "Subtotal",
+    ),
+    discountLabel: varchar("discount_label", { length: 255 }).default(
+      "Discount",
+    ),
+    paymentLabel: varchar("payment_label", { length: 255 }).default(
+      "Payment Details",
+    ),
+    noteLabel: varchar("note_label", { length: 255 }).default("Note"),
+
+    // Rates
+    taxRate: numericCasted("tax_rate", { precision: 5, scale: 2 }).default(0),
+    vatRate: numericCasted("vat_rate", { precision: 5, scale: 2 }).default(0),
+
     // Content templates
     paymentTerms: integer("payment_terms"), // days
     note: text(),
     terms: text(),
     paymentDetails: text("payment_details"),
-    
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+    fromDetails: text("from_details"),
+    noteDetails: text("note_details"),
+    deliveryType: varchar("delivery_type", { length: 20 }).default("create"),
+
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
   },
-  (table) => [
-    index("invoice_templates_team_idx").on(table.teamId),
-  ]
+  (table) => [index("invoice_templates_team_idx").on(table.teamId)],
 );
 
 export const invoiceComments = pgTable(
@@ -483,11 +659,11 @@ export const invoiceComments = pgTable(
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     content: text().notNull(),
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
   },
-  (table) => [
-    index("invoice_comments_invoice_idx").on(table.invoiceId),
-  ]
+  (table) => [index("invoice_comments_invoice_idx").on(table.invoiceId)],
 );
 
 export const payments = pgTable(
@@ -504,12 +680,14 @@ export const payments = pgTable(
     reference: varchar({ length: 255 }),
     note: text(),
     created_by: uuid("created_by").references(() => users.id),
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
     index("payments_invoice_idx").on(table.invoiceId),
     index("payments_date_idx").on(table.paymentDate),
-  ]
+  ],
 );
 
 export const notificationSettings = pgTable(
@@ -526,13 +704,17 @@ export const notificationSettings = pgTable(
     enabled: boolean().default(true).notNull(),
     email: boolean().default(true).notNull(),
     inApp: boolean("in_app").default(true).notNull(),
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
     unique().on(table.userId, table.teamId, table.type),
     index("notification_settings_user_team_idx").on(table.userId, table.teamId),
-  ]
+  ],
 );
 
 export const activities = pgTable(
@@ -549,22 +731,24 @@ export const activities = pgTable(
     metadata: jsonb().default({}),
     ipAddress: varchar("ip_address", { length: 45 }),
     userAgent: text("user_agent"),
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
     index("activities_team_idx").on(table.teamId),
     index("activities_entity_idx").on(table.entity, table.entityId),
     index("activities_created_idx").on(table.createdAt),
-  ]
+  ],
 );
 
 // Jobs table for dirt receiving tracking
 export const jobStatusEnum = pgEnum("job_status", [
   "pending",
-  "in_progress", 
+  "in_progress",
   "completed",
   "invoiced",
-  "cancelled"
+  "cancelled",
 ]);
 
 export const dirtTypeEnum = pgEnum("dirt_type", [
@@ -577,7 +761,7 @@ export const dirtTypeEnum = pgEnum("dirt_type", [
   "gravel",
   "concrete",
   "asphalt",
-  "other"
+  "other",
 ]);
 
 export const jobs = pgTable(
@@ -587,52 +771,82 @@ export const jobs = pgTable(
     teamId: uuid("team_id")
       .references(() => teams.id, { onDelete: "cascade" })
       .notNull(),
-    customerId: uuid("customer_id")
-      .references(() => customers.id, { onDelete: "restrict" })
-      .notNull(),
-    jobNumber: varchar("job_number", { length: 50 }).notNull(),
-    
-    // Location details
-    sourceLocation: varchar("source_location", { length: 255 }).notNull(), // Where dirt is coming from
+    customerId: uuid("customer_id").references(() => customers.id, {
+      onDelete: "restrict",
+    }),
+    jobNumber: varchar("job_number", { length: 50 }),
+
+    // Contact details
+    contactPerson: varchar("contact_person", { length: 255 }),
+    contactNumber: varchar("contact_number", { length: 50 }),
+
+    // Vehicle details
+    rego: varchar("rego", { length: 20 }), // Vehicle registration
+    loadNumber: integer("load_number").default(1), // Load count for the day
+
+    // Company/Job details
+    companyName: varchar("company_name", { length: 255 }), // Company/customer name
+    addressSite: text("address_site"), // Full address/site description
+
+    // Equipment and material
+    equipmentType: varchar("equipment_type", { length: 100 }), // Truck & Trailer 22m3, Tandem 10m3, etc.
+    materialType: varchar("material_type", { length: 100 }), // Dry Clean Fill, etc.
+    pricePerUnit: numericCasted("price_per_unit", { precision: 10, scale: 2 }), // Price per cubic metre
+    cubicMetreCapacity: integer("cubic_metre_capacity"), // Load capacity in m3
+
+    // Date tracking
+    jobDate: date("job_date", { mode: "string" }), // Date of the job
+
+    // Legacy fields (kept for compatibility, now optional)
+    sourceLocation: varchar("source_location", { length: 255 }), // Where dirt is coming from
     sourceAddress: text("source_address"),
     destinationSite: varchar("destination_site", { length: 255 }), // Where it's being deposited
-    
-    // Dirt details
-    dirtType: dirtTypeEnum("dirt_type").notNull(),
-    quantityCubicMeters: numericCasted("quantity_cubic_meters", { precision: 10, scale: 2 }).notNull(), // m³
+    dirtType: dirtTypeEnum("dirt_type"),
+    quantityCubicMeters: numericCasted("quantity_cubic_meters", {
+      precision: 10,
+      scale: 2,
+    }), // m³
     weightKg: numericCasted("weight_kg", { precision: 12, scale: 2 }), // kg (optional)
-    pricePerCubicMeter: integer("price_per_cubic_meter").notNull(), // cents per m³
-    totalAmount: integer("total_amount").notNull(), // total in cents
-    
+    pricePerCubicMeter: integer("price_per_cubic_meter"), // cents per m³
+    totalAmount: integer("total_amount"), // total in cents
+
     // Tracking
     status: jobStatusEnum().default("pending").notNull(),
     scheduledDate: date("scheduled_date", { mode: "string" }),
     arrivalTime: timestamp("arrival_time", { mode: "string" }),
     completedTime: timestamp("completed_time", { mode: "string" }),
-    
+
     // Linking
-    invoiceId: uuid("invoice_id").references(() => invoices.id, { onDelete: "set null" }),
-    
+    invoiceId: uuid("invoice_id").references(() => invoices.id, {
+      onDelete: "set null",
+    }),
+
     // Additional info
     truckNumber: varchar("truck_number", { length: 50 }),
     driverName: varchar("driver_name", { length: 255 }),
     notes: text(),
     photos: jsonb().default([]), // Array of photo URLs
-    
+
     createdBy: uuid("created_by").references(() => users.id),
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
   },
   (table) => [
-    unique().on(table.teamId, table.jobNumber),
     index("jobs_team_idx").on(table.teamId),
     index("jobs_customer_idx").on(table.customerId),
     index("jobs_status_idx").on(table.status),
     index("jobs_invoice_idx").on(table.invoiceId),
     index("jobs_scheduled_date_idx").on(table.scheduledDate),
-  ]
+    index("jobs_contact_person_idx").on(table.contactPerson),
+    index("jobs_rego_idx").on(table.rego),
+    index("jobs_company_name_idx").on(table.companyName),
+    index("jobs_job_date_idx").on(table.jobDate),
+  ],
 );
-
 
 export const documents = pgTable(
   "documents",
@@ -732,7 +946,6 @@ export const documents = pgTable(
   ],
 );
 
-
 export const documentTagAssignments = pgTable(
   "document_tag_assignments",
   {
@@ -778,6 +991,56 @@ export const documentTagAssignments = pgTable(
   ],
 );
 
+export const apps = pgTable(
+  "apps",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    teamId: uuid("team_id").defaultRandom(),
+    config: jsonb(),
+    createdAt: timestamp("created_at", {
+      withTimezone: true,
+      mode: "string",
+    }).defaultNow(),
+    appId: text("app_id").notNull(),
+    createdBy: uuid("created_by").defaultRandom(),
+    settings: jsonb(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.createdBy],
+      foreignColumns: [users.id],
+      name: "apps_created_by_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.teamId],
+      foreignColumns: [teams.id],
+      name: "integrations_team_id_fkey",
+    }).onDelete("cascade"),
+    unique("unique_app_id_team_id").on(table.teamId, table.appId),
+    pgPolicy("Apps can be deleted by a member of the team", {
+      as: "permissive",
+      for: "delete",
+      to: ["public"],
+      using: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
+    }),
+    pgPolicy("Apps can be inserted by a member of the team", {
+      as: "permissive",
+      for: "insert",
+      to: ["public"],
+    }),
+    pgPolicy("Apps can be selected by a member of the team", {
+      as: "permissive",
+      for: "select",
+      to: ["public"],
+    }),
+    pgPolicy("Apps can be updated by a member of the team", {
+      as: "permissive",
+      for: "update",
+      to: ["public"],
+    }),
+  ],
+);
+
 export const documentTags = pgTable(
   "document_tags",
   {
@@ -804,7 +1067,6 @@ export const documentTags = pgTable(
     }),
   ],
 );
-
 
 export const shortLinks = pgTable(
   "short_links",
@@ -873,6 +1135,42 @@ export const shortLinks = pgTable(
     }),
   ],
 );
+
+export const reports = pgTable(
+  "reports",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+    linkId: text("link_id"),
+    teamId: uuid("team_id"),
+    shortLink: text("short_link"),
+    from: timestamp({ withTimezone: true, mode: "string" }),
+    to: timestamp({ withTimezone: true, mode: "string" }),
+    type: reportTypesEnum(),
+    expireAt: timestamp("expire_at", { withTimezone: true, mode: "string" }),
+    currency: text(),
+    createdBy: uuid("created_by"),
+  },
+  (table) => [
+    index("reports_team_id_idx").using(
+      "btree",
+      table.teamId.asc().nullsLast().op("uuid_ops"),
+    ),
+    foreignKey({
+      columns: [table.createdBy],
+      foreignColumns: [users.id],
+      name: "public_reports_created_by_fkey",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [table.teamId],
+      foreignColumns: [teams.id],
+      name: "reports_team_id_fkey",
+    }).onDelete("cascade"),
+  ],
+);
+
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   usersInAuth: one(usersInAuth, {
@@ -888,6 +1186,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   invoicesCreated: many(invoices),
   comments: many(invoiceComments),
   activities: many(activities),
+  shortLinks: many(shortLinks),
+  reports: many(reports),
   notificationSettings: many(notificationSettings),
   jobsCreated: many(jobs),
   documents: many(documents),
@@ -970,24 +1270,30 @@ export const invoicesRelations = relations(invoices, ({ one, many }) => ({
   jobs: many(jobs),
 }));
 
-export const invoiceTemplatesRelations = relations(invoiceTemplates, ({ one, many }) => ({
-  team: one(teams, {
-    fields: [invoiceTemplates.teamId],
-    references: [teams.id],
+export const invoiceTemplatesRelations = relations(
+  invoiceTemplates,
+  ({ one, many }) => ({
+    team: one(teams, {
+      fields: [invoiceTemplates.teamId],
+      references: [teams.id],
+    }),
+    invoices: many(invoices),
   }),
-  invoices: many(invoices),
-}));
+);
 
-export const invoiceCommentsRelations = relations(invoiceComments, ({ one }) => ({
-  invoice: one(invoices, {
-    fields: [invoiceComments.invoiceId],
-    references: [invoices.id],
+export const invoiceCommentsRelations = relations(
+  invoiceComments,
+  ({ one }) => ({
+    invoice: one(invoices, {
+      fields: [invoiceComments.invoiceId],
+      references: [invoices.id],
+    }),
+    user: one(users, {
+      fields: [invoiceComments.userId],
+      references: [users.id],
+    }),
   }),
-  user: one(users, {
-    fields: [invoiceComments.userId],
-    references: [users.id],
-  }),
-}));
+);
 
 export const paymentsRelations = relations(payments, ({ one }) => ({
   invoice: one(invoices, {

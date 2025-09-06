@@ -5,43 +5,34 @@ export async function getApiKeysByTeam(db: Database, teamId: string) {
 }
 
 export async function upsertApiKey(
-  db: Database, 
-  params: { teamId: string; userId: string; name: string; id?: string }
+  db: Database,
+  params: { teamId: string; userId: string; name: string; id?: string },
 ) {
-  return { 
-    data: null, 
-    key: null, 
-    keyHash: null 
+  return {
+    data: null,
+    key: null,
+    keyHash: null,
   };
 }
 
 export async function deleteApiKey(
   db: Database,
-  params: { teamId: string; id: string }
+  params: { teamId: string; id: string },
 ) {
   return null;
 }
 
-export async function validateAccessToken(
-  db: Database,
-  token: string
-) {
+export async function validateAccessToken(db: Database, token: string) {
   // Stub implementation - always return null (no valid token)
   return null;
 }
 
-export async function updateApiKeyLastUsedAt(
-  db: Database,
-  id: string
-) {
+export async function updateApiKeyLastUsedAt(db: Database, id: string) {
   // Stub implementation
   return null;
 }
 
-export async function getApiKeyByToken(
-  db: Database,
-  token: string
-) {
+export async function getApiKeyByToken(db: Database, token: string) {
   // Stub implementation
   return null;
 }

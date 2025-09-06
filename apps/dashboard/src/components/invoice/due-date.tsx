@@ -11,7 +11,7 @@ import { LabelInput } from "./label-input";
 export function DueDate() {
   const { setValue, watch } = useFormContext();
   const dueDate = watch("dueDate");
-  const dateFormat = watch("template.dateFormat");
+  const dateFormat = watch("template.dateFormat") || "MMM dd, yyyy";
 
   const [isOpen, setIsOpen] = useState(false);
 

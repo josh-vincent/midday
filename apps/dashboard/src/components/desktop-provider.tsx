@@ -15,7 +15,7 @@ export function DesktopProvider() {
   const pathname = usePathname();
   const isDesktopApp = () => false;
   const getCurrentWindow = () => ({ label: "main" });
-  const invoke = ( command: string ) => {};
+  const invoke = (command: string) => {};
   const listenForDeepLinks = () => {};
 
   useEffect(() => {

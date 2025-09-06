@@ -9,15 +9,10 @@ export const updateUserSchema = z.object({
     description: "Email address of the user",
     example: "jane.doe@acme.com",
   }),
-  avatarUrl: z
-    .string()
-    .url()
-    .optional()
-    .openapi({
-      description:
-        "URL to the user's avatar image",
-      example: "https://cdn.midday.ai/avatars/jane-doe.jpg",
-    }),
+  avatarUrl: z.string().url().optional().openapi({
+    description: "URL to the user's avatar image",
+    example: "https://cdn.midday.ai/avatars/jane-doe.jpg",
+  }),
   locale: z.string().optional().openapi({
     description:
       "User's preferred locale for internationalization (language and region)",

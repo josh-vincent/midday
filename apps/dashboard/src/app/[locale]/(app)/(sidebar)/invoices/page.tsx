@@ -11,7 +11,7 @@ import { InvoicesPaid } from "@/components/invoices-paid";
 import { DataTable } from "@/components/tables/invoices/data-table";
 import { InvoiceSkeleton } from "@/components/tables/invoices/skeleton";
 import { loadInvoiceFilterParams } from "@/hooks/use-invoice-filter-params";
-import { loadSortParams } from "@/hooks/use-sort-params";
+import { loadSortParams } from "@/hooks/use-sort-params.server";
 import { batchPrefetch, trpc } from "@/trpc/server";
 import { getInitialInvoicesColumnVisibility } from "@/utils/columns";
 import type { Metadata } from "next";
@@ -20,7 +20,7 @@ import type { SearchParams } from "nuqs";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Invoices | Midday",
+  title: "Invoices | ToCLD",
 };
 
 type Props = {

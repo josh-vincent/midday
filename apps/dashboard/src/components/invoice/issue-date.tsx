@@ -11,7 +11,7 @@ import { LabelInput } from "./label-input";
 export function IssueDate() {
   const { setValue, watch } = useFormContext();
   const issueDate = watch("issueDate");
-  const dateFormat = watch("template.dateFormat");
+  const dateFormat = watch("template.dateFormat") || "MMM dd, yyyy";
   const [isOpen, setIsOpen] = useState(false);
 
   const trpc = useTRPC();

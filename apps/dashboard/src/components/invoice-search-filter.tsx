@@ -98,23 +98,25 @@ export function InvoiceSearchFilter() {
       );
 
       // Since we're no longer streaming, we can directly use the object
-      const finalObject = object ? {
-        statuses: Array.isArray(object?.statuses)
-          ? object?.statuses
-          : object?.statuses
-            ? [object.statuses]
-            : null,
-        customers:
-          object?.customers?.map(
-            (name: string) =>
-              customersData?.data?.find(
-                (customer) => customer.name === name,
-              )?.id,
-          ) ?? null,
-        q: object?.name ?? null,
-        start: object?.start ?? null,
-        end: object?.end ?? null,
-      } : {};
+      const finalObject = object
+        ? {
+            statuses: Array.isArray(object?.statuses)
+              ? object?.statuses
+              : object?.statuses
+                ? [object.statuses]
+                : null,
+            customers:
+              object?.customers?.map(
+                (name: string) =>
+                  customersData?.data?.find(
+                    (customer) => customer.name === name,
+                  )?.id,
+              ) ?? null,
+            q: object?.name ?? null,
+            start: object?.start ?? null,
+            end: object?.end ?? null,
+          }
+        : {};
 
       setFilter({
         q: null,

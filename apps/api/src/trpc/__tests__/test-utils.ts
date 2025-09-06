@@ -1,8 +1,9 @@
 import { createTRPCContext } from "@api/trpc/init";
 import { appRouter } from "@api/trpc/routers/_app";
+import type { Session } from "@api/utils/auth";
 import type { Database } from "@midday/db/client";
 import { connectDb } from "@midday/db/client";
-import type { Session } from "@api/utils/auth";
+import { sql } from "drizzle-orm";
 import type { Context } from "hono";
 
 export const mockSession: Session = {
@@ -35,7 +36,7 @@ export const mockContext = (overrides?: Partial<any>) => {
 
 export const createMockTRPCContext = async (overrides?: Partial<any>) => {
   const db = await connectDb();
-  
+
   return {
     session: mockSession,
     supabase: {} as any,
@@ -56,30 +57,32 @@ export const createTestCaller = async (ctx?: Partial<any>) => {
 };
 
 export const cleanupTestData = async (db: Database, teamId: string) => {
-  await db.execute(`DELETE FROM invoices WHERE team_id = $1`, [teamId]);
-  await db.execute(`DELETE FROM customers WHERE team_id = $1`, [teamId]);
-  await db.execute(`DELETE FROM invoice_templates WHERE team_id = $1`, [teamId]);
-  await db.execute(`DELETE FROM team_members WHERE team_id = $1`, [teamId]);
-  await db.execute(`DELETE FROM teams WHERE id = $1`, [teamId]);
+  await db.execute(sql`DELETE FROM invoices WHERE team_id = ${teamId}`);
+  await db.execute(sql`DELETE FROM customers WHERE team_id = ${teamId}`);
+  await db.execute(
+    sql`DELETE FROM invoice_templates WHERE team_id = ${teamId}`,
+  );
+  await db.execute(sql`DELETE FROM users_on_team WHERE team_id = ${teamId}`);
+  await db.execute(sql`DELETE FROM teams WHERE id = ${teamId}`);
 };
 
-export const createTestTeam = async (db: Database, teamId: string = "test-team-id") => {
-  await db.execute(`
+export const createTestTeam = async (db: Database, teamId = "test-team-id") => {
+  await db.execute(sql`
     INSERT INTO teams (id, name, base_currency)
-    VALUES ($1, $2, $3)
+    VALUES (${teamId}, ${"Test Team"}, ${"USD"})
     ON CONFLICT (id) DO NOTHING
-  `, [teamId, "Test Team", "USD"]);
-  
+  `);
+
   return teamId;
 };
 
-export const createTestUser = async (db: Database, userId: string = "test-user-id") => {
-  await db.execute(`
+export const createTestUser = async (db: Database, userId = "test-user-id") => {
+  await db.execute(sql`
     INSERT INTO users (id, email, full_name)
-    VALUES ($1, $2, $3)
+    VALUES (${userId}, ${"test@example.com"}, ${"Test User"})
     ON CONFLICT (id) DO NOTHING
-  `, [userId, "test@example.com", "Test User"]);
-  
+  `);
+
   return userId;
 };
 
@@ -87,56 +90,61 @@ export const createTestTeamMember = async (
   db: Database,
   teamId: string,
   userId: string,
-  role: string = "owner"
+  role = "owner",
 ) => {
-  await db.execute(`
-    INSERT INTO team_members (team_id, user_id, role)
-    VALUES ($1, $2, $3)
-    ON CONFLICT (team_id, user_id) DO NOTHING
-  `, [teamId, userId, role]);
+  // Check if member already exists
+  const existing = await db.execute(sql`
+    SELECT 1 FROM users_on_team 
+    WHERE team_id = ${teamId} AND user_id = ${userId}
+  `);
+
+  if (existing.length === 0) {
+    await db.execute(sql`
+      INSERT INTO users_on_team (team_id, user_id, role)
+      VALUES (${teamId}, ${userId}, ${role})
+    `);
+  }
 };
 
 export const createTestCustomer = async (
   db: Database,
   teamId: string,
-  customerId: string = "test-customer-id"
+  customerId = "test-customer-id",
 ) => {
-  await db.execute(`
-    INSERT INTO customers (id, team_id, name, email, user_id)
-    VALUES ($1, $2, $3, $4, $5)
+  const token = `cust_${customerId.replace(/-/g, "")}`;
+  await db.execute(sql`
+    INSERT INTO customers (id, team_id, name, email, token)
+    VALUES (${customerId}, ${teamId}, ${"Test Customer"}, ${"customer@example.com"}, ${token})
     ON CONFLICT (id) DO NOTHING
-  `, [customerId, teamId, "Test Customer", "customer@example.com", "test-user-id"]);
-  
+  `);
+
   return customerId;
 };
 
 export const createTestInvoice = async (
   db: Database,
   teamId: string,
-  invoiceId: string = "test-invoice-id"
+  invoiceId = "test-invoice-id",
 ) => {
-  await db.execute(`
+  const lineItems = JSON.stringify([
+    { name: "Test Item", quantity: 1, price: 100, vat: 0 },
+  ]);
+  const issueDate = new Date().toISOString();
+  const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  await db.execute(sql`
     INSERT INTO invoices (
       id, team_id, user_id, customer_id, customer_name,
       invoice_number, status, currency, amount,
       line_items, issue_date, due_date
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    VALUES (
+      ${invoiceId}, ${teamId}, ${"test-user-id"}, ${"test-customer-id"}, ${"Test Customer"},
+      ${"INV-001"}, ${"draft"}, ${"USD"}, ${100.0},
+      ${lineItems}::jsonb, ${issueDate}, ${dueDate}
+    )
     ON CONFLICT (id) DO NOTHING
-  `, [
-    invoiceId,
-    teamId,
-    "test-user-id",
-    "test-customer-id",
-    "Test Customer",
-    "INV-001",
-    "draft",
-    "USD",
-    100.00,
-    JSON.stringify([{ name: "Test Item", quantity: 1, price: 100, vat: 0 }]),
-    new Date().toISOString(),
-    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-  ]);
-  
+  `);
+
   return invoiceId;
 };

@@ -3,7 +3,7 @@ import { teams, users, usersOnTeam } from "@db/schema";
 import { eq, inArray, sql } from "drizzle-orm";
 
 export const getUserById = async (db: Database, id: string) => {
-  const [result] = await db
+  const [userRow] = await db
     .select({
       id: users.id,
       fullName: users.fullName,
@@ -16,21 +16,35 @@ export const getUserById = async (db: Database, id: string) => {
       teamId: users.teamId,
       createdAt: users.createdAt,
       updatedAt: users.updatedAt,
-      team: {
+    })
+    .from(users)
+    .where(eq(users.id, id))
+    .limit(1);
+
+  if (!userRow) {
+    return null;
+  }
+
+  // Fetch team data if user has a teamId
+  let teamData = null;
+  if (userRow.teamId) {
+    const [team] = await db
+      .select({
         id: teams.id,
         name: teams.name,
         logoUrl: teams.logoUrl,
         plan: teams.plan,
         inboxId: teams.inboxId,
         createdAt: teams.createdAt,
-        countryCode: teams.countryCode
-      },
-    })
-    .from(users)
-    .leftJoin(teams, eq(users.teamId, teams.id))
-    .where(eq(users.id, id))
-    .limit(1);
-    
+        countryCode: teams.countryCode,
+      })
+      .from(teams)
+      .where(eq(teams.id, userRow.teamId))
+      .limit(1);
+
+    teamData = team || null;
+  }
+
   // Also fetch user's teams from usersOnTeam
   const userTeams = await db
     .select({
@@ -40,14 +54,11 @@ export const getUserById = async (db: Database, id: string) => {
     .from(usersOnTeam)
     .where(eq(usersOnTeam.userId, id));
 
-  if (result) {
-    return {
-      ...result,
-      usersOnTeams: userTeams,
-    };
-  }
-
-  return null;
+  return {
+    ...userRow,
+    team: teamData,
+    usersOnTeams: userTeams,
+  };
 };
 
 export type UpdateUserParams = {

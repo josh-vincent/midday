@@ -18,7 +18,7 @@ export function useSyncStatus({
   const [status, setStatus] = useState<
     "FAILED" | "SYNCING" | "COMPLETED" | null
   >(null);
-  
+
   // Disabled - trigger.dev
   // const { run, error } = useRealtimeRun(runId, {
   //   enabled: !!runId && !!accessToken,

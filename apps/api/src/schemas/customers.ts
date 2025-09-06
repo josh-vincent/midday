@@ -66,13 +66,13 @@ export const customerResponseSchema = z.object({
     description: "Name of the customer or organization",
     example: "Acme Corporation",
   }),
-  email: z.string().email().openapi({
+  email: z.string().email().nullable().openapi({
     description: "Primary email address of the customer",
     example: "contact@acme.com",
   }),
   billingEmail: z.string().email().nullable().openapi({
     description: "Billing email address of the customer",
-    example: "finance@acme.com",
+    example: "billing@acme.com",
   }),
   phone: z.string().nullable().openapi({
     description: "Primary phone number of the customer",
@@ -82,22 +82,16 @@ export const customerResponseSchema = z.object({
     description: "Website URL of the customer",
     example: "https://acme.com",
   }),
-  createdAt: z.string().openapi({
-    description:
-      "Date and time when the customer was created in ISO 8601 format",
-    example: "2024-05-01T12:34:56.789Z",
-  }),
-  country: z.string().nullable().openapi({
-    description: "Country name where the customer is located",
-    example: "United States",
+  contact: z.string().nullable().openapi({
+    description: "Primary contact person's name at the customer organization",
+    example: "John Smith",
   }),
   addressLine1: z.string().nullable().openapi({
     description: "First line of the customer's address",
     example: "123 Main Street",
   }),
   addressLine2: z.string().nullable().openapi({
-    description:
-      "Second line of the customer's address (suite, apartment, etc.)",
+    description: "Second line of the customer's address",
     example: "Suite 400",
   }),
   city: z.string().nullable().openapi({
@@ -108,60 +102,56 @@ export const customerResponseSchema = z.object({
     description: "State or province where the customer is located",
     example: "California",
   }),
-  zip: z.string().nullable().openapi({
+  country: z.string().nullable().openapi({
+    description: "Country name where the customer is located",
+    example: "United States",
+  }),
+  countryCode: z.string().nullable().openapi({
+    description: "ISO country code",
+    example: "AU",
+  }),
+  postalCode: z.string().nullable().openapi({
     description: "ZIP or postal code of the customer's address",
     example: "94105",
+  }),
+  taxNumber: z.string().nullable().openapi({
+    description: "Tax identification number of the customer",
+    example: "US123456789",
+  }),
+  abn: z.string().nullable().openapi({
+    description: "Australian Business Number",
+    example: "12345678901",
+  }),
+  currency: z.string().nullable().openapi({
+    description: "Preferred currency for the customer",
+    example: "AUD",
+  }),
+  token: z.string().openapi({
+    description: "Customer access token",
+    example: "cust_token_abc123",
   }),
   note: z.string().nullable().openapi({
     description: "Internal notes about the customer for team reference",
     example: "Preferred contact method is email. Large enterprise client.",
   }),
-  vatNumber: z.string().nullable().openapi({
-    description: "VAT (Value Added Tax) number of the customer",
-    example: "US123456789",
-  }),
-  countryCode: z.string().nullable().openapi({
-    description: "Country code in ISO 3166-1 alpha-2 format",
-    example: "US",
-  }),
-  token: z.string().openapi({
-    description:
-      "Unique token for the customer (used for internal identification)",
-    example: "cus_abc123xyz789",
-  }),
-  contact: z.string().nullable().openapi({
-    description: "Primary contact person's name at the customer organization",
-    example: "John Smith",
-  }),
-  invoiceCount: z.number().openapi({
-    description: "Total number of invoices created for this customer",
-    example: 12,
-  }),
-  projectCount: z.number().openapi({
-    description: "Total number of projects associated with this customer",
-    example: 3,
-  }),
   tags: z
-    .array(
-      z.object({
-        id: z.string().uuid().openapi({
-          description: "Unique identifier of the tag",
-          example: "e7a9c1a2-4c2a-4e7a-9c1a-2b7c1e24c2a4",
-        }),
-        name: z.string().openapi({
-          description: "Display name of the tag",
-          example: "VIP",
-        }),
-      }),
-    )
+    .any()
+    .nullable()
     .openapi({
       description:
         "Array of tags associated with the customer for categorization",
-      example: [
-        { id: "e7a9c1a2-4c2a-4e7a-9c1a-2b7c1e24c2a4", name: "VIP" },
-        { id: "f1b2c3d4-5678-4e7a-9c1a-2b7c1e24c2a4", name: "Enterprise" },
-      ],
+      example: ["VIP", "Enterprise"],
     }),
+  createdAt: z.string().openapi({
+    description:
+      "Date and time when the customer was created in ISO 8601 format",
+    example: "2024-05-01T12:34:56.789Z",
+  }),
+  updatedAt: z.string().openapi({
+    description:
+      "Date and time when the customer was last updated in ISO 8601 format",
+    example: "2024-05-01T12:34:56.789Z",
+  }),
 });
 
 export const customersResponseSchema = z.object({
@@ -223,17 +213,25 @@ export const upsertCustomerSchema = z.object({
     description: "Name of the customer or organization",
     example: "Acme Corporation",
   }),
-  email: z.string().email().openapi({
+  email: z.string().email().nullable().optional().openapi({
     description: "Primary email address of the customer",
     example: "contact@acme.com",
   }),
   billingEmail: z.string().email().nullable().optional().openapi({
     description: "Billing email address of the customer",
-    example: "finance@acme.com",
+    example: "billing@acme.com",
   }),
-  country: z.string().nullable().optional().openapi({
-    description: "Country name where the customer is located",
-    example: "United States",
+  phone: z.string().nullable().optional().openapi({
+    description: "Primary phone number of the customer",
+    example: "+1-555-123-4567",
+  }),
+  website: z.string().nullable().optional().openapi({
+    description: "Website URL of the customer",
+    example: "https://acme.com",
+  }),
+  contact: z.string().nullable().optional().openapi({
+    description: "Primary contact person's name at the customer organization",
+    example: "John Smith",
   }),
   addressLine1: z.string().nullable().optional().openapi({
     description: "First line of the customer's address",
@@ -252,54 +250,41 @@ export const upsertCustomerSchema = z.object({
     description: "State or province where the customer is located",
     example: "California",
   }),
+  country: z.string().nullable().optional().openapi({
+    description: "Country name where the customer is located",
+    example: "United States",
+  }),
+  countryCode: z.string().nullable().optional().openapi({
+    description: "ISO country code",
+    example: "AU",
+  }),
   zip: z.string().nullable().optional().openapi({
     description: "ZIP or postal code of the customer's address",
     example: "94105",
-  }),
-  phone: z.string().nullable().optional().openapi({
-    description: "Primary phone number of the customer",
-    example: "+1-555-123-4567",
-  }),
-  website: z.string().nullable().optional().openapi({
-    description: "Website URL of the customer",
-    example: "https://acme.com",
-  }),
-  note: z.string().nullable().optional().openapi({
-    description: "Internal notes about the customer for team reference",
-    example: "Preferred contact method is email. Large enterprise client.",
   }),
   vatNumber: z.string().nullable().optional().openapi({
     description: "VAT (Value Added Tax) number of the customer",
     example: "US123456789",
   }),
-  countryCode: z.string().nullable().optional().openapi({
-    description: "Country code in ISO 3166-1 alpha-2 format",
-    example: "US",
+  abn: z.string().nullable().optional().openapi({
+    description: "Australian Business Number",
+    example: "12345678901",
   }),
-  contact: z.string().nullable().optional().openapi({
-    description: "Primary contact person's name at the customer organization",
-    example: "John Smith",
+  currency: z.string().nullable().optional().openapi({
+    description: "Preferred currency for the customer",
+    example: "AUD",
+  }),
+  note: z.string().nullable().optional().openapi({
+    description: "Internal notes about the customer for team reference",
+    example: "Preferred contact method is email. Large enterprise client.",
   }),
   tags: z
-    .array(
-      z.object({
-        id: z.string().uuid().openapi({
-          description: "Unique identifier of the tag",
-          example: "e7a9c1a2-4c2a-4e7a-9c1a-2b7c1e24c2a4",
-        }),
-        name: z.string().openapi({
-          description: "Display name of the tag",
-          example: "VIP",
-        }),
-      }),
-    )
+    .any()
+    .nullable()
     .optional()
     .openapi({
       description:
         "Array of tags to associate with the customer for categorization",
-      example: [
-        { id: "e7a9c1a2-4c2a-4e7a-9c1a-2b7c1e24c2a4", name: "VIP" },
-        { id: "f1b2c3d4-5678-4e7a-9c1a-2b7c1e24c2a4", name: "Enterprise" },
-      ],
+      example: ["VIP", "Enterprise"],
     }),
 });

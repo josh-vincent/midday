@@ -4,7 +4,13 @@ export interface ImportBatch {
   teamId: string;
   userId: string;
   filename: string;
-  status: 'pending' | 'validating' | 'validated' | 'processing' | 'processed' | 'failed';
+  status:
+    | "pending"
+    | "validating"
+    | "validated"
+    | "processing"
+    | "processed"
+    | "failed";
   totalRows?: number;
   validRows?: number;
   errorRows?: number;
@@ -22,7 +28,7 @@ export interface ImportRow {
   parsedData?: ParsedImportData;
   validationErrors?: ValidationError[];
   invoiceId?: string;
-  status: 'valid' | 'error' | 'duplicate' | 'processed';
+  status: "valid" | "error" | "duplicate" | "processed";
   createdAt: string;
 }
 
@@ -30,12 +36,12 @@ export interface ParsedImportData {
   // Customer fields
   customerName?: string;
   customerId?: string;
-  
+
   // Invoice fields
   invoiceNumber?: string;
   invoiceDate?: string;
   dueDate?: string;
-  
+
   // Line item fields
   ticketNumber?: string;
   truckRego?: string;
@@ -53,7 +59,7 @@ export interface ParsedImportData {
   rate?: number;
   epaLevyRate?: number;
   amount?: number;
-  
+
   // Additional fields
   notes?: string;
 }
@@ -79,24 +85,24 @@ export interface MappingTemplate {
 
 export interface ColumnMapping {
   sourceColumn: string; // CSV column name
-  targetField: string;  // Database field name
-  dataType: 'string' | 'number' | 'date' | 'boolean';
-  format?: string;      // Date format, number format, etc.
-  transform?: string;   // Transformation function name
+  targetField: string; // Database field name
+  dataType: "string" | "number" | "date" | "boolean";
+  format?: string; // Date format, number format, etc.
+  transform?: string; // Transformation function name
   required?: boolean;
 }
 
 export interface ValidationRule {
   field: string;
-  rule: 'required' | 'unique' | 'min' | 'max' | 'regex' | 'custom';
+  rule: "required" | "unique" | "min" | "max" | "regex" | "custom";
   value?: any;
   message?: string;
 }
 
 export interface GroupingRule {
   field: string;
-  groupBy: 'customer' | 'po' | 'week' | 'month' | 'site';
-  aggregation?: 'sum' | 'count' | 'first' | 'last';
+  groupBy: "customer" | "po" | "week" | "month" | "site";
+  aggregation?: "sum" | "count" | "first" | "last";
 }
 
 // Payment types
@@ -106,7 +112,7 @@ export interface Payment {
   amount: number;
   currency: string;
   paymentDate: string;
-  paymentMethod: 'bank_transfer' | 'credit_card' | 'cash' | 'check' | 'other';
+  paymentMethod: "bank_transfer" | "credit_card" | "cash" | "check" | "other";
   reference?: string;
   notes?: string;
   createdBy: string;
@@ -138,17 +144,17 @@ export interface ReminderPolicy {
 
 export interface Reminder {
   daysOffset: number; // Negative for before due date, positive for after
-  channel: 'email' | 'sms';
+  channel: "email" | "sms";
   template: string;
   enabled: boolean;
 }
 
 export interface ScheduledJob {
   id: string;
-  type: 'send_invoice' | 'send_reminder' | 'process_import';
+  type: "send_invoice" | "send_reminder" | "process_import";
   payload: any;
   scheduledFor: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: "pending" | "processing" | "completed" | "failed";
   attempts: number;
   lastError?: string;
   completedAt?: string;
@@ -161,7 +167,7 @@ export interface EmailDelivery {
   invoiceId: string;
   recipientEmail: string;
   type: string; // 'invoice', 'reminder_1', 'reminder_2', etc
-  status: 'sent' | 'delivered' | 'opened' | 'bounced' | 'failed';
+  status: "sent" | "delivered" | "opened" | "bounced" | "failed";
   sentAt: string;
   deliveredAt?: string;
   openedAt?: string;
@@ -186,7 +192,7 @@ export interface Attachment {
 export interface AttachmentMetadata {
   lineItemIndex?: number;
   ticketNumber?: string;
-  type?: 'docket' | 'photo' | 'document';
+  type?: "docket" | "photo" | "document";
   description?: string;
 }
 
@@ -194,7 +200,7 @@ export interface AttachmentMetadata {
 export interface AccountingConnection {
   id: string;
   teamId: string;
-  provider: 'xero' | 'quickbooks' | 'myob';
+  provider: "xero" | "quickbooks" | "myob";
   accessToken?: string;
   refreshToken?: string;
   expiresAt?: string;
@@ -208,7 +214,7 @@ export interface AccountingConnection {
 export interface AccountingLink {
   id: string;
   teamId: string;
-  entityType: 'invoice' | 'customer' | 'payment';
+  entityType: "invoice" | "customer" | "payment";
   entityId: string;
   provider: string;
   externalId: string;
@@ -233,42 +239,48 @@ export interface AuditLogEntry {
 
 // Material types for dirt industry
 export const MATERIAL_TYPES = [
-  'Clean Fill',
-  'Virgin Excavated Natural Material (VENM)',
-  'Excavated Natural Material (ENM)',
-  'Contaminated Soil',
-  'Asbestos Contaminated',
-  'General Solid Waste',
-  'Construction & Demolition Waste',
-  'Mixed Waste',
-  'Concrete',
-  'Asphalt',
-  'Rock',
-  'Sand',
-  'Clay',
-  'Topsoil',
+  "Clean Fill",
+  "Virgin Excavated Natural Material (VENM)",
+  "Excavated Natural Material (ENM)",
+  "Contaminated Soil",
+  "Asbestos Contaminated",
+  "General Solid Waste",
+  "Construction & Demolition Waste",
+  "Mixed Waste",
+  "Concrete",
+  "Asphalt",
+  "Rock",
+  "Sand",
+  "Clay",
+  "Topsoil",
 ] as const;
 
-export type MaterialType = typeof MATERIAL_TYPES[number];
+export type MaterialType = (typeof MATERIAL_TYPES)[number];
 
 // EPA levy rates (example - should be configurable)
 export const EPA_LEVY_RATES: Record<string, number> = {
-  'Clean Fill': 0,
-  'Virgin Excavated Natural Material (VENM)': 0,
-  'Excavated Natural Material (ENM)': 15.50,
-  'Contaminated Soil': 146.70,
-  'Asbestos Contaminated': 146.70,
-  'General Solid Waste': 146.70,
-  'Construction & Demolition Waste': 146.70,
-  'Mixed Waste': 146.70,
+  "Clean Fill": 0,
+  "Virgin Excavated Natural Material (VENM)": 0,
+  "Excavated Natural Material (ENM)": 15.5,
+  "Contaminated Soil": 146.7,
+  "Asbestos Contaminated": 146.7,
+  "General Solid Waste": 146.7,
+  "Construction & Demolition Waste": 146.7,
+  "Mixed Waste": 146.7,
 };
 
 // Helper functions for calculations
-export function calculateNetTonnage(grossWeight: number, tareWeight: number): number {
+export function calculateNetTonnage(
+  grossWeight: number,
+  tareWeight: number,
+): number {
   return Math.max(0, grossWeight - tareWeight);
 }
 
-export function calculateEPALevy(tonnage: number, materialType: string): number {
+export function calculateEPALevy(
+  tonnage: number,
+  materialType: string,
+): number {
   const rate = EPA_LEVY_RATES[materialType] || 0;
   return tonnage * rate;
 }
@@ -276,7 +288,7 @@ export function calculateEPALevy(tonnage: number, materialType: string): number 
 export function calculateLineItemTotal(
   tonnage: number,
   ratePerTonne: number,
-  epaLevyAmount: number = 0
+  epaLevyAmount: number = 0,
 ): number {
-  return (tonnage * ratePerTonne) + epaLevyAmount;
+  return tonnage * ratePerTonne + epaLevyAmount;
 }

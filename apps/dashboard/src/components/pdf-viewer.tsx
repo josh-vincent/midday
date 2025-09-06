@@ -14,11 +14,11 @@ export function PdfViewer({ url, maxWidth }: PdfViewerProps) {
       <div className="flex flex-col items-center justify-center p-8 h-full">
         <Alert className="max-w-md">
           <AlertDescription>
-            PDF viewer is temporarily disabled. 
+            PDF viewer is temporarily disabled.
             <br />
-            <a 
-              href={url} 
-              target="_blank" 
+            <a
+              href={url}
+              target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 underline mt-2 inline-block"
             >

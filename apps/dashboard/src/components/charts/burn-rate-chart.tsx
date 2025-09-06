@@ -1,6 +1,6 @@
 "use client";
 
-import { useReportsParams } from "@/hooks/use-reports-params";
+import { useReportsParams } from "@/hooks/use-reports-params-client";
 import { useTRPC } from "@/trpc/client";
 import { calculateAvgBurnRate } from "@/utils/format";
 import { cn } from "@midday/ui/cn";

@@ -199,7 +199,10 @@ function LineItemRow({
         </Button>
       )}
 
-      <DescriptionWithJobSearch name={`lineItems.${index}.name`} index={index} />
+      <DescriptionWithJobSearch
+        name={`lineItems.${index}.name`}
+        index={index}
+      />
 
       <QuantityInput name={`lineItems.${index}.quantity`} />
 

@@ -8,6 +8,9 @@ export default {
   out: "./migrations",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_SESSION_POOLER! || "postgresql://postgres.ulncfblvuijlgniydjju:MikeTheDogSupabase!@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres",
+    url:
+      process.env.DATABASE_SESSION_POOLER! ||
+      "postgresql://postgres.ulncfblvuijlgniydjju:MikeTheDogSupabase!@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres",
   },
+  ç,
 } satisfies Config;

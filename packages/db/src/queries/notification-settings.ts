@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { Database } from "../client";
 import { notificationSettings, notificationTypeEnum } from "../schema";
 
-export type NotificationType = typeof notificationTypeEnum.enumValues[number];
+export type NotificationType = (typeof notificationTypeEnum.enumValues)[number];
 
 export interface NotificationSetting {
   id: string;
@@ -98,8 +98,8 @@ export async function deleteNotificationSetting(
       and(
         eq(notificationSettings.userId, params.userId),
         eq(notificationSettings.teamId, params.teamId),
-        eq(notificationSettings.type, params.type)
-      )
+        eq(notificationSettings.type, params.type),
+      ),
     )
     .returning();
 
@@ -117,8 +117,8 @@ export async function getUserNotificationSettings(
     .where(
       and(
         eq(notificationSettings.userId, userId),
-        eq(notificationSettings.teamId, teamId)
-      )
+        eq(notificationSettings.teamId, teamId),
+      ),
     );
 
   return settings as NotificationSetting[];
@@ -138,12 +138,16 @@ export async function initializeDefaultNotificationSettings(
     "payment_failed",
   ];
 
-  const existingSettings = await getUserNotificationSettings(db, userId, teamId);
-  const existingTypes = new Set(existingSettings.map(s => s.type));
+  const existingSettings = await getUserNotificationSettings(
+    db,
+    userId,
+    teamId,
+  );
+  const existingTypes = new Set(existingSettings.map((s) => s.type));
 
   const settingsToCreate = defaultTypes
-    .filter(type => !existingTypes.has(type))
-    .map(type => ({
+    .filter((type) => !existingTypes.has(type))
+    .map((type) => ({
       userId,
       teamId,
       type,
@@ -176,13 +180,13 @@ export async function updateNotificationSettings(
   }>,
 ) {
   const results = await Promise.all(
-    updates.map(update =>
+    updates.map((update) =>
       upsertNotificationSetting(db, {
         userId,
         teamId,
         ...update,
-      })
-    )
+      }),
+    ),
   );
 
   return results;

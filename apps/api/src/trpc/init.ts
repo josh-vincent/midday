@@ -89,6 +89,8 @@ export const protectedProcedure = t.procedure
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
 
+    // Some endpoints may require a team, they should check teamId themselves
+    // This allows for more flexible handling of team-less users
     return opts.next({
       ctx: {
         teamId,

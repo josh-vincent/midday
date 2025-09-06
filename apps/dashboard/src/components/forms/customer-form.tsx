@@ -40,22 +40,10 @@ const formSchema = z.object({
   name: z.string().min(2, {
     message: "Name must be at least 2 characters.",
   }),
-  email: z.string().email({
-    message: "Email is not valid.",
-  }),
-  billingEmail: z
-    .string()
-    .email({
-      message: "Email is not valid.",
-    })
-    .nullable()
-    .optional(),
+  email: z.string().optional(),
+  billingEmail: z.string().nullable().optional(),
   phone: z.string().optional(),
-  website: z
-    .string()
-
-    .optional()
-    .transform((url) => url?.replace(/^https?:\/\//, "")),
+  website: z.string().optional(),
   contact: z.string().optional(),
   addressLine1: z.string().optional(),
   addressLine2: z.string().optional(),
@@ -65,11 +53,12 @@ const formSchema = z.object({
   countryCode: z.string().optional(),
   zip: z.string().optional(),
   vatNumber: z.string().optional(),
+  abn: z.string().optional(),
   note: z.string().optional(),
   tags: z
     .array(
       z.object({
-        id: z.string().uuid(),
+        id: z.string(),
         value: z.string(),
       }),
     )
@@ -138,28 +127,30 @@ export function CustomerForm({ data }: Props) {
   );
 
   const form = useZodForm(formSchema, {
+    mode: "onChange",
     defaultValues: {
       id: data?.id,
-      name: name ?? data?.name ?? undefined,
-      email: data?.email ?? undefined,
+      name: name ?? data?.name ?? "",
+      email: data?.email ?? "",
       billingEmail: data?.billingEmail ?? null,
-      website: data?.website ?? undefined,
-      addressLine1: data?.addressLine1 ?? undefined,
-      addressLine2: data?.addressLine2 ?? undefined,
-      city: data?.city ?? undefined,
-      state: data?.state ?? undefined,
-      country: data?.country ?? undefined,
-      countryCode: data?.countryCode ?? undefined,
-      zip: data?.zip ?? undefined,
-      phone: data?.phone ?? undefined,
-      contact: data?.contact ?? undefined,
-      note: data?.note ?? undefined,
-      vatNumber: data?.vatNumber ?? undefined,
+      website: data?.website ?? "",
+      addressLine1: data?.addressLine1 ?? "",
+      addressLine2: data?.addressLine2 ?? "",
+      city: data?.city ?? "",
+      state: data?.state ?? "",
+      country: data?.country ?? "",
+      countryCode: data?.countryCode ?? "",
+      zip: data?.zip ?? "",
+      phone: data?.phone ?? "",
+      contact: data?.contact ?? "",
+      note: data?.note ?? "",
+      vatNumber: data?.vatNumber ?? "",
+      abn: data?.abn ?? "",
       tags:
         data?.tags?.map((tag) => ({
           id: tag?.id ?? "",
           value: tag?.name ?? "",
-        })) ?? undefined,
+        })) ?? [],
     },
   });
 
@@ -199,21 +190,30 @@ export function CustomerForm({ data }: Props) {
       phone: data.phone || null,
       zip: data.zip || null,
       vatNumber: data.vatNumber || null,
+      abn: data.abn || null,
       tags: data.tags?.length
         ? data.tags.map((tag) => ({
-            id: tag.id,
+            id: tag.id || tag.value, // Use value as id if id is empty
             name: tag.value,
           }))
         : undefined,
       countryCode: data.countryCode || null,
     };
 
+    console.log(
+      "Form data being sent:",
+      JSON.stringify(formattedData, null, 2),
+    );
     upsertCustomerMutation.mutate(formattedData);
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)}>
+      <form
+        onSubmit={form.handleSubmit(handleSubmit, (errors) => {
+          console.error("Form validation errors:", errors);
+        })}
+      >
         <div className="h-[calc(100vh-180px)] scrollbar-hide overflow-auto">
           <div>
             <Accordion
@@ -262,7 +262,7 @@ export function CustomerForm({ data }: Props) {
                               placeholder="acme@example.com"
                               type="email"
                               autoComplete="off"
-                              onBlur={handleEmailBlur}
+                              // onBlur={handleEmailBlur}
                             />
                           </FormControl>
                           <FormMessage />
@@ -495,13 +495,13 @@ export function CustomerForm({ data }: Props) {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-xs text-[#878787] font-normal">
-                              ZIP Code / Postal Code
+                              Postal Code
                             </FormLabel>
                             <FormControl>
                               <Input
                                 {...field}
                                 value={field.value ?? ""}
-                                placeholder="10001"
+                                placeholder="2000"
                                 autoComplete="off"
                               />
                             </FormControl>
@@ -516,7 +516,7 @@ export function CustomerForm({ data }: Props) {
                         htmlFor="tags"
                         className="mb-2 text-xs text-[#878787] font-normal block"
                       >
-                        Expense Tags
+                        Tags
                       </Label>
 
                       <SelectTags
@@ -556,18 +556,39 @@ export function CustomerForm({ data }: Props) {
                       />
 
                       <FormDescription className="mt-2">
-                        Tags help categorize and track customer expenses.
+                        Tags help categorize and track customers.
                       </FormDescription>
                     </div>
 
-                    <div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="abn"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs text-[#878787] font-normal">
+                              ABN
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                value={field.value ?? ""}
+                                placeholder="12 345 678 901"
+                                autoComplete="off"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
                       <FormField
                         control={form.control}
                         name="vatNumber"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-xs text-[#878787] font-normal">
-                              Tax ID / VAT Number
+                              Tax Number
                             </FormLabel>
                             <FormControl>
                               <VatNumberInput
@@ -621,9 +642,12 @@ export function CustomerForm({ data }: Props) {
 
             <SubmitButton
               isSubmitting={upsertCustomerMutation.isPending}
-              disabled={
-                upsertCustomerMutation.isPending || !form.formState.isDirty
-              }
+              disabled={upsertCustomerMutation.isPending}
+              onClick={() => {
+                console.log("Form errors:", form.formState.errors);
+                console.log("Form is valid:", form.formState.isValid);
+                console.log("Form values:", form.getValues());
+              }}
             >
               {isEdit ? "Update" : "Create"}
             </SubmitButton>
