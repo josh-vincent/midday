@@ -164,7 +164,8 @@ export function BarChart({ data, height = 290 }) {
                 key={`cell-${index.toString()}`}
                 className={cn(
                   "fill-[#41191A]",
-                  +entry.previous.value > 0 &&
+                  entry?.previous?.value &&
+                    +entry.previous.value > 0 &&
                     "dark:fill-[#323232] fill-[#C6C6C6]",
                 )}
               />
@@ -174,9 +175,10 @@ export function BarChart({ data, height = 290 }) {
           <Bar dataKey="current.value" barSize={16}>
             {data?.result?.map((entry, index) => (
               <Cell
-                key={`cell-${index.toString()}`}
+                key={`cell-${index?.toString()}`}
                 className={cn(
                   "fill-[#FF3638]",
+                  entry?.current?.value &&
                   +entry.current.value > 0 &&
                     "dark:fill-[#F5F5F3] fill-[#121212]",
                 )}

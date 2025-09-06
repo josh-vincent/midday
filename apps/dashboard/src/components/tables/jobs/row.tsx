@@ -2,7 +2,7 @@
 
 import { TableRow, TableCell } from "@midday/ui/table";
 import type { Row } from "@tanstack/react-table";
-import { useRouter } from "next/navigation";
+import { useJobParams } from "@/hooks/use-job-params";
 import type { Job } from "./columns";
 
 type Props = {
@@ -10,10 +10,19 @@ type Props = {
 };
 
 export function JobRow({ row }: Props) {
-  const router = useRouter();
+  const { setParams } = useJobParams();
 
-  const handleRowClick = () => {
-    router.push(`/jobs/${row.original.id}`);
+  const handleRowClick = (e: React.MouseEvent) => {
+    // Don't open details if clicking on checkbox or actions
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('[role="checkbox"]') ||
+      target.closest('[data-action-menu]') ||
+      target.closest('button')
+    ) {
+      return;
+    }
+    setParams({ jobId: row.original.id });
   };
 
   return (
@@ -22,7 +31,10 @@ export function JobRow({ row }: Props) {
       onClick={handleRowClick}
     >
       {row.getVisibleCells().map((cell) => (
-        <TableCell key={cell.id}>
+        <TableCell 
+          key={cell.id}
+          className={cell.column.id === 'select' ? 'w-[40px]' : ''}
+        >
           {cell.renderValue
             ? cell.column.columnDef.cell?.(cell.getContext())
             : null}

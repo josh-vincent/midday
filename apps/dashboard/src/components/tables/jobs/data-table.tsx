@@ -1,10 +1,12 @@
 "use client";
 
+import { JobsActions } from "@/components/jobs-actions";
 import { LoadMore } from "@/components/load-more";
 import { useJobFilterParams } from "@/hooks/use-job-filter-params";
 import { useSortParams } from "@/hooks/use-sort-params";
 import { useTableScroll } from "@/hooks/use-table-scroll";
 import { useUserQuery } from "@/hooks/use-user";
+import { useJobsStore } from "@/store/jobs";
 import { useTRPC } from "@/trpc/client";
 import { Table, TableBody } from "@midday/ui/table";
 import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
@@ -26,6 +28,7 @@ export function DataTable() {
   const { filter, hasFilters } = useJobFilterParams();
   const { ref, inView } = useInView();
   const { data: user } = useUserQuery();
+  const { rowSelection, setRowSelection, setJobs, jobs, resetRowSelection } = useJobsStore();
 
   const tableScroll = useTableScroll({
     useColumnWidths: true,
@@ -64,11 +67,24 @@ export function DataTable() {
     }) ?? [];
   }, [data]);
 
+  // Update store with current jobs data using memoization
+  const memoizedJobs = useMemo(() => tableData, [tableData]);
+  useEffect(() => {
+    setJobs(memoizedJobs);
+  }, [memoizedJobs, setJobs]);
+
   useEffect(() => {
     if (inView && hasNextPage) {
       fetchNextPage();
     }
   }, [inView, hasNextPage, fetchNextPage]);
+
+  // Clear selection when component unmounts to prevent state leakage
+  useEffect(() => {
+    return () => {
+      resetRowSelection();
+    };
+  }, [resetRowSelection]);
 
   const table = useReactTable({
     data: tableData,
@@ -76,10 +92,15 @@ export function DataTable() {
     columns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    meta: {
-      dateFormat: user?.dateFormat,
-      timeFormat: user?.timeFormat,
+    state: {
+      rowSelection,
     },
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection: true,
+    // meta: {
+    //   dateFormat: user?.dateFormat,
+    //   timeFormat: user?.timeFormat,
+    // },
   });
 
   if (hasFilters && !tableData?.length) {
@@ -97,7 +118,7 @@ export function DataTable() {
         className="overflow-x-auto overscroll-x-none md:border-l md:border-r border-border scrollbar-hide"
       >
         <Table>
-          <TableHeader table={table} tableScroll={tableScroll} />
+          <TableHeader table={table} tableScroll={tableScroll} jobs={jobs} />
 
           <TableBody className="border-l-0 border-r-0">
             {table.getRowModel().rows.map((row) => (

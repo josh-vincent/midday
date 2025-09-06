@@ -1,10 +1,11 @@
 import { ErrorFallback } from "@/components/error-fallback";
 import { JobsHeader } from "@/components/jobs-header";
+import { JobSheet } from "@/components/sheets/job-sheet";
 import { DataTable } from "@/components/tables/jobs/data-table";
 import { JobsSkeleton } from "@/components/tables/jobs/skeleton";
 import { loadJobFilterParams } from "@/hooks/use-job-filter-params.server";
 import { loadSortParams } from "@/hooks/use-sort-params.server";
-import { HydrateClient, batchPrefetch, trpc } from "@/trpc/server";
+import { HydrateClient, batchPrefetch, trpc, getQueryClient } from "@/trpc/server";
 import type { Metadata } from "next";
 import { ErrorBoundary } from "next/dist/client/components/error-boundary";
 import type { SearchParams } from "nuqs";
@@ -19,17 +20,19 @@ type Props = {
 };
 
 // Summary card component
-function JobsSummaryCards() {
-  // This would fetch from tRPC in a real implementation
+async function JobsSummaryCards() {
+  const queryClient = getQueryClient();
+  const summary = await queryClient.fetchQuery(trpc.job.summary.queryOptions());
+  
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
       <div className="border rounded-lg p-4">
         <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <h3 className="text-sm font-medium">Active Jobs</h3>
+          <h3 className="text-sm font-medium">Today's Jobs</h3>
         </div>
-        <div className="text-2xl font-bold">12</div>
+        <div className="text-2xl font-bold">{summary.today.total}</div>
         <p className="text-xs text-muted-foreground">
-          +2 from yesterday
+          {summary.today.completed} completed
         </p>
       </div>
       
@@ -37,9 +40,11 @@ function JobsSummaryCards() {
         <div className="flex flex-row items-center justify-between space-y-0 pb-2">
           <h3 className="text-sm font-medium">Pending Value</h3>
         </div>
-        <div className="text-2xl font-bold">$45,231</div>
+        <div className="text-2xl font-bold">
+          ${summary.pending.potentialRevenue.toLocaleString()}
+        </div>
         <p className="text-xs text-muted-foreground">
-          Across 8 jobs
+          Across {summary.pending.count} jobs
         </p>
       </div>
       
@@ -47,9 +52,9 @@ function JobsSummaryCards() {
         <div className="flex flex-row items-center justify-between space-y-0 pb-2">
           <h3 className="text-sm font-medium">This Week</h3>
         </div>
-        <div className="text-2xl font-bold">5</div>
+        <div className="text-2xl font-bold">{summary.week.jobCount}</div>
         <p className="text-xs text-muted-foreground">
-          Jobs completed
+          ${summary.week.revenue.toLocaleString()} revenue
         </p>
       </div>
       
@@ -57,9 +62,9 @@ function JobsSummaryCards() {
         <div className="flex flex-row items-center justify-between space-y-0 pb-2">
           <h3 className="text-sm font-medium">Monthly Volume</h3>
         </div>
-        <div className="text-2xl font-bold">324 m³</div>
+        <div className="text-2xl font-bold">{summary.month.volume} m³</div>
         <p className="text-xs text-muted-foreground">
-          +12% from last month
+          {summary.month.deliveries} deliveries
         </p>
       </div>
     </div>
@@ -96,6 +101,9 @@ export default async function JobsPage(props: Props) {
           </Suspense>
         </ErrorBoundary>
       </div>
+      
+      {/* Job Sheet for creating/editing jobs */}
+      <JobSheet />
     </HydrateClient>
   );
 }

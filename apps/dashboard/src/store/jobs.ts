@@ -1,30 +1,29 @@
+import type { RowSelectionState, Updater } from "@tanstack/react-table";
 import { create } from "zustand";
 
-interface Job {
+// Use the same Job type from columns
+export type Job = {
   id: string;
   jobNumber: string;
-  contactPerson?: string;
-  contactNumber?: string;
-  rego?: string;
-  loadNumber?: number;
-  companyName?: string;
-  addressSite?: string;
-  equipmentType?: string;
-  materialType?: string;
-  pricePerUnit?: number;
-  cubicMetreCapacity?: number;
-  jobDate?: string;
-  status: "pending" | "in_progress" | "completed" | "cancelled";
-  totalAmount?: number;
-  customerId: string;
-  customerName?: string;
+  jobDate: string | null;
+  companyName: string | null;
+  customerName?: string | null;
+  description: string | null;
+  status: "pending" | "in_progress" | "completed" | "cancelled" | "invoiced";
+  totalAmount: number | null;
+  currency: string;
+  teamId: string;
+  customerId: string | null;
+  volume: number | null;
+  weight: number | null;
   createdAt: string;
-  updatedAt?: string;
-}
+  updatedAt: string;
+};
 
 interface JobsState {
   rowSelection: Record<string, boolean>;
-  setRowSelection: (selection: Record<string, boolean>) => void;
+  setRowSelection: (updater: Updater<RowSelectionState>) => void;
+  resetRowSelection: () => void;
   columnVisibility: Record<string, boolean>;
   setColumnVisibility: (visibility: Record<string, boolean>) => void;
   filters: {
@@ -41,7 +40,14 @@ interface JobsState {
 
 export const useJobsStore = create<JobsState>((set) => ({
   rowSelection: {},
-  setRowSelection: (selection) => set({ rowSelection: selection }),
+  setRowSelection: (updater: Updater<RowSelectionState>) =>
+    set((state) => {
+      return {
+        rowSelection:
+          typeof updater === "function" ? updater(state.rowSelection) : updater,
+      };
+    }),
+  resetRowSelection: () => set({ rowSelection: {} }),
   columnVisibility: {
     jobDate: true,
     jobNumber: true,

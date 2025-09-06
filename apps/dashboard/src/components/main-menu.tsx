@@ -39,7 +39,7 @@ const items = [
       { path: "/jobs?status=pending", name: "Pending" },
       { path: "/jobs?status=in_progress", name: "In Progress" },
       { path: "/jobs?status=completed", name: "Completed" },
-      { path: "/jobs/new", name: "Create new" },
+      { path: "/jobs?createJob=true", name: "Create new" },
     ],
   },
   {

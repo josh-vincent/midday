@@ -132,8 +132,8 @@ export function JobsGroupedView({ jobs }: JobsGroupedViewProps) {
       JSON.stringify(selectedGroupData),
     );
 
-    // Navigate to invoice creation with bulk data
-    router.push("/invoices/new?bulk=true");
+    // Navigate to invoice page and open creation sheet with bulk data
+    router.push("/invoices?type=create&bulk=true");
   };
 
   const completedJobsOnly = (group: GroupedJobs) =>

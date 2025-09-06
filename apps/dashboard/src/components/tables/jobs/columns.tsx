@@ -1,6 +1,7 @@
 "use client";
 
 import { formatAmount } from "@/utils/format";
+import { Checkbox } from "@midday/ui/checkbox";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ActionsMenu } from "./actions-menu";
@@ -10,6 +11,7 @@ export type Job = {
   jobNumber: string;
   jobDate: string | null;
   companyName: string | null;
+  customerName?: string | null;
   description: string | null;
   status: "pending" | "in_progress" | "completed" | "cancelled" | "invoiced";
   totalAmount: number | null;
@@ -32,8 +34,43 @@ const statusColors = {
 
 export const columns: ColumnDef<Job>[] = [
   {
+    id: "select",
+    size: 40,
+    header: ({ table }) => (
+      <div className="flex items-center justify-center">
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      </div>
+    ),
+    cell: ({ row }) => {
+      return (
+        <div 
+          className="flex items-center justify-center"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+        >
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => {
+              row.toggleSelected(!!value);
+            }}
+            aria-label="Select row"
+          />
+        </div>
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
     accessorKey: "jobNumber",
     header: "Job #",
+    enableSorting: true,
     cell: ({ row }) => (
       <span className="font-medium">{row.getValue("jobNumber") || "-"}</span>
     ),
@@ -41,6 +78,7 @@ export const columns: ColumnDef<Job>[] = [
   {
     accessorKey: "jobDate",
     header: "Date",
+    enableSorting: true,
     cell: ({ row, table }) => {
       const date = row.getValue("jobDate") as string | null;
       const dateFormat = (table.options.meta as any)?.dateFormat || "MMM d, yyyy";
@@ -53,6 +91,7 @@ export const columns: ColumnDef<Job>[] = [
   {
     accessorKey: "companyName",
     header: "Company",
+    enableSorting: true,
     cell: ({ row }) => (
       <span className="truncate max-w-[200px]">
         {row.getValue("companyName") || "Unknown"}
@@ -74,6 +113,7 @@ export const columns: ColumnDef<Job>[] = [
   {
     accessorKey: "status",
     header: "Status",
+    enableSorting: true,
     cell: ({ row }) => {
       const status = row.getValue("status") as Job["status"];
       return (
@@ -90,6 +130,7 @@ export const columns: ColumnDef<Job>[] = [
   {
     accessorKey: "volume",
     header: "Volume",
+    enableSorting: true,
     cell: ({ row }) => {
       const volume = row.getValue("volume") as number | null;
       return volume ? `${volume} m³` : "-";
@@ -98,6 +139,7 @@ export const columns: ColumnDef<Job>[] = [
   {
     accessorKey: "weight",
     header: "Weight",
+    enableSorting: true,
     cell: ({ row }) => {
       const weight = row.getValue("weight") as number | null;
       return weight ? `${weight} kg` : "-";
@@ -106,6 +148,7 @@ export const columns: ColumnDef<Job>[] = [
   {
     accessorKey: "totalAmount",
     header: () => <div className="text-right">Amount</div>,
+    enableSorting: true,
     cell: ({ row }) => {
       const amount = row.getValue("totalAmount") as number | null;
       const currency = row.original.currency || "USD";

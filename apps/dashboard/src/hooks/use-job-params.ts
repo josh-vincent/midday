@@ -1,3 +1,5 @@
+"use client";
+
 import { parseAsBoolean, parseAsString, useQueryStates } from "nuqs";
 
 export function useJobParams() {
@@ -8,7 +10,7 @@ export function useJobParams() {
   });
 
   return {
-    ...params,
+    params,
     setParams,
   };
 }

@@ -20,6 +20,7 @@ import {
   Clock
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useJobParams } from "@/hooks/use-job-params";
 import type { Row } from "@tanstack/react-table";
 import type { Job } from "./columns";
 import { toast } from "@midday/ui/use-toast";
@@ -30,10 +31,11 @@ type Props = {
 
 export function ActionsMenu({ row }: Props) {
   const router = useRouter();
+  const { setParams } = useJobParams();
   const job = row.original;
 
   const handleEdit = () => {
-    router.push(`/jobs/${job.id}/edit`);
+    setParams({ jobId: job.id });
   };
 
   const handleDuplicate = () => {
@@ -53,7 +55,8 @@ export function ActionsMenu({ row }: Props) {
   };
 
   const handleConvertToInvoice = () => {
-    router.push(`/invoices/new?jobId=${job.id}`);
+    // Navigate to invoices page and open sheet with job data
+    router.push(`/invoices?type=create&jobId=${job.id}`);
   };
 
   const handleStatusChange = (status: Job["status"]) => {
@@ -64,7 +67,7 @@ export function ActionsMenu({ row }: Props) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" className="h-8 w-8 p-0">
+        <Button variant="ghost" className="h-8 w-8 p-0" data-action-menu>
           <span className="sr-only">Open menu</span>
           <MoreHorizontal className="h-4 w-4" />
         </Button>

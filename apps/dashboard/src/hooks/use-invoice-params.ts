@@ -5,6 +5,8 @@ const invoiceParamsSchema = {
   selectedCustomerId: parseAsString,
   type: parseAsStringEnum(["edit", "create", "details", "success"]),
   invoiceId: parseAsString,
+  jobId: parseAsString,
+  fromJobs: parseAsString,
 };
 
 export function useInvoiceParams() {

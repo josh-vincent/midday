@@ -1,8 +1,12 @@
+"use client";
+
 import { Button } from "@midday/ui/button";
 import { Plus, Search } from "lucide-react";
-import Link from "next/link";
+import { useJobParams } from "@/hooks/use-job-params";
 
 export function EmptyState() {
+  const { setParams } = useJobParams();
+  
   return (
     <div className="flex flex-col items-center justify-center h-[400px] text-center">
       <div className="rounded-full bg-muted p-4 mb-4">
@@ -12,11 +16,9 @@ export function EmptyState() {
       <p className="text-sm text-muted-foreground mb-4 max-w-sm">
         Get started by creating your first job. Track work, manage progress, and convert to invoices.
       </p>
-      <Button asChild>
-        <Link href="/jobs/new">
-          <Plus className="mr-2 h-4 w-4" />
-          Create Job
-        </Link>
+      <Button onClick={() => setParams({ createJob: true })}>
+        <Plus className="mr-2 h-4 w-4" />
+        Create Job
       </Button>
     </div>
   );

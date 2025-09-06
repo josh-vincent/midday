@@ -25,8 +25,8 @@ export function JobsChart({ disabled }: Props) {
 
   const { data } = useQuery({
     ...trpc.reports.jobs.queryOptions({
-      from: params.from,
-      to: params.to,
+      startDate: params.from,
+      endDate: params.to,
       currency: params.currency ?? undefined,
     }),
     placeholderData: (previousData) =>
@@ -75,7 +75,7 @@ export function JobsChart({ disabled }: Props) {
                   className="flex items-center space-x-1 text-[#606060] hover:text-primary transition-colors"
                 >
                   <span className="text-xs">View jobs</span>
-                  <Icons.ArrowUpRight className="h-3 w-3" />
+                  <Icons.Overview className="h-3 w-3" />
                 </Link>
               </TooltipTrigger>
               <TooltipContent className="text-xs px-2 py-1">

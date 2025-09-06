@@ -25,21 +25,21 @@ export function VolumeChart({ disabled }: Props) {
 
   const { data } = useQuery({
     ...trpc.reports.volume.queryOptions({
-      from: params.from,
-      to: params.to,
+      startDate: params.from,
+      endDate: params.to,
       currency: params.currency ?? undefined,
     }),
     placeholderData: (previousData) =>
       previousData ?? {
         summary: {
-          currency: "m³",
+          currency: null,
           currentTotal: 0,
           prevTotal: 0,
         },
         meta: {
           type: "volume",
           period: "monthly",
-          currency: "m³",
+          currency: null,
         },
         result: [],
       },
@@ -55,16 +55,19 @@ export function VolumeChart({ disabled }: Props) {
         <h1 className="text-4xl font-mono">
           <AnimatedNumber
             value={data?.summary?.currentTotal ?? 0}
-            currency={null}
+            currency={data?.summary?.currency ?? null}
             minimumFractionDigits={0}
             maximumFractionDigits={0}
           />
-          <span className="text-2xl text-[#606060] ml-2">m³</span>
+          <span className="text-2xl text-[#606060] ml-2">
+            {data?.summary?.currency ?? "m³"}
+          </span>
         </h1>
 
         <div className="text-sm text-[#606060] flex items-center space-x-2">
           <p className="text-sm text-[#606060]">
-            vs {data?.summary?.prevTotal ?? 0} m³ previous period
+            vs {data?.summary?.prevTotal ?? 0}{" "}
+            {data?.summary?.currency ?? "m³"} previous period
           </p>
 
           <TooltipProvider delayDuration={100}>
@@ -75,7 +78,7 @@ export function VolumeChart({ disabled }: Props) {
                   className="flex items-center space-x-1 text-[#606060] hover:text-primary transition-colors"
                 >
                   <span className="text-xs">View volume details</span>
-                  <Icons.ArrowUpRight className="h-3 w-3" />
+                  <Icons.Overview className="h-3 w-3" />
                 </Link>
               </TooltipTrigger>
               <TooltipContent className="text-xs px-2 py-1">

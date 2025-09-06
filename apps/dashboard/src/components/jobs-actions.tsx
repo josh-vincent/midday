@@ -3,7 +3,7 @@
 import { JobsCSVImporter } from "@/components/import/jobs-csv-importer";
 import { JobsColumnVisibility } from "@/components/jobs-column-visibility";
 import { OpenJobSheet } from "@/components/open-job-sheet";
-import { useJobsStore } from "@/store/jobs";
+import { useJobsStore, type Job } from "@/store/jobs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +30,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface JobsActionsProps {
-  jobs?: any[];
+  jobs?: Job[];
 }
 
 export function JobsActions({ jobs = [] }: JobsActionsProps) {
@@ -43,24 +43,25 @@ export function JobsActions({ jobs = [] }: JobsActionsProps) {
   const handleStatusUpdate = (status: string) => {
     // TODO: Implement status update mutation
     console.log("Update status to:", status, "for jobs:", jobIds);
-    setRowSelection({});
+    setRowSelection(() => ({}));
   };
 
   const handleAddToInvoice = () => {
     // Get selected jobs data
     const selectedJobs = jobs.filter((job) => jobIds.includes(job.id));
 
-    // Group by customer
+    // Group by customer, handling null customerIds
     const groupedByCustomer = selectedJobs.reduce(
       (acc, job) => {
-        if (!acc[job.customerId]) {
-          acc[job.customerId] = {
-            customerId: job.customerId,
-            customerName: job.customerName || job.companyName,
+        const customerId = job.customerId || 'no-customer';
+        if (!acc[customerId]) {
+          acc[customerId] = {
+            customerId: job.customerId, // Keep original null value
+            customerName: job.customerName || job.companyName || 'Unknown Customer',
             jobs: [],
           };
         }
-        acc[job.customerId].jobs.push(job);
+        acc[customerId].jobs.push(job);
         return acc;
       },
       {} as Record<string, any>,
@@ -72,15 +73,15 @@ export function JobsActions({ jobs = [] }: JobsActionsProps) {
       JSON.stringify(Object.values(groupedByCustomer)),
     );
 
-    // Navigate to invoice creation
-    router.push("/invoices/new?fromJobs=true");
-    setRowSelection({});
+    // Navigate to invoice page and open creation sheet
+    router.push("/invoices?type=create&fromJobs=true");
+    setRowSelection(() => ({}));
   };
 
   const handleDelete = () => {
     // TODO: Implement delete mutation
     console.log("Delete jobs:", jobIds);
-    setRowSelection({});
+    setRowSelection(() => ({}));
   };
 
   if (jobIds?.length) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useReportsParams } from "@/hooks/use-reports-params-client-client";
+import { useReportsParams } from "@/hooks/use-reports-params-client";
 import { useTRPC } from "@/trpc/client";
 import { cn } from "@midday/ui/cn";
 import { Icons } from "@midday/ui/icons";
@@ -27,8 +27,8 @@ export function InvoiceChart({ disabled }: Props) {
 
   const { data } = useQuery({
     ...trpc.reports.invoice.queryOptions({
-      from: params.from,
-      to: params.to,
+      startDate: params.from,
+      endDate: params.to,
       currency: params.currency ?? undefined,
     }),
     placeholderData: (previousData) => previousData ?? chartExampleData,
@@ -65,7 +65,7 @@ export function InvoiceChart({ disabled }: Props) {
                   className="flex items-center space-x-1 text-[#606060] hover:text-primary transition-colors"
                 >
                   <span className="text-xs">View invoices</span>
-                  <Icons.ArrowUpRight className="h-3 w-3" />
+                  <Icons.Overview className="h-3 w-3" />
                 </Link>
               </TooltipTrigger>
               <TooltipContent className="text-xs px-2 py-1">

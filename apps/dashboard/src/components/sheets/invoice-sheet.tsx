@@ -10,7 +10,7 @@ import React from "react";
 
 export function InvoiceSheet() {
   const trpc = useTRPC();
-  const { setParams, type, invoiceId } = useInvoiceParams();
+  const { setParams, type, invoiceId, jobId, fromJobs } = useInvoiceParams();
   const isOpen = type === "create" || type === "edit" || type === "success";
 
   // Get default settings for new invoices - only when sheet is open
@@ -31,6 +31,28 @@ export function InvoiceSheet() {
     ),
   );
 
+  // Get job data if converting from job
+  const { data: jobData } = useQuery(
+    trpc.job.getById.queryOptions(
+      { id: jobId! },
+      { 
+        enabled: !!jobId && type === "create",
+      }
+    ),
+  );
+
+  // Get selected jobs from sessionStorage for bulk invoice
+  const selectedJobs = React.useMemo(() => {
+    if (fromJobs === "true" && typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("selectedJobsForInvoice");
+      if (stored) {
+        sessionStorage.removeItem("selectedJobsForInvoice");
+        return JSON.parse(stored);
+      }
+    }
+    return null;
+  }, [fromJobs]);
+
   const handleOnOpenChange = (open: boolean) => {
     // Refetch default settings when the sheet is closed
     if (!open) {
@@ -42,7 +64,12 @@ export function InvoiceSheet() {
 
   return (
     <Sheet open={isOpen} onOpenChange={handleOnOpenChange}>
-      <FormContext defaultSettings={defaultSettings} data={data}>
+      <FormContext 
+        defaultSettings={defaultSettings} 
+        data={data}
+        jobData={jobData}
+        selectedJobs={selectedJobs}
+      >
         <InvoiceContent />
       </FormContext>
     </Sheet>

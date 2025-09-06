@@ -8,6 +8,7 @@ import { InvoiceSummarySkeleton } from "@/components/invoice-summary";
 import { InvoicesOpen } from "@/components/invoices-open";
 import { InvoicesOverdue } from "@/components/invoices-overdue";
 import { InvoicesPaid } from "@/components/invoices-paid";
+import { InvoiceSheet } from "@/components/sheets/invoice-sheet";
 import { DataTable } from "@/components/tables/invoices/data-table";
 import { InvoiceSkeleton } from "@/components/tables/invoices/skeleton";
 import { loadInvoiceFilterParams } from "@/hooks/use-invoice-filter-params";
@@ -53,29 +54,33 @@ export default async function Page(props: Props) {
   ]);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pt-6">
-        <Suspense fallback={<InvoiceSummarySkeleton />}>
-          <InvoicesOpen />
-        </Suspense>
-        <Suspense fallback={<InvoiceSummarySkeleton />}>
-          <InvoicesOverdue />
-        </Suspense>
-        <Suspense fallback={<InvoiceSummarySkeleton />}>
-          <InvoicesPaid />
-        </Suspense>
-        <Suspense fallback={<InvoicePaymentScoreSkeleton />}>
-          <InvoicePaymentScore />
-        </Suspense>
+    <>
+      <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 pt-6">
+          <Suspense fallback={<InvoiceSummarySkeleton />}>
+            <InvoicesOpen />
+          </Suspense>
+          <Suspense fallback={<InvoiceSummarySkeleton />}>
+            <InvoicesOverdue />
+          </Suspense>
+          <Suspense fallback={<InvoiceSummarySkeleton />}>
+            <InvoicesPaid />
+          </Suspense>
+          <Suspense fallback={<InvoicePaymentScoreSkeleton />}>
+            <InvoicePaymentScore />
+          </Suspense>
+        </div>
+
+        <InvoiceHeader />
+
+        <ErrorBoundary errorComponent={ErrorFallback}>
+          <Suspense fallback={<InvoiceSkeleton />}>
+            <DataTable columnVisibility={columnVisibility} />
+          </Suspense>
+        </ErrorBoundary>
       </div>
-
-      <InvoiceHeader />
-
-      <ErrorBoundary errorComponent={ErrorFallback}>
-        <Suspense fallback={<InvoiceSkeleton />}>
-          <DataTable columnVisibility={columnVisibility} />
-        </Suspense>
-      </ErrorBoundary>
-    </div>
+      
+      <InvoiceSheet />
+    </>
   );
 }

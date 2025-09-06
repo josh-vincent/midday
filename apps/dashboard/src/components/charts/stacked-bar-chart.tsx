@@ -72,20 +72,20 @@ const ToolTipContent = ({ payload = [] }) => {
 };
 
 export function StackedBarChart({ data, height = 290 }) {
-  const formattedData = data.result.map((item) => ({
+  const formattedData = data?.result.map((item) => ({
     ...item,
-    value: item.value,
-    recurring: item.recurring,
-    total: item.total,
-    meta: data.meta,
-    date: format(new Date(item.date), "MMM"),
+    value: item?.value,
+    recurring: item?.recurring,
+    total: item?.total,
+    meta: data?.meta,
+    date: format(new Date(item?.date), "MMM"),
   }));
 
   return (
     <div className="relative h-full w-full">
       <div className="space-x-4 absolute right-0 -top-10 hidden md:flex">
         <div className="flex space-x-2 items-center">
-          <span className="w-2 h-2 rounded-full bg-[#C6C6C6] dark:bg-[#606060]" />
+            <Icons.DotRaster />
           <span className="text-sm text-[#606060]">Total expenses</span>
         </div>
         <div className="flex space-x-2 items-center">

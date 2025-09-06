@@ -25,8 +25,8 @@ export function RevenueChart({ disabled }: Props) {
 
   const { data } = useQuery({
     ...trpc.reports.revenue.queryOptions({
-      from: params.from,
-      to: params.to,
+      startDate: params.from,
+      endDate: params.to,
       currency: params.currency ?? undefined,
     }),
     placeholderData: (previousData) => previousData ?? chartExampleData,
@@ -42,7 +42,7 @@ export function RevenueChart({ disabled }: Props) {
         <h1 className="text-4xl font-mono">
           <AnimatedNumber
             value={data?.summary?.currentTotal ?? 0}
-            currency={data?.summary?.currency ?? "USD"}
+              currency={data?.summary?.currency ?? null}
           />
         </h1>
 

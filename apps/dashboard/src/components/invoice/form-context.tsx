@@ -86,12 +86,16 @@ type FormContextProps = {
   children: React.ReactNode;
   data?: RouterOutputs["invoice"]["getById"];
   defaultSettings?: RouterOutputs["invoice"]["defaultSettings"];
+  jobData?: RouterOutputs["job"]["getById"];
+  selectedJobs?: any;
 };
 
 export function FormContext({
   children,
   data,
   defaultSettings,
+  jobData,
+  selectedJobs,
 }: FormContextProps) {
   const form = useZodForm(invoiceFormSchema, {
     // @ts-expect-error
@@ -100,6 +104,31 @@ export function FormContext({
   });
 
   useEffect(() => {
+    // Build line items from job data
+    let lineItems = data?.lineItems;
+    
+    if (!data && jobData) {
+      // Single job conversion
+      lineItems = [{
+        name: jobData.description || `Job ${jobData.jobNumber}`,
+        quantity: jobData.volume || 1,
+        unit: jobData.volume ? "m³" : undefined,
+        price: jobData.totalAmount || 0,
+        jobId: jobData.id,
+      }];
+    } else if (!data && selectedJobs) {
+      // Multiple jobs from bulk selection
+      lineItems = selectedJobs.flatMap((group: any) => 
+        group.jobs.map((job: any) => ({
+          name: job.description || `Job ${job.jobNumber}`,
+          quantity: job.volume || 1,
+          unit: job.volume ? "m³" : undefined,
+          price: job.totalAmount || 0,
+          jobId: job.id,
+        }))
+      );
+    }
+
     form.reset({
       ...(defaultSettings ?? {}),
       ...(data ?? {}),
@@ -108,9 +137,11 @@ export function FormContext({
         ...(defaultSettings?.template ?? {}),
         ...(data?.template ?? {}),
       },
-      customerId: data?.customerId ?? defaultSettings?.customerId ?? undefined,
+      customerId: data?.customerId ?? jobData?.customerId ?? defaultSettings?.customerId ?? undefined,
+      customerName: data?.customerName ?? jobData?.companyName,
+      lineItems: lineItems || defaultSettings?.lineItems || [],
     });
-  }, [data, defaultSettings]);
+  }, [data, defaultSettings, jobData, selectedJobs]);
 
   return <FormProvider {...form}>{children}</FormProvider>;
 }

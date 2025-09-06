@@ -49,7 +49,7 @@ export const reportTypesEnum = pgEnum("reportTypes", [
 // Enums
 export const invoiceStatusEnum = pgEnum("invoice_status", [
   "draft",
-  "unpaid",
+  "unpaid", 
   "paid",
   "canceled",
   "overdue",
@@ -87,7 +87,7 @@ export const inviteStatusEnum = pgEnum("invite_status", [
 export const currencyEnum = pgEnum("currency", [
   "USD",
   "EUR",
-  "GBP",
+  "GBP", 
   "AUD",
   "CAD",
   "NZD",
@@ -100,6 +100,7 @@ export const documentProcessingStatusEnum = pgEnum(
   "document_processing_status",
   ["pending", "processing", "completed", "failed"],
 );
+
 
 // Tables
 
@@ -271,14 +272,12 @@ export const teams = pgTable(
     nextInvoiceNumber: integer("next_invoice_number").default(1).notNull(),
     paymentTerms: integer("payment_terms").default(30), // days
     invoiceNotes: text("invoice_notes"),
-    createdAt: timestamp("created_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
   },
-  (table) => [index("teams_name_idx").on(table.name)],
+  (table) => [
+    index("teams_name_idx").on(table.name),
+  ]
 );
 
 export const usersOnTeam = pgTable(
@@ -355,15 +354,13 @@ export const userInvites = pgTable(
     status: inviteStatusEnum().default("pending").notNull(),
     invitedBy: uuid("invited_by").references(() => users.id),
     expiresAt: timestamp("expires_at", { mode: "string" }).notNull(),
-    createdAt: timestamp("created_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
   },
   (table) => [
     unique().on(table.teamId, table.email),
     index("user_invites_email_idx").on(table.email),
     index("user_invites_code_idx").on(table.code),
-  ],
+  ]
 );
 
 export const customers = pgTable(
@@ -392,12 +389,8 @@ export const customers = pgTable(
     note: text(),
     tags: jsonb().default([]),
     contact: text(),
-    createdAt: timestamp("created_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
     fts: tsvector("fts")
       .notNull()
       .generatedAlwaysAs(
@@ -424,7 +417,7 @@ export const customers = pgTable(
     index("customers_team_idx").on(table.teamId),
     index("customers_name_idx").on(table.name),
     index("customers_email_idx").on(table.email),
-  ],
+  ]
 );
 
 export const tags = pgTable(
@@ -436,18 +429,14 @@ export const tags = pgTable(
       .notNull(),
     name: varchar({ length: 100 }).notNull(),
     color: varchar({ length: 7 }), // Hex color code
-    createdAt: timestamp("created_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
   },
   (table) => [
     unique().on(table.teamId, table.name), // Unique tag name per team
     index("tags_team_idx").on(table.teamId),
     index("tags_name_idx").on(table.name),
-  ],
+  ]
 );
 
 export const invoices = pgTable(
@@ -467,23 +456,17 @@ export const invoices = pgTable(
     paidDate: date("paid_date", { mode: "string" }),
     status: invoiceStatusEnum().default("draft").notNull(),
     currency: currencyEnum().default("AUD").notNull(),
-    exchangeRate: numericCasted("exchange_rate", {
-      precision: 10,
-      scale: 4,
-    }).default(1),
-
+    exchangeRate: numericCasted("exchange_rate", { precision: 10, scale: 4 }).default(1),
+    
     // Amounts
     subtotal: integer().default(0).notNull(), // in cents
     taxRate: numericCasted("tax_rate", { precision: 5, scale: 2 }).default(0),
     taxAmount: integer("tax_amount").default(0).notNull(), // in cents
-    discountRate: numericCasted("discount_rate", {
-      precision: 5,
-      scale: 2,
-    }).default(0),
+    discountRate: numericCasted("discount_rate", { precision: 5, scale: 2 }).default(0),
     discountAmount: integer("discount_amount").default(0).notNull(), // in cents
     totalAmount: integer("total_amount").default(0).notNull(), // in cents
     paidAmount: integer("paid_amount").default(0).notNull(), // in cents
-
+    
     // Content
     lineItems: jsonb("line_items").default([]).notNull(),
     note: text(),
@@ -506,6 +489,7 @@ export const invoices = pgTable(
     scheduledAt: timestamp("scheduled_at", { mode: "string" }),
     scheduledJobId: text("scheduled_job_id"),
     logoUrl: text("logo_url"),
+    
 
     invoiceNoLabel: text("invoice_no_label"),
     issueDateLabel: text("issue_date_label"),
@@ -542,14 +526,10 @@ export const invoices = pgTable(
     viewedAt: timestamp("viewed_at", { mode: "string" }),
     downloadedAt: timestamp("downloaded_at", { mode: "string" }),
     metadata: jsonb().default({}),
-
+    
     createdBy: uuid("created_by").references(() => users.id),
-    createdAt: timestamp("created_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
   },
   (table) => [
     unique().on(table.teamId, table.invoiceNumber),
@@ -557,7 +537,7 @@ export const invoices = pgTable(
     index("invoices_customer_idx").on(table.customerId),
     index("invoices_status_idx").on(table.status),
     index("invoices_due_date_idx").on(table.dueDate),
-  ],
+  ]
 );
 
 export const invoiceTemplates = pgTable(
@@ -570,7 +550,7 @@ export const invoiceTemplates = pgTable(
     name: varchar({ length: 255 }).notNull(),
     description: text(),
     isDefault: boolean("is_default").default(false).notNull(),
-
+    
     // Template settings
     title: varchar({ length: 255 }).default("Invoice"),
     logoUrl: text("logo_url"),
@@ -588,47 +568,29 @@ export const invoiceTemplates = pgTable(
     includePdf: boolean("include_pdf").default(true),
     includeUnits: boolean("include_units").default(false),
     sendCopy: boolean("send_copy").default(false),
-
+    
     // Labels
     customerLabel: varchar("customer_label", { length: 255 }).default("To"),
     fromLabel: varchar("from_label", { length: 255 }).default("From"),
-    invoiceNoLabel: varchar("invoice_no_label", { length: 255 }).default(
-      "Invoice No",
-    ),
-    issueDateLabel: varchar("issue_date_label", { length: 255 }).default(
-      "Issue Date",
-    ),
-    dueDateLabel: varchar("due_date_label", { length: 255 }).default(
-      "Due Date",
-    ),
-    descriptionLabel: varchar("description_label", { length: 255 }).default(
-      "Description",
-    ),
+    invoiceNoLabel: varchar("invoice_no_label", { length: 255 }).default("Invoice No"),
+    issueDateLabel: varchar("issue_date_label", { length: 255 }).default("Issue Date"),
+    dueDateLabel: varchar("due_date_label", { length: 255 }).default("Due Date"),
+    descriptionLabel: varchar("description_label", { length: 255 }).default("Description"),
     priceLabel: varchar("price_label", { length: 255 }).default("Price"),
-    quantityLabel: varchar("quantity_label", { length: 255 }).default(
-      "Quantity",
-    ),
+    quantityLabel: varchar("quantity_label", { length: 255 }).default("Quantity"),
     totalLabel: varchar("total_label", { length: 255 }).default("Total"),
-    totalSummaryLabel: varchar("total_summary_label", { length: 255 }).default(
-      "Total",
-    ),
+    totalSummaryLabel: varchar("total_summary_label", { length: 255 }).default("Total"),
     vatLabel: varchar("vat_label", { length: 255 }).default("VAT"),
     taxLabel: varchar("tax_label", { length: 255 }).default("Tax"),
-    subtotalLabel: varchar("subtotal_label", { length: 255 }).default(
-      "Subtotal",
-    ),
-    discountLabel: varchar("discount_label", { length: 255 }).default(
-      "Discount",
-    ),
-    paymentLabel: varchar("payment_label", { length: 255 }).default(
-      "Payment Details",
-    ),
+    subtotalLabel: varchar("subtotal_label", { length: 255 }).default("Subtotal"),
+    discountLabel: varchar("discount_label", { length: 255 }).default("Discount"),
+    paymentLabel: varchar("payment_label", { length: 255 }).default("Payment Details"),
     noteLabel: varchar("note_label", { length: 255 }).default("Note"),
-
+    
     // Rates
     taxRate: numericCasted("tax_rate", { precision: 5, scale: 2 }).default(0),
     vatRate: numericCasted("vat_rate", { precision: 5, scale: 2 }).default(0),
-
+    
     // Content templates
     paymentTerms: integer("payment_terms"), // days
     note: text(),
@@ -637,15 +599,13 @@ export const invoiceTemplates = pgTable(
     fromDetails: text("from_details"),
     noteDetails: text("note_details"),
     deliveryType: varchar("delivery_type", { length: 20 }).default("create"),
-
-    createdAt: timestamp("created_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
+    
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
   },
-  (table) => [index("invoice_templates_team_idx").on(table.teamId)],
+  (table) => [
+    index("invoice_templates_team_idx").on(table.teamId),
+  ]
 );
 
 export const invoiceComments = pgTable(
@@ -659,11 +619,11 @@ export const invoiceComments = pgTable(
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
     content: text().notNull(),
-    createdAt: timestamp("created_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
   },
-  (table) => [index("invoice_comments_invoice_idx").on(table.invoiceId)],
+  (table) => [
+    index("invoice_comments_invoice_idx").on(table.invoiceId),
+  ]
 );
 
 export const payments = pgTable(
@@ -680,14 +640,12 @@ export const payments = pgTable(
     reference: varchar({ length: 255 }),
     note: text(),
     created_by: uuid("created_by").references(() => users.id),
-    createdAt: timestamp("created_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
   },
   (table) => [
     index("payments_invoice_idx").on(table.invoiceId),
     index("payments_date_idx").on(table.paymentDate),
-  ],
+  ]
 );
 
 export const notificationSettings = pgTable(
@@ -704,17 +662,13 @@ export const notificationSettings = pgTable(
     enabled: boolean().default(true).notNull(),
     email: boolean().default(true).notNull(),
     inApp: boolean("in_app").default(true).notNull(),
-    createdAt: timestamp("created_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
   },
   (table) => [
     unique().on(table.userId, table.teamId, table.type),
     index("notification_settings_user_team_idx").on(table.userId, table.teamId),
-  ],
+  ]
 );
 
 export const activities = pgTable(
@@ -731,24 +685,22 @@ export const activities = pgTable(
     metadata: jsonb().default({}),
     ipAddress: varchar("ip_address", { length: 45 }),
     userAgent: text("user_agent"),
-    createdAt: timestamp("created_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
   },
   (table) => [
     index("activities_team_idx").on(table.teamId),
     index("activities_entity_idx").on(table.entity, table.entityId),
     index("activities_created_idx").on(table.createdAt),
-  ],
+  ]
 );
 
 // Jobs table for dirt receiving tracking
 export const jobStatusEnum = pgEnum("job_status", [
   "pending",
-  "in_progress",
+  "in_progress", 
   "completed",
   "invoiced",
-  "cancelled",
+  "cancelled"
 ]);
 
 export const dirtTypeEnum = pgEnum("dirt_type", [
@@ -761,7 +713,7 @@ export const dirtTypeEnum = pgEnum("dirt_type", [
   "gravel",
   "concrete",
   "asphalt",
-  "other",
+  "other"
 ]);
 
 export const jobs = pgTable(
@@ -771,71 +723,62 @@ export const jobs = pgTable(
     teamId: uuid("team_id")
       .references(() => teams.id, { onDelete: "cascade" })
       .notNull(),
-    customerId: uuid("customer_id").references(() => customers.id, {
-      onDelete: "restrict",
-    }),
+    customerId: uuid("customer_id")
+      .references(() => customers.id, { onDelete: "restrict" }),
     jobNumber: varchar("job_number", { length: 50 }),
-
+    
     // Contact details
     contactPerson: varchar("contact_person", { length: 255 }),
     contactNumber: varchar("contact_number", { length: 50 }),
-
+    
     // Vehicle details
     rego: varchar("rego", { length: 20 }), // Vehicle registration
     loadNumber: integer("load_number").default(1), // Load count for the day
-
+    
     // Company/Job details
     companyName: varchar("company_name", { length: 255 }), // Company/customer name
     addressSite: text("address_site"), // Full address/site description
-
+    
     // Equipment and material
     equipmentType: varchar("equipment_type", { length: 100 }), // Truck & Trailer 22m3, Tandem 10m3, etc.
     materialType: varchar("material_type", { length: 100 }), // Dry Clean Fill, etc.
     pricePerUnit: numericCasted("price_per_unit", { precision: 10, scale: 2 }), // Price per cubic metre
     cubicMetreCapacity: integer("cubic_metre_capacity"), // Load capacity in m3
-
+    
     // Date tracking
     jobDate: date("job_date", { mode: "string" }), // Date of the job
-
+    
     // Legacy fields (kept for compatibility, now optional)
     sourceLocation: varchar("source_location", { length: 255 }), // Where dirt is coming from
     sourceAddress: text("source_address"),
     destinationSite: varchar("destination_site", { length: 255 }), // Where it's being deposited
     dirtType: dirtTypeEnum("dirt_type"),
-    quantityCubicMeters: numericCasted("quantity_cubic_meters", {
-      precision: 10,
-      scale: 2,
-    }), // m³
+    quantityCubicMeters: numericCasted("quantity_cubic_meters", { precision: 10, scale: 2 }), // m³
     weightKg: numericCasted("weight_kg", { precision: 12, scale: 2 }), // kg (optional)
     pricePerCubicMeter: integer("price_per_cubic_meter"), // cents per m³
     totalAmount: integer("total_amount"), // total in cents
-
+    
     // Tracking
     status: jobStatusEnum().default("pending").notNull(),
     scheduledDate: date("scheduled_date", { mode: "string" }),
     arrivalTime: timestamp("arrival_time", { mode: "string" }),
     completedTime: timestamp("completed_time", { mode: "string" }),
-
+    
     // Linking
-    invoiceId: uuid("invoice_id").references(() => invoices.id, {
-      onDelete: "set null",
-    }),
-
+    invoiceId: uuid("invoice_id").references(() => invoices.id, { onDelete: "set null" }),
+    
     // Additional info
     truckNumber: varchar("truck_number", { length: 50 }),
     driverName: varchar("driver_name", { length: 255 }),
     notes: text(),
     photos: jsonb().default([]), // Array of photo URLs
-
+    
     createdBy: uuid("created_by").references(() => users.id),
-    createdAt: timestamp("created_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" })
-      .defaultNow()
-      .notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
   },
   (table) => [
+    unique().on(table.teamId, table.jobNumber),
     index("jobs_team_idx").on(table.teamId),
     index("jobs_customer_idx").on(table.customerId),
     index("jobs_status_idx").on(table.status),
@@ -845,8 +788,9 @@ export const jobs = pgTable(
     index("jobs_rego_idx").on(table.rego),
     index("jobs_company_name_idx").on(table.companyName),
     index("jobs_job_date_idx").on(table.jobDate),
-  ],
+  ]
 );
+
 
 export const documents = pgTable(
   "documents",
@@ -945,6 +889,7 @@ export const documents = pgTable(
     }),
   ],
 );
+
 
 export const documentTagAssignments = pgTable(
   "document_tag_assignments",
@@ -1068,6 +1013,7 @@ export const documentTags = pgTable(
   ],
 );
 
+
 export const shortLinks = pgTable(
   "short_links",
   {
@@ -1168,7 +1114,7 @@ export const reports = pgTable(
       foreignColumns: [teams.id],
       name: "reports_team_id_fkey",
     }).onDelete("cascade"),
-  ],
+  ]
 );
 
 // Relations
@@ -1270,30 +1216,24 @@ export const invoicesRelations = relations(invoices, ({ one, many }) => ({
   jobs: many(jobs),
 }));
 
-export const invoiceTemplatesRelations = relations(
-  invoiceTemplates,
-  ({ one, many }) => ({
-    team: one(teams, {
-      fields: [invoiceTemplates.teamId],
-      references: [teams.id],
-    }),
-    invoices: many(invoices),
+export const invoiceTemplatesRelations = relations(invoiceTemplates, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [invoiceTemplates.teamId],
+    references: [teams.id],
   }),
-);
+  invoices: many(invoices),
+}));
 
-export const invoiceCommentsRelations = relations(
-  invoiceComments,
-  ({ one }) => ({
-    invoice: one(invoices, {
-      fields: [invoiceComments.invoiceId],
-      references: [invoices.id],
-    }),
-    user: one(users, {
-      fields: [invoiceComments.userId],
-      references: [users.id],
-    }),
+export const invoiceCommentsRelations = relations(invoiceComments, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoiceComments.invoiceId],
+    references: [invoices.id],
   }),
-);
+  user: one(users, {
+    fields: [invoiceComments.userId],
+    references: [users.id],
+  }),
+}));
 
 export const paymentsRelations = relations(payments, ({ one }) => ({
   invoice: one(invoices, {

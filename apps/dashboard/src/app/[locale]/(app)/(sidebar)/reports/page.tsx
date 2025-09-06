@@ -13,8 +13,6 @@ export const metadata: Metadata = {
 export default function ReportsPage() {
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">Reports</h1>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
         <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
           <InvoiceChart />
