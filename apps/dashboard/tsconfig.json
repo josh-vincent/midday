@@ -9,7 +9,7 @@
       "@jobs/*": ["../../packages/jobs/src/*"],
       "@db/*": ["../../packages/db/src/*"]
     },
-    "strict": true
+    "strictNullChecks": true
   },
   "include": [
     "**/*.ts",

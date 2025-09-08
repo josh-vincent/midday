@@ -20,7 +20,7 @@ export function JobsMonthlyVolume({ summary }: JobsMonthlyVolumeProps) {
           <AnimatedNumber
             value={totalVolume}
             maximumFractionDigits={1}
-            minimumFractionDigits={0} currency={null|"AUD"}          />
+            minimumFractionDigits={0}          />
         </CardTitle>
       </CardHeader>
 
