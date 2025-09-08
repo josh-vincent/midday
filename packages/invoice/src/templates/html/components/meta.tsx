@@ -9,10 +9,21 @@ type Props = {
   dueDate?: string | null;
 };
 
+// Helper function to convert date format from old to new date-fns format
+function convertDateFormat(dateFormat: string): string {
+  return dateFormat
+    .replace(/DD/g, 'dd')  // days
+    .replace(/YYYY/g, 'yyyy')  // years
+    .replace(/YY/g, 'yy');  // short years
+}
+
 export function Meta({ template, invoiceNumber, issueDate, dueDate }: Props) {
   if (!template) {
     return null;
   }
+  
+  // Convert the date format to be compatible with date-fns v2+
+  const dateFormatPattern = template.dateFormat ? convertDateFormat(template.dateFormat) : 'dd/MM/yyyy';
 
   return (
     <div className="mb-2">
@@ -42,7 +53,7 @@ export function Meta({ template, invoiceNumber, issueDate, dueDate }: Props) {
                   {issueDate
                     ? format(
                         new TZDate(issueDate, template.timezone),
-                        template.dateFormat,
+                        dateFormatPattern,
                       )
                     : ""}
                 </span>
@@ -61,7 +72,7 @@ export function Meta({ template, invoiceNumber, issueDate, dueDate }: Props) {
                   {dueDate
                     ? format(
                         new TZDate(dueDate, template.timezone),
-                        template.dateFormat,
+                        dateFormatPattern,
                       )
                     : ""}
                 </span>

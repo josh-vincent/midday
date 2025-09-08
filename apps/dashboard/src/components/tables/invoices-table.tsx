@@ -414,9 +414,14 @@ export function InvoicesTable({
                       />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1 font-medium">
-                        <Hash className="h-3 w-3" />
-                        {invoice.invoiceNumber}
+                      <div>
+                        <div className="flex items-center gap-1 font-medium">
+                          <Hash className="h-3 w-3" />
+                          {invoice.invoiceNumber}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {invoice.id.slice(0, 8)}...
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>

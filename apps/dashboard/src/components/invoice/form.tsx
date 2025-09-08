@@ -49,6 +49,13 @@ export function Form() {
         queryClient.invalidateQueries({
           queryKey: trpc.invoice.invoiceSummary.queryKey(),
         });
+
+        // Invalidate the getInvoiceByToken query to refresh preview
+        if (token) {
+          queryClient.invalidateQueries({
+            queryKey: trpc.invoice.getInvoiceByToken.queryKey({ token }),
+          });
+        }
       },
     }),
   );
@@ -79,28 +86,9 @@ export function Form() {
   );
 
   // Only watch the fields that are used in the upsert action
+  // Watch the entire form to ensure all changes trigger draft saves
   const formValues = useWatch({
     control: form.control,
-    name: [
-      "customerDetails",
-      "customerId",
-      "customerName",
-      "template",
-      "lineItems",
-      "amount",
-      "vat",
-      "tax",
-      "discount",
-      "dueDate",
-      "issueDate",
-      "noteDetails",
-      "paymentDetails",
-      "fromDetails",
-      "invoiceNumber",
-      "topBlock",
-      "bottomBlock",
-      "scheduledAt",
-    ],
   });
 
   const isDirty = form.formState.isDirty;
@@ -201,6 +189,7 @@ export function Form() {
                 <OpenURL
                   href={`${getUrl()}/i/${token}`}
                   className="flex items-center gap-1"
+                  title="Refresh the preview page to see latest changes"
                 >
                   <Icons.ExternalLink className="size-3" />
                   <span>Preview invoice</span>

@@ -12,5 +12,4 @@ export default {
       process.env.DATABASE_SESSION_POOLER! ||
       "postgresql://postgres.ulncfblvuijlgniydjju:MikeTheDogSupabase!@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres",
   },
-  ç,
 } satisfies Config;

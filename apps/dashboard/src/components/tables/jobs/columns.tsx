@@ -5,6 +5,7 @@ import { Checkbox } from "@midday/ui/checkbox";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ActionsMenu } from "./actions-menu";
+import { CompanyCell } from "./company-cell";
 
 export type Job = {
   id: string;
@@ -68,17 +69,21 @@ export const columns: ColumnDef<Job>[] = [
     enableHiding: false,
   },
   {
+    id: "jobNumber", 
     accessorKey: "jobNumber",
     header: "Job #",
     enableSorting: true,
+    enableHiding: false, // Keep job number always visible
     cell: ({ row }) => (
       <span className="font-medium">{row.getValue("jobNumber") || "-"}</span>
     ),
   },
   {
-    accessorKey: "jobDate",
+    id: "jobDate",
+    accessorKey: "jobDate", 
     header: "Date",
     enableSorting: true,
+    enableHiding: true,
     cell: ({ row, table }) => {
       const date = row.getValue("jobDate") as string | null;
       const dateFormat = (table.options.meta as any)?.dateFormat || "MMM d, yyyy";
@@ -89,18 +94,20 @@ export const columns: ColumnDef<Job>[] = [
     },
   },
   {
+    id: "companyName",
     accessorKey: "companyName",
-    header: "Company",
+    header: "Company", 
     enableSorting: true,
+    enableHiding: true,
     cell: ({ row }) => (
-      <span className="truncate max-w-[200px]">
-        {row.getValue("companyName") || "Unknown"}
-      </span>
+      <CompanyCell job={row.original} />
     ),
   },
   {
+    id: "description",
     accessorKey: "description",
     header: "Description",
+    enableHiding: true,
     cell: ({ row }) => {
       const description = row.getValue("description") as string | null;
       return (
@@ -111,9 +118,11 @@ export const columns: ColumnDef<Job>[] = [
     },
   },
   {
+    id: "status",
     accessorKey: "status",
     header: "Status",
     enableSorting: true,
+    enableHiding: true,
     cell: ({ row }) => {
       const status = row.getValue("status") as Job["status"];
       return (
@@ -128,27 +137,33 @@ export const columns: ColumnDef<Job>[] = [
     },
   },
   {
+    id: "volume",
     accessorKey: "volume",
     header: "Volume",
     enableSorting: true,
+    enableHiding: true,
     cell: ({ row }) => {
       const volume = row.getValue("volume") as number | null;
       return volume ? `${volume} m³` : "-";
     },
   },
   {
+    id: "weight",
     accessorKey: "weight",
     header: "Weight",
     enableSorting: true,
+    enableHiding: true,
     cell: ({ row }) => {
       const weight = row.getValue("weight") as number | null;
       return weight ? `${weight} kg` : "-";
     },
   },
   {
+    id: "totalAmount",
     accessorKey: "totalAmount",
     header: () => <div className="text-right">Amount</div>,
     enableSorting: true,
+    enableHiding: true,
     cell: ({ row }) => {
       const amount = row.getValue("totalAmount") as number | null;
       const currency = row.original.currency || "USD";

@@ -42,21 +42,29 @@ export function InvoiceSheet() {
   );
 
   // Get selected jobs from sessionStorage for bulk invoice
-  const selectedJobs = React.useMemo(() => {
+  const [selectedJobs, setSelectedJobs] = React.useState<any>(null);
+  
+  React.useEffect(() => {
     if (fromJobs === "true" && typeof window !== "undefined") {
       const stored = sessionStorage.getItem("selectedJobsForInvoice");
       if (stored) {
-        sessionStorage.removeItem("selectedJobsForInvoice");
-        return JSON.parse(stored);
+        const jobs = JSON.parse(stored);
+        setSelectedJobs(jobs);
+        // Only clear after successfully creating the invoice
+        // sessionStorage.removeItem("selectedJobsForInvoice");
       }
     }
-    return null;
   }, [fromJobs]);
 
   const handleOnOpenChange = (open: boolean) => {
     // Refetch default settings when the sheet is closed
     if (!open) {
       refetch();
+      // Clear selected jobs from sessionStorage when closing
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("selectedJobsForInvoice");
+      }
+      setSelectedJobs(null);
     }
 
     setParams(null);

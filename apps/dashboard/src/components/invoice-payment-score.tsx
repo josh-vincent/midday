@@ -31,12 +31,19 @@ export function InvoicePaymentScore() {
   const { data } = useSuspenseQuery(trpc.invoice.paymentStatus.queryOptions());
   const t = useI18n();
 
+  const paymentStatus = data?.paymentStatus || "pending";
+  const paymentStatusText = paymentStatus === "unknown" ? "Pending" : 
+    paymentStatus.charAt(0).toUpperCase() + paymentStatus.slice(1).replace(/_/g, ' ');
+  
+  const paymentStatusDescription = paymentStatus === "unknown" ? 
+    "Payment status is being calculated" : 
+    `Your invoices are typically ${paymentStatus.replace(/_/g, ' ')}`;
+
   return (
     <Card>
       <CardHeader className="pb-2 flex flex-col xl:flex-row justify-between">
         <CardTitle className="font-mono font-medium text-2xl">
-          {/* @ts-expect-error */}
-          {t(`payment_status.${data?.paymentStatus}`)}
+          {paymentStatusText}
         </CardTitle>
 
         <PaymentScoreVisualizer
@@ -49,8 +56,7 @@ export function InvoicePaymentScore() {
         <div className="flex flex-col gap-2">
           <div>Payment score</div>
           <div className="text-sm text-muted-foreground">
-            {/* @ts-expect-error */}
-            {t(`payment_status_description.${data?.paymentStatus}`)}
+            {paymentStatusDescription}
           </div>
         </div>
       </CardContent>

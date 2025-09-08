@@ -1,24 +1,21 @@
 "use client";
 
 import { useJobsFilterParams } from "@/hooks/use-jobs-filter-params";
-import { useJobsStore } from "@/store/jobs";
 import { Card, CardContent, CardHeader, CardTitle } from "@midday/ui/card";
-import { Clock } from "lucide-react";
+import { AnimatedNumber } from "./animated-number";
 
-export function JobsPending() {
-  const jobs = useJobsStore((state) => state.jobs);
+interface JobsPendingProps {
+  summary: {
+    count: number;
+    potentialRevenue: number;
+  };
+}
+
+export function JobsPending({ summary }: JobsPendingProps) {
   const { setFilter } = useJobsFilterParams();
-
-  // Filter pending and in-progress jobs
-  const pendingJobs = jobs.filter(
-    (job) => job.status === "pending" || job.status === "in_progress",
-  );
-
-  // Calculate total pending value
-  const pendingValue = pendingJobs.reduce((total, job) => {
-    const amount = (job.pricePerUnit || 0) * (job.cubicMetreCapacity || 0);
-    return total + amount;
-  }, 0);
+  
+  const pendingCount = summary?.count || 0;
+  const pendingValue = summary?.potentialRevenue || 0;
 
   return (
     <button
@@ -32,9 +29,12 @@ export function JobsPending() {
     >
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="font-mono font-medium text-2xl flex items-center gap-2">
-            {pendingCount}
-            <Clock className="h-5 w-5 text-yellow-500" />
+          <CardTitle className="font-mono font-medium text-2xl">
+            <AnimatedNumber
+              value={pendingCount}
+              maximumFractionDigits={0}
+              minimumFractionDigits={0}
+            />
           </CardTitle>
         </CardHeader>
 

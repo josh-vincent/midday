@@ -28,7 +28,7 @@ export function DataTable() {
   const { filter, hasFilters } = useJobFilterParams();
   const { ref, inView } = useInView();
   const { data: user } = useUserQuery();
-  const { rowSelection, setRowSelection, setJobs, jobs, resetRowSelection } = useJobsStore();
+  const { rowSelection, setRowSelection, setJobs, jobs, resetRowSelection, columnVisibility } = useJobsStore();
 
   const tableScroll = useTableScroll({
     useColumnWidths: true,
@@ -94,6 +94,7 @@ export function DataTable() {
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       rowSelection,
+      columnVisibility,
     },
     onRowSelectionChange: setRowSelection,
     enableRowSelection: true,

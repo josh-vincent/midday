@@ -6,23 +6,35 @@ export const transformFormValuesToDraft = (values: InvoiceFormValues) => {
     template: {
       ...values.template,
       ...(values.paymentDetails && {
-        paymentDetails: JSON.stringify(values.paymentDetails),
+        paymentDetails: typeof values.paymentDetails === 'string' 
+          ? values.paymentDetails 
+          : JSON.stringify(values.paymentDetails),
       }),
       ...(values.fromDetails && {
-        fromDetails: JSON.stringify(values.fromDetails),
+        fromDetails: typeof values.fromDetails === 'string' 
+          ? values.fromDetails 
+          : JSON.stringify(values.fromDetails),
       }),
     },
     ...(values.paymentDetails && {
-      paymentDetails: JSON.stringify(values.paymentDetails),
+      paymentDetails: typeof values.paymentDetails === 'string' 
+        ? values.paymentDetails 
+        : JSON.stringify(values.paymentDetails),
     }),
     ...(values.fromDetails && {
-      fromDetails: JSON.stringify(values.fromDetails),
+      fromDetails: typeof values.fromDetails === 'string' 
+        ? values.fromDetails 
+        : JSON.stringify(values.fromDetails),
     }),
     ...(values.customerDetails && {
-      customerDetails: JSON.stringify(values.customerDetails),
+      customerDetails: typeof values.customerDetails === 'string' 
+        ? values.customerDetails 
+        : JSON.stringify(values.customerDetails),
     }),
     ...(values.noteDetails && {
-      noteDetails: JSON.stringify(values.noteDetails),
+      noteDetails: typeof values.noteDetails === 'string' 
+        ? values.noteDetails 
+        : JSON.stringify(values.noteDetails),
     }),
   };
 };

@@ -1,6 +1,5 @@
 "use client";
 
-import { JobsCSVImporter } from "@/components/import/jobs-csv-importer";
 import { JobsColumnVisibility } from "@/components/jobs-column-visibility";
 import { OpenJobSheet } from "@/components/open-job-sheet";
 import { useJobsStore, type Job } from "@/store/jobs";
@@ -25,9 +24,8 @@ import {
   DropdownMenuTrigger,
 } from "@midday/ui/dropdown-menu";
 import { Icons } from "@midday/ui/icons";
-import { ChevronDown, Loader2, Plus, Upload } from "lucide-react";
+import { ChevronDown, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 interface JobsActionsProps {
   jobs?: Job[];
@@ -35,7 +33,6 @@ interface JobsActionsProps {
 
 export function JobsActions({ jobs = [] }: JobsActionsProps) {
   const { setRowSelection, rowSelection } = useJobsStore();
-  const [showImporter, setShowImporter] = useState(false);
   const router = useRouter();
 
   const jobIds = Object.keys(rowSelection);
@@ -165,17 +162,9 @@ export function JobsActions({ jobs = [] }: JobsActionsProps) {
   }
 
   return (
-    <>
-      <div className="space-x-2 hidden md:flex">
-        <JobsColumnVisibility />
-        <Button variant="outline" onClick={() => setShowImporter(true)}>
-          <Upload className="mr-2 h-4 w-4" />
-          Import CSV
-        </Button>
-        <OpenJobSheet />
-      </div>
-
-      <JobsCSVImporter open={showImporter} onOpenChange={setShowImporter} />
-    </>
+    <div className="space-x-2 hidden md:flex">
+      <JobsColumnVisibility />
+      <OpenJobSheet />
+    </div>
   );
 }

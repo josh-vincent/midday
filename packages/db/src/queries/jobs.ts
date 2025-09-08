@@ -143,42 +143,48 @@ type CreateJobParams = {
 };
 
 export async function createJob(db: Database, params: CreateJobParams) {
+  // Build insert data with only defined fields
+  const insertData: any = {
+    teamId: params.teamId,
+    status: params.status || "pending",
+    createdBy: params.createdBy,
+  };
+
+  // Only include fields that are defined in params
+  if (params.customerId !== undefined) insertData.customerId = params.customerId;
+  if (params.jobNumber !== undefined) insertData.jobNumber = params.jobNumber;
+  if (params.contactPerson !== undefined) insertData.contactPerson = params.contactPerson;
+  if (params.contactNumber !== undefined) insertData.contactNumber = params.contactNumber;
+  if (params.rego !== undefined) insertData.rego = params.rego;
+  if (params.loadNumber !== undefined) insertData.loadNumber = params.loadNumber;
+  if (params.companyName !== undefined) insertData.companyName = params.companyName;
+  if (params.addressSite !== undefined) insertData.addressSite = params.addressSite;
+  if (params.equipmentType !== undefined) insertData.equipmentType = params.equipmentType;
+  if (params.materialType !== undefined) insertData.materialType = params.materialType;
+  if (params.pricePerUnit !== undefined) insertData.pricePerUnit = params.pricePerUnit;
+  if (params.cubicMetreCapacity !== undefined) insertData.cubicMetreCapacity = params.cubicMetreCapacity;
+  if (params.jobDate !== undefined) insertData.jobDate = params.jobDate;
+  if (params.scheduledDate !== undefined) insertData.scheduledDate = params.scheduledDate;
+  if (params.arrivalTime !== undefined) insertData.arrivalTime = params.arrivalTime;
+  if (params.completedTime !== undefined) insertData.completedTime = params.completedTime;
+  if (params.truckNumber !== undefined) insertData.truckNumber = params.truckNumber;
+  if (params.driverName !== undefined) insertData.driverName = params.driverName;
+  if (params.notes !== undefined) insertData.notes = params.notes;
+  
+  // Legacy fields - only if defined
+  if (params.sourceLocation !== undefined) insertData.sourceLocation = params.sourceLocation;
+  if (params.sourceAddress !== undefined) insertData.sourceAddress = params.sourceAddress;
+  if (params.destinationSite !== undefined) insertData.destinationSite = params.destinationSite;
+  if (params.dirtType !== undefined) insertData.dirtType = params.dirtType;
+  if (params.quantityCubicMeters !== undefined) insertData.quantityCubicMeters = params.quantityCubicMeters;
+  if (params.weightKg !== undefined) insertData.weightKg = params.weightKg;
+  if (params.pricePerCubicMeter !== undefined) insertData.pricePerCubicMeter = params.pricePerCubicMeter;
+  if (params.totalAmount !== undefined) insertData.totalAmount = params.totalAmount;
+  if (params.photos !== undefined) insertData.photos = params.photos;
+
   const [job] = await db
     .insert(jobs)
-    .values({
-      teamId: params.teamId,
-      customerId: params.customerId || null,
-      jobNumber: params.jobNumber || null,
-      contactPerson: params.contactPerson,
-      contactNumber: params.contactNumber,
-      rego: params.rego,
-      loadNumber: params.loadNumber,
-      companyName: params.companyName,
-      addressSite: params.addressSite,
-      equipmentType: params.equipmentType,
-      materialType: params.materialType,
-      pricePerUnit: params.pricePerUnit,
-      cubicMetreCapacity: params.cubicMetreCapacity,
-      jobDate: params.jobDate,
-      scheduledDate: params.scheduledDate,
-      arrivalTime: params.arrivalTime,
-      completedTime: params.completedTime,
-      status: params.status || "pending",
-      truckNumber: params.truckNumber,
-      driverName: params.driverName,
-      notes: params.notes || null,
-      // Legacy optional fields
-      sourceLocation: params.sourceLocation,
-      sourceAddress: params.sourceAddress,
-      destinationSite: params.destinationSite,
-      dirtType: params.dirtType,
-      quantityCubicMeters: params.quantityCubicMeters,
-      weightKg: params.weightKg,
-      pricePerCubicMeter: params.pricePerCubicMeter,
-      totalAmount: params.totalAmount,
-      photos: params.photos || [],
-      createdBy: params.createdBy,
-    })
+    .values(insertData)
     .returning();
 
   // Log activity

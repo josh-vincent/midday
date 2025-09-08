@@ -21,6 +21,7 @@
     "@midday/encryption": "workspace:*",
     "@midday/invoice": "workspace:*",
     "@midday/logger": "workspace:*",
+    "@midday/redis": "workspace:*",
     "@midday/supabase": "workspace:*",
     "@scalar/hono-api-reference": "^0.9.4",
     "@sindresorhus/slugify": "^2.2.1",

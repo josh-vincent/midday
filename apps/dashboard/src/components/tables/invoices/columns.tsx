@@ -21,12 +21,29 @@ export type Invoice = NonNullable<
 
 export const columns: ColumnDef<Invoice>[] = [
   {
-    header: "Invoice no.",
-    accessorKey: "invoiceNumber",
+    header: "Title",
+    accessorKey: "title",
     meta: {
       className:
-        "w-[220px] min-w-[220px] md:sticky md:left-0 bg-background group-hover:bg-[#F2F1EF] group-hover:dark:bg-secondary z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background group-hover:after:to-muted after:z-[-1]",
+        "w-[180px] min-w-[180px] md:sticky md:left-0 bg-background group-hover:bg-[#F2F1EF] group-hover:dark:bg-secondary z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background group-hover:after:to-muted after:z-[-1]",
     },
+    cell: ({ row }) => {
+      // @ts-expect-error template is a jsonb field
+      const title = row.original.template?.title as string | undefined;
+      return (
+        <span
+          className={cn({
+            "line-through": row.original.status === "canceled",
+          })}
+        >
+          {title || "Invoice"}
+        </span>
+      );
+    },
+  },
+  {
+    header: "Invoice no.",
+    accessorKey: "invoiceNumber",
     cell: ({ row }) => (
       <span
         className={cn({

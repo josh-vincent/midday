@@ -315,6 +315,10 @@ export const invoiceRouter = createTRPCRouter({
     .input(draftInvoiceSchema)
     .mutation(async ({ input, ctx: { db, teamId, session } }) => {
       try {
+        // For drafts, we can work without a teamId temporarily
+        // This allows users to create drafts before having a team
+        const effectiveTeamId = teamId || "temp-team-" + session?.user.id;
+        
         // Generate defaults for minimal draft creation
         const id = input.id || crypto.randomUUID();
         const now = new Date();
@@ -350,9 +354,9 @@ export const invoiceRouter = createTRPCRouter({
         // This is a workaround for the database connection issue
         const draftData = {
           id,
-          teamId: teamId!,
+          teamId: effectiveTeamId,
           userId: session?.user.id!,
-          template: input.template || defaultTemplate,
+          template: { ...defaultTemplate, ...input.template },
           dueDate: input.dueDate || thirtyDaysFromNow.toISOString().split('T')[0],
           issueDate: input.issueDate || now.toISOString().split('T')[0],
           invoiceNumber: input.invoiceNumber || `INV-${Date.now()}`,
@@ -363,17 +367,31 @@ export const invoiceRouter = createTRPCRouter({
           paymentDetails: input.paymentDetails || null,
           fromDetails: input.fromDetails || null,
           customerDetails: input.customerDetails || null,
-          noteDetails: input.noteDetails || null,
+          noteDetails: typeof input.noteDetails === 'string' ? input.noteDetails : JSON.stringify(input.noteDetails) || null,
+          lineItems: input.lineItems || [],
+          amount: input.amount || 0,
+          subtotal: input.subtotal || 0,
+          vat: input.vat || 0,
+          tax: input.tax || 0,
+          discount: input.discount || 0,
+          logoUrl: input.logoUrl || null,
+          topBlock: input.topBlock || null,
+          bottomBlock: input.bottomBlock || null,
+          scheduledAt: input.scheduledAt || null,
         };
         
         // Try the database insert, but return draft data even if it fails
         try {
           const result = await draftInvoice(db, {
             ...draftData,
-            paymentDetails: parseInputValue(input.paymentDetails),
-            fromDetails: parseInputValue(input.fromDetails),
-            customerDetails: parseInputValue(input.customerDetails),
-            noteDetails: parseInputValue(input.noteDetails),
+            // These fields are already JSON strings or objects, don't parse them
+            paymentDetails: input.paymentDetails,
+            fromDetails: input.fromDetails,
+            customerDetails: input.customerDetails,
+            noteDetails: input.noteDetails,
+            lineItems: input.lineItems || [],
+            topBlock: input.topBlock,
+            bottomBlock: input.bottomBlock,
           });
           return result;
         } catch (dbError) {

@@ -58,7 +58,7 @@ export function TableHeader({ table, tableScroll, jobs }: Props) {
                 key={header.id}
                 style={{
                   width: header.column.id === 'select' 
-                    ? '40px' 
+                    ? 'w-[40px]' 
                     : tableScroll?.columnWidths?.[header?.column?.id],
                 }}
                 className={header.column.id === 'select' ? 'w-[40px]' : ''}

@@ -509,11 +509,26 @@ export async function draftInvoice(db: Database, params: DraftInvoiceParams) {
     fromDetails,
     customerDetails,
     noteDetails,
-    ...restInput
+    // Extract only the fields that exist in the invoices table
+    customerId,
+    customerName,
+    dueDate,
+    issueDate,
+    invoiceNumber,
+    logoUrl,
+    vat,
+    tax,
+    discount,
+    subtotal,
+    topBlock,
+    bottomBlock,
+    amount,
+    lineItems,
   } = params;
 
   const useToken = token ?? (await generateToken(id));
 
+  // Remove paymentDetails and fromDetails from template since they're stored separately
   const { paymentDetails: _, fromDetails: __, ...restTemplate } = template;
 
   const [result] = await db
@@ -523,9 +538,26 @@ export async function draftInvoice(db: Database, params: DraftInvoiceParams) {
       teamId,
       userId,
       token: useToken,
-      ...restInput,
-      currency: template.currency?.toUpperCase(),
+      // Only include fields that exist in the invoices table
+      customerId,
+      customerName,
+      dueDate,
+      issueDate,
+      invoiceNumber,
+      logoUrl,
+      vat,
+      tax,
+      discount,
+      subtotal,
+      topBlock,
+      bottomBlock,
+      amount,
+      lineItems,
+      status: "draft",
+      currency: template.currency?.toUpperCase() as any,
+      // Store template data in the template JSON column
       template: restTemplate,
+      // Store content fields
       paymentDetails: paymentDetails,
       fromDetails: fromDetails,
       customerDetails: customerDetails,
@@ -537,9 +569,26 @@ export async function draftInvoice(db: Database, params: DraftInvoiceParams) {
         teamId,
         userId,
         token: useToken,
-        ...restInput,
-        currency: template.currency?.toUpperCase(),
+        // Only include fields that exist in the invoices table
+        customerId,
+        customerName,
+        dueDate,
+        issueDate,
+        invoiceNumber,
+        logoUrl,
+        vat,
+        tax,
+        discount,
+        subtotal,
+        topBlock,
+        bottomBlock,
+        amount,
+        lineItems,
+        status: "draft",
+        currency: template.currency?.toUpperCase() as any,
+        // Store template data in the template JSON column
         template: camelcaseKeys(restTemplate, { deep: true }),
+        // Store content fields
         paymentDetails: paymentDetails,
         fromDetails: fromDetails,
         customerDetails: customerDetails,

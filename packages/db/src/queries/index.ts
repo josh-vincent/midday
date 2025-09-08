@@ -8,6 +8,7 @@ export * from "./user-invites";
 export * from "./invoices";
 export * from "./invoice-templates";
 export * from "./jobs";
+export * from "./jobs-enhanced";
 export * from "./customers";
 
 // Supporting queries

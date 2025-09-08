@@ -28,6 +28,8 @@ interface Job {
   materialType?: string;
   pricePerUnit?: number;
   cubicMetreCapacity?: number;
+  weightKg?: number;
+  notes?: string;
   jobDate?: string;
   status: "pending" | "in_progress" | "completed" | "cancelled";
   totalAmount?: number;
@@ -42,8 +44,11 @@ interface JobsTableProps {
 }
 
 export function JobsTable({ jobs }: JobsTableProps) {
-  const { rowSelection, setRowSelection, columnVisibility, setJobs, filters } =
-    useJobsStore();
+  const rowSelection = useJobsStore((state) => state.rowSelection);
+  const setRowSelection = useJobsStore((state) => state.setRowSelection);
+  const columnVisibility = useJobsStore((state) => state.columnVisibility);
+  const setJobs = useJobsStore((state) => state.setJobs);
+  const filters = useJobsStore((state) => state.filters);
 
   useEffect(() => {
     setJobs(jobs);
@@ -119,37 +124,42 @@ export function JobsTable({ jobs }: JobsTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-12">
-              <Checkbox
-                checked={isAllSelected}
-                indeterminate={isIndeterminate}
-                onCheckedChange={handleSelectAll}
-              />
+            <TableHead className="w-12 text-center">
+              <div className="flex items-center justify-center">
+                <Checkbox
+                  checked={isAllSelected}
+                  indeterminate={isIndeterminate}
+                  onCheckedChange={handleSelectAll}
+                />
+              </div>
             </TableHead>
-            {columnVisibility.jobDate !== false && <TableHead>Date</TableHead>}
-            {columnVisibility.jobNumber !== false && (
+            {(columnVisibility.jobDate ?? true) && <TableHead>Date</TableHead>}
+            {(columnVisibility.jobNumber ?? true) && (
               <TableHead>Job Details</TableHead>
             )}
-            {columnVisibility.contact !== false && (
+            {(columnVisibility.contact ?? true) && (
               <TableHead>Contact</TableHead>
             )}
-            {columnVisibility.vehicle !== false && (
+            {(columnVisibility.vehicle ?? true) && (
               <TableHead>Vehicle</TableHead>
             )}
-            {columnVisibility.material !== false && (
+            {(columnVisibility.material ?? true) && (
               <TableHead>Material</TableHead>
             )}
-            {columnVisibility.amount !== false && (
+            {(columnVisibility.amount ?? true) && (
               <TableHead className="text-right">Amount</TableHead>
             )}
-            {columnVisibility.status !== false && <TableHead>Status</TableHead>}
+            {(columnVisibility.status ?? true) && <TableHead>Status</TableHead>}
+            {(columnVisibility.volume ?? true) && <TableHead>Volume</TableHead>}
+            {(columnVisibility.weight ?? true) && <TableHead>Weight</TableHead>}
+            {(columnVisibility.description ?? true) && <TableHead>Description</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredJobs.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={8}
+                colSpan={11}
                 className="text-center py-8 text-muted-foreground"
               >
                 No jobs found
@@ -161,22 +171,24 @@ export function JobsTable({ jobs }: JobsTableProps) {
                 key={job.id}
                 className={rowSelection[job.id] ? "bg-muted/50" : ""}
               >
-                <TableCell>
-                  <Checkbox
-                    checked={rowSelection[job.id] || false}
-                    onCheckedChange={(checked) =>
-                      handleSelectRow(job.id, checked as boolean)
-                    }
-                  />
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center">
+                    <Checkbox
+                      checked={rowSelection[job.id] || false}
+                      onCheckedChange={(checked) =>
+                        handleSelectRow(job.id, checked as boolean)
+                      }
+                    />
+                  </div>
                 </TableCell>
-                {columnVisibility.jobDate !== false && (
+                {(columnVisibility.jobDate ?? true) && (
                   <TableCell>
                     {job.jobDate
                       ? format(new Date(job.jobDate), "MMM d, yyyy")
                       : "-"}
                   </TableCell>
                 )}
-                {columnVisibility.jobNumber !== false && (
+                {(columnVisibility.jobNumber ?? true) && (
                   <TableCell>
                     <div>
                       <div className="flex items-center gap-1 font-medium">
@@ -197,7 +209,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
                     </div>
                   </TableCell>
                 )}
-                {columnVisibility.contact !== false && (
+                {(columnVisibility.contact ?? true) && (
                   <TableCell>
                     <div className="space-y-1">
                       {job.contactPerson && (
@@ -215,7 +227,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
                     </div>
                   </TableCell>
                 )}
-                {columnVisibility.vehicle !== false && (
+                {(columnVisibility.vehicle ?? true) && (
                   <TableCell>
                     <div className="space-y-1">
                       {job.rego && (
@@ -237,7 +249,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
                     </div>
                   </TableCell>
                 )}
-                {columnVisibility.material !== false && (
+                {(columnVisibility.material ?? true) && (
                   <TableCell>
                     <div className="space-y-1">
                       {job.materialType && (
@@ -254,7 +266,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
                     </div>
                   </TableCell>
                 )}
-                {columnVisibility.amount !== false && (
+                {(columnVisibility.amount ?? true) && (
                   <TableCell className="text-right">
                     {job.pricePerUnit && job.cubicMetreCapacity ? (
                       <div>
@@ -273,11 +285,28 @@ export function JobsTable({ jobs }: JobsTableProps) {
                     )}
                   </TableCell>
                 )}
-                {columnVisibility.status !== false && (
+                {(columnVisibility.status ?? true) && (
                   <TableCell>
                     <Badge variant={getStatusColor(job.status)}>
                       {job.status.replace("_", " ")}
                     </Badge>
+                  </TableCell>
+                )}
+                {(columnVisibility.volume ?? true) && (
+                  <TableCell>
+                    {job.cubicMetreCapacity ? `${job.cubicMetreCapacity} m³` : "-"}
+                  </TableCell>
+                )}
+                {(columnVisibility.weight ?? true) && (
+                  <TableCell>
+                    {job.weightKg ? `${(job.weightKg / 1000).toFixed(2)} t` : "-"}
+                  </TableCell>
+                )}
+                {(columnVisibility.description ?? true) && (
+                  <TableCell className="max-w-[200px]">
+                    <div className="truncate" title={job.notes || ""}>
+                      {job.notes || "-"}
+                    </div>
                   </TableCell>
                 )}
               </TableRow>

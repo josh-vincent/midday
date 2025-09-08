@@ -46,7 +46,7 @@ export function DataTable({
 
   const tableScroll = useTableScroll({
     useColumnWidths: true,
-    startFromColumn: 1,
+    startFromColumn: 2,
   });
 
   const infiniteQueryOptions = trpc.invoice.get.infiniteQueryOptions(

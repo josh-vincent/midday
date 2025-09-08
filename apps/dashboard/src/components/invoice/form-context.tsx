@@ -2,7 +2,7 @@
 
 import { useZodForm } from "@/hooks/use-zod-form";
 import type { RouterOutputs } from "@api/trpc/routers/_app";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { FormProvider } from "react-hook-form";
 import { z } from "zod";
 
@@ -75,7 +75,7 @@ export const invoiceFormSchema = z.object({
   topBlock: z.any().nullable().optional(),
   bottomBlock: z.any().nullable().optional(),
   amount: z.number(),
-  lineItems: z.array(lineItemSchema).min(1),
+  lineItems: z.array(lineItemSchema).min(0),
   token: z.string().optional(),
   scheduledAt: z.string().nullable().optional(),
 });
@@ -97,6 +97,10 @@ export function FormContext({
   jobData,
   selectedJobs,
 }: FormContextProps) {
+  // Use a ref to track if we've initialized with job data
+  const hasInitializedWithJobs = React.useRef(false);
+  const hasInitializedWithDefaults = React.useRef(false);
+  
   const form = useZodForm(invoiceFormSchema, {
     // @ts-expect-error
     defaultValues: defaultSettings,
@@ -104,6 +108,31 @@ export function FormContext({
   });
 
   useEffect(() => {
+    // Skip if we've already initialized with jobs and there are no new jobs
+    if (hasInitializedWithJobs.current && selectedJobs) {
+      return;
+    }
+    
+    // Skip if we've already initialized with defaults and no new data
+    if (hasInitializedWithDefaults.current && !data && !jobData && !selectedJobs) {
+      return;
+    }
+    
+    // Only reset the form when we have default settings or data
+    if (!defaultSettings && !data) {
+      return;
+    }
+
+    console.log("FormContext useEffect triggered with:", {
+      hasDefaultSettings: !!defaultSettings,
+      hasData: !!data,
+      hasJobData: !!jobData,
+      hasSelectedJobs: !!selectedJobs,
+      selectedJobsLength: selectedJobs?.length,
+      hasInitializedWithJobs: hasInitializedWithJobs.current,
+      hasInitializedWithDefaults: hasInitializedWithDefaults.current
+    });
+
     // Build line items from job data
     let lineItems = data?.lineItems;
     
@@ -113,23 +142,61 @@ export function FormContext({
         name: jobData.description || `Job ${jobData.jobNumber}`,
         quantity: jobData.volume || 1,
         unit: jobData.volume ? "m³" : undefined,
-        price: jobData.totalAmount || 0,
+        price: (jobData.totalAmount || 0) / 100, // Convert from cents to dollars
         jobId: jobData.id,
       }];
-    } else if (!data && selectedJobs) {
+    } else if (!data && selectedJobs && selectedJobs.length > 0) {
       // Multiple jobs from bulk selection
       lineItems = selectedJobs.flatMap((group: any) => 
         group.jobs.map((job: any) => ({
           name: job.description || `Job ${job.jobNumber}`,
           quantity: job.volume || 1,
           unit: job.volume ? "m³" : undefined,
-          price: job.totalAmount || 0,
+          price: (job.totalAmount || 0) / 100, // Convert from cents to dollars
           jobId: job.id,
         }))
       );
     }
 
-    form.reset({
+    // Calculate totals from line items
+    let subtotal = 0;
+    let amount = 0;
+    if (lineItems && lineItems.length > 0) {
+      subtotal = lineItems.reduce((sum: number, item: any) => {
+        return sum + (item.price * item.quantity);
+      }, 0);
+      amount = subtotal; // Add tax/vat/discount calculations here if needed
+    }
+
+    // Get customer info from selected jobs
+    const customerFromJobs = selectedJobs?.[0]?.jobs?.[0] || selectedJobs?.[0];
+    const customerName = data?.customerName ?? jobData?.companyName ?? customerFromJobs?.customerName ?? customerFromJobs?.companyName ?? undefined;
+    const customerId = data?.customerId ?? jobData?.customerId ?? customerFromJobs?.customerId ?? defaultSettings?.customerId ?? undefined;
+
+    // Build customer details
+    let customerDetails = data?.customerDetails ?? defaultSettings?.customerDetails;
+    if (!data && customerName && !customerDetails) {
+      customerDetails = JSON.stringify({
+        type: "doc",
+        content: [
+          {
+            type: "paragraph",
+            content: [
+              {
+                type: "text",
+                text: customerName,
+              },
+            ],
+          },
+        ],
+      });
+    }
+
+    // Build the form data with proper priority:
+    // 1. Existing invoice data (when editing)
+    // 2. Job/selected jobs data (when creating from jobs)  
+    // 3. Default settings (fallback)
+    const formData = {
       ...(defaultSettings ?? {}),
       ...(data ?? {}),
       // @ts-expect-error
@@ -137,11 +204,42 @@ export function FormContext({
         ...(defaultSettings?.template ?? {}),
         ...(data?.template ?? {}),
       },
-      customerId: data?.customerId ?? jobData?.customerId ?? defaultSettings?.customerId ?? undefined,
-      customerName: data?.customerName ?? jobData?.companyName,
-      lineItems: lineItems || defaultSettings?.lineItems || [],
+      fromDetails: data?.fromDetails ?? defaultSettings?.fromDetails,
+      paymentDetails: data?.paymentDetails ?? defaultSettings?.paymentDetails,
+      customerId,
+      customerName,
+      customerDetails,
+      // Priority: edited invoice > job lineItems > default lineItems
+      lineItems: lineItems && lineItems.length > 0 ? lineItems : (defaultSettings?.lineItems || []),
+      subtotal: subtotal > 0 ? subtotal : (data?.subtotal || defaultSettings?.subtotal || 0),
+      amount: amount > 0 ? amount : (data?.amount || defaultSettings?.amount || 0),
+    };
+
+    console.log("About to reset form with:", {
+      lineItemsCount: formData.lineItems?.length,
+      customerName: formData.customerName,
+      customerId: formData.customerId,
+      subtotal: formData.subtotal,
+      amount: formData.amount
     });
-  }, [data, defaultSettings, jobData, selectedJobs]);
+
+    form.reset(formData);
+    
+    // Mark as initialized based on what we have
+    if (selectedJobs || jobData) {
+      hasInitializedWithJobs.current = true;
+    } else {
+      hasInitializedWithDefaults.current = true;
+    }
+    
+    // Only run this effect once for each type of data
+  }, [
+    // Only trigger on actual data changes, not every render
+    data?.id,
+    defaultSettings?.id,
+    jobData?.id,
+    selectedJobs ? "has-jobs" : "no-jobs"
+  ]);
 
   return <FormProvider {...form}>{children}</FormProvider>;
 }

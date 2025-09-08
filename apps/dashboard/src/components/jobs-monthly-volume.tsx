@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@midday/ui/card";
-import { Package } from "lucide-react";
+import { AnimatedNumber } from "./animated-number";
 interface JobsMonthlyVolumeProps {
   summary?: {
     volume: number;
@@ -16,10 +16,11 @@ export function JobsMonthlyVolume({ summary }: JobsMonthlyVolumeProps) {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="font-mono font-medium text-2xl flex items-center gap-2">
-          {totalVolume}
-          <span className="text-sm font-normal">m³</span>
-          <Package className="h-5 w-5 text-muted-foreground" />
+        <CardTitle className="font-mono font-medium text-2xl">
+          <AnimatedNumber
+            value={totalVolume}
+            maximumFractionDigits={1}
+            minimumFractionDigits={0} currency={null|"AUD"}          />
         </CardTitle>
       </CardHeader>
 
@@ -27,7 +28,7 @@ export function JobsMonthlyVolume({ summary }: JobsMonthlyVolumeProps) {
         <div className="flex flex-col gap-2">
           <div>Monthly Volume</div>
           <div className="text-sm text-muted-foreground">
-            {completedDeliveries} deliveries completed
+            {totalVolume}m³ from {completedDeliveries} deliveries
           </div>
         </div>
       </CardContent>

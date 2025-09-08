@@ -26,6 +26,7 @@ import { Label } from "@midday/ui/label";
 import { SubmitButton } from "@midday/ui/submit-button";
 import { Textarea } from "@midday/ui/textarea";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { z } from "zod";
 import { CountrySelector } from "../country-selector";
 import {
@@ -34,6 +35,7 @@ import {
 } from "../search-address-input";
 import { SelectTags } from "../select-tags";
 import { VatNumberInput } from "../vat-number-input";
+import { BulkLinkJobsDialog } from "../bulk-link-jobs-dialog";
 
 const formSchema = z.object({
   id: z.string().uuid().optional(),
@@ -91,13 +93,27 @@ export function CustomerForm({ data }: Props) {
   const queryClient = useQueryClient();
   const isEdit = !!data;
 
-  const { setParams: setCustomerParams, name } = useCustomerParams();
+  const { setParams: setCustomerParams, name, jobId } = useCustomerParams();
   const { setParams: setInvoiceParams, type } = useInvoiceParams();
   const fromInvoice = type === "create" || type === "edit";
+  const fromJob = !!jobId;
+
+  // State for bulk linking dialog
+  const [showBulkLinkDialog, setShowBulkLinkDialog] = useState(false);
+  const [newCustomer, setNewCustomer] = useState<{ id: string; name: string } | null>(null);
+
+  // Mutation to update job with customer link
+  const updateJobMutation = useMutation(
+    trpc.job.update.mutationOptions({
+      onError: (error) => {
+        console.error("Failed to link customer to job:", error);
+      },
+    }),
+  );
 
   const upsertCustomerMutation = useMutation(
     trpc.customers.upsert.mutationOptions({
-      onSuccess: (data) => {
+      onSuccess: async (data) => {
         queryClient.invalidateQueries({
           queryKey: trpc.customers.get.infiniteQueryKey(),
         });
@@ -115,8 +131,35 @@ export function CustomerForm({ data }: Props) {
           queryKey: trpc.search.global.queryKey(),
         });
 
-        // Close the customer form
-        setCustomerParams(null);
+        // Invalidate jobs queries to refresh the table
+        if (fromJob) {
+          queryClient.invalidateQueries({
+            queryKey: trpc.job.list.infiniteQueryKey(),
+          });
+        }
+
+        // If the customer is created from a job, link the customer to the job
+        if (data && fromJob && jobId) {
+          try {
+            await updateJobMutation.mutateAsync({
+              id: jobId,
+              customerId: data.id,
+              companyName: data.name || "",
+            });
+          } catch (error) {
+            console.error("Failed to link customer to job:", error);
+          }
+        }
+
+        // If customer was created (not edited), show bulk link dialog
+        // Skip only if specifically from job creation (where we already linked the job)
+        if (data && !isEdit && !fromJob) {
+          setNewCustomer({ id: data.id, name: data.name || "" });
+          setShowBulkLinkDialog(true);
+        } else {
+          // Close the customer form immediately if not showing bulk dialog
+          setCustomerParams(null);
+        }
 
         // If the customer is created from an invoice, set the customer as the selected customer
         if (data && fromInvoice) {
@@ -654,6 +697,23 @@ export function CustomerForm({ data }: Props) {
           </div>
         </div>
       </form>
+
+      {/* Bulk Link Jobs Dialog */}
+      {newCustomer && (
+        <BulkLinkJobsDialog
+          open={showBulkLinkDialog}
+          onOpenChange={(open) => {
+            setShowBulkLinkDialog(open);
+            if (!open) {
+              // Close the customer form when bulk dialog is closed
+              setCustomerParams(null);
+              setNewCustomer(null);
+            }
+          }}
+          customerName={newCustomer.name}
+          customerId={newCustomer.id}
+        />
+      )}
     </Form>
   );
 }

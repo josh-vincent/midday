@@ -1,6 +1,12 @@
 import { ErrorFallback } from "@/components/error-fallback";
 import { JobsHeader } from "@/components/jobs-header";
-import { JobSheet } from "@/components/sheets/job-sheet";
+import { JobsBulkActionsPopup } from "@/components/jobs-bulk-actions-popup";
+import { JobsMonthlyVolume } from "@/components/jobs-monthly-volume";
+import { JobsPending } from "@/components/jobs-pending";
+import { JobsToday } from "@/components/jobs-today";
+import { JobsWeekSummary } from "@/components/jobs-week-summary";
+import { CustomerCreateSheet } from "@/components/sheets/customer-create-sheet";
+import { JobCreateSheet } from "@/components/sheets/job-create-sheet";
 import { DataTable } from "@/components/tables/jobs/data-table";
 import { JobsSkeleton } from "@/components/tables/jobs/skeleton";
 import { loadJobFilterParams } from "@/hooks/use-job-filter-params.server";
@@ -26,47 +32,10 @@ async function JobsSummaryCards() {
   
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-      <div className="border rounded-lg p-4">
-        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <h3 className="text-sm font-medium">Today's Jobs</h3>
-        </div>
-        <div className="text-2xl font-bold">{summary.today.total}</div>
-        <p className="text-xs text-muted-foreground">
-          {summary.today.completed} completed
-        </p>
-      </div>
-      
-      <div className="border rounded-lg p-4">
-        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <h3 className="text-sm font-medium">Pending Value</h3>
-        </div>
-        <div className="text-2xl font-bold">
-          ${summary.pending.potentialRevenue.toLocaleString()}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Across {summary.pending.count} jobs
-        </p>
-      </div>
-      
-      <div className="border rounded-lg p-4">
-        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <h3 className="text-sm font-medium">This Week</h3>
-        </div>
-        <div className="text-2xl font-bold">{summary.week.jobCount}</div>
-        <p className="text-xs text-muted-foreground">
-          ${summary.week.revenue.toLocaleString()} revenue
-        </p>
-      </div>
-      
-      <div className="border rounded-lg p-4">
-        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <h3 className="text-sm font-medium">Monthly Volume</h3>
-        </div>
-        <div className="text-2xl font-bold">{summary.month.volume} m³</div>
-        <p className="text-xs text-muted-foreground">
-          {summary.month.deliveries} deliveries
-        </p>
-      </div>
+      <JobsToday summary={summary.today} />
+      <JobsWeekSummary summary={summary.week} />
+      <JobsPending summary={summary.pending} />
+      <JobsMonthlyVolume summary={summary.month} />
     </div>
   );
 }
@@ -89,8 +58,8 @@ export default async function JobsPage(props: Props) {
     <HydrateClient>
       <div className="flex flex-col gap-6 pt-6">
         {/* Summary Cards */}
+        
         <JobsSummaryCards />
-
         {/* Header with filters and create button */}
         <JobsHeader />
 
@@ -103,7 +72,13 @@ export default async function JobsPage(props: Props) {
       </div>
       
       {/* Job Sheet for creating/editing jobs */}
-      <JobSheet />
+      <JobCreateSheet />
+      
+      {/* Customer Create Sheet for linking companies */}
+      <CustomerCreateSheet />
+      
+      {/* Bulk Actions Popup */}
+      <JobsBulkActionsPopup />
     </HydrateClient>
   );
 }

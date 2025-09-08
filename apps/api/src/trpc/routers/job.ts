@@ -386,6 +386,9 @@ export const jobsRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
+        
+        // Customer linking
+        customerId: z.string().optional().nullable(),
 
         // Contact details
         contactPerson: z.string().optional(),
@@ -473,6 +476,55 @@ export const jobsRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx: { db }, input }) => {
       return deleteJob(db, input.id);
+    }),
+
+  // Bulk update status
+  updateManyStatus: protectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string()),
+        status: z.enum(["pending", "in_progress", "completed", "cancelled", "invoiced"]),
+      }),
+    )
+    .mutation(async ({ ctx: { db, teamId }, input }) => {
+      if (!teamId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "No team selected",
+        });
+      }
+
+      const results = [];
+      for (const id of input.ids) {
+        const result = await updateJob(db, {
+          id,
+          status: input.status,
+          teamId,
+        });
+        results.push(result);
+      }
+      
+      return { count: results.length, ids: input.ids };
+    }),
+
+  // Bulk delete
+  deleteMany: protectedProcedure
+    .input(z.array(z.string()))
+    .mutation(async ({ ctx: { db, teamId }, input }) => {
+      if (!teamId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "No team selected",
+        });
+      }
+
+      const results = [];
+      for (const id of input) {
+        const result = await deleteJob(db, id);
+        results.push(result);
+      }
+      
+      return { count: results.length, ids: input };
     }),
 
   // New endpoint for bulk import

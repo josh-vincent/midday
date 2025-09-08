@@ -447,8 +447,7 @@ export const invoices = pgTable(
       .references(() => teams.id, { onDelete: "cascade" })
       .notNull(),
     customerId: uuid("customer_id")
-      .references(() => customers.id, { onDelete: "restrict" })
-      .notNull(),
+      .references(() => customers.id, { onDelete: "restrict" }),
     templateId: uuid("template_id").references(() => invoiceTemplates.id),
     invoiceNumber: varchar("invoice_number", { length: 50 }).notNull(),
     issueDate: date("issue_date", { mode: "string" }).notNull(),

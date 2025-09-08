@@ -1,5 +1,6 @@
 "use client";
 
+import { BulkLinkJobsDialog } from "@/components/bulk-link-jobs-dialog";
 import { LoadMore } from "@/components/load-more";
 import { useCustomerFilterParams } from "@/hooks/use-customer-filter-params";
 import { useCustomerParams } from "@/hooks/use-customer-params";
@@ -13,7 +14,7 @@ import {
   getFilteredRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import React, { useDeferredValue, useEffect, useMemo } from "react";
+import React, { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import { columns } from "./columns";
 import { EmptyState, NoResults } from "./empty-states";
@@ -26,6 +27,10 @@ export function DataTable() {
   const trpc = useTRPC();
   const { filter, hasFilters } = useCustomerFilterParams();
   const { params } = useSortParams();
+
+  // State for bulk linking dialog
+  const [showBulkLinkDialog, setShowBulkLinkDialog] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<{ id: string; name: string } | null>(null);
 
   const deferredSearch = useDeferredValue(filter.q);
 
@@ -60,6 +65,11 @@ export function DataTable() {
     deleteCustomerMutation.mutate({ id });
   };
 
+  const handleShowBulkLinkDialog = (customerId: string, customerName: string) => {
+    setSelectedCustomer({ id: customerId, name: customerName });
+    setShowBulkLinkDialog(true);
+  };
+
   useEffect(() => {
     if (inView) {
       fetchNextPage();
@@ -86,6 +96,7 @@ export function DataTable() {
     getFilteredRowModel: getFilteredRowModel(),
     meta: {
       deleteCustomer: handleDeleteCustomer,
+      showBulkLinkDialog: handleShowBulkLinkDialog,
     },
   });
 
@@ -115,6 +126,21 @@ export function DataTable() {
       </div>
 
       <LoadMore ref={ref} hasNextPage={hasNextPage} />
+
+      {/* Bulk Link Jobs Dialog */}
+      {selectedCustomer && (
+        <BulkLinkJobsDialog
+          open={showBulkLinkDialog}
+          onOpenChange={(open) => {
+            setShowBulkLinkDialog(open);
+            if (!open) {
+              setSelectedCustomer(null);
+            }
+          }}
+          customerName={selectedCustomer.name}
+          customerId={selectedCustomer.id}
+        />
+      )}
     </div>
   );
 }

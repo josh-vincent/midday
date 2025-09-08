@@ -6,6 +6,7 @@ export function useCustomerParams() {
     createCustomer: parseAsBoolean,
     name: parseAsString,
     q: parseAsString,
+    jobId: parseAsString, // For linking back to jobs after customer creation
   });
 
   return {

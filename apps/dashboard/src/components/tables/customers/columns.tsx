@@ -15,6 +15,7 @@ import {
 import { ScrollArea, ScrollBar } from "@midday/ui/scroll-area";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import type { ColumnDef } from "@tanstack/react-table";
+import { LinkIcon } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
@@ -148,6 +149,15 @@ export const columns: ColumnDef<Customer>[] = [
                 }
               >
                 Edit customer
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={() =>
+                  table.options.meta?.showBulkLinkDialog?.(row.original.id, row.original.name)
+                }
+              >
+                <LinkIcon className="h-4 w-4 mr-2" />
+                Link jobs
               </DropdownMenuItem>
 
               <DropdownMenuItem

@@ -7,22 +7,24 @@ import { Icons } from "@midday/ui/icons";
 import { Popover, PopoverContent, PopoverTrigger } from "@midday/ui/popover";
 
 export function JobsColumnVisibility() {
-  const { columnVisibility, setColumnVisibility } = useJobsStore();
+  const columnVisibility = useJobsStore((state) => state.columnVisibility);
+  const setColumnVisibility = useJobsStore((state) => state.setColumnVisibility);
 
   const columns = [
-    { id: "jobDate", label: "Date" },
     { id: "jobNumber", label: "Job Number" },
-    { id: "contact", label: "Contact" },
-    { id: "vehicle", label: "Vehicle" },
-    { id: "material", label: "Material" },
-    { id: "amount", label: "Amount" },
+    { id: "jobDate", label: "Date" },
+    { id: "companyName", label: "Company" },
+    { id: "description", label: "Description" },
     { id: "status", label: "Status" },
+    { id: "volume", label: "Volume" },
+    { id: "weight", label: "Weight" },
+    { id: "totalAmount", label: "Amount" },
   ];
 
-  const handleToggle = (columnId: string) => {
+  const handleToggle = (columnId: string, checked: boolean) => {
     setColumnVisibility({
       ...columnVisibility,
-      [columnId]: !columnVisibility[columnId],
+      [columnId]: checked,
     });
   };
 
@@ -40,8 +42,8 @@ export function JobsColumnVisibility() {
             <div key={column.id} className="flex items-center space-x-2">
               <Checkbox
                 id={column.id}
-                checked={columnVisibility[column.id] !== false}
-                onCheckedChange={() => handleToggle(column.id)}
+                checked={columnVisibility[column.id] ?? true}
+                onCheckedChange={(checked) => handleToggle(column.id, checked as boolean)}
               />
               <label
                 htmlFor={column.id}

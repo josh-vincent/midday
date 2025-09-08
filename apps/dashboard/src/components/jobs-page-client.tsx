@@ -1,6 +1,7 @@
 "use client";
 
 import { JobsActions } from "@/components/jobs-actions";
+import { JobsCSVImporter } from "@/components/import/jobs-csv-importer";
 import { JobsGroupedView } from "@/components/jobs-grouped-view";
 import { JobsMonthlyVolume } from "@/components/jobs-monthly-volume";
 import { JobsPending } from "@/components/jobs-pending";
@@ -9,8 +10,9 @@ import { JobsToday } from "@/components/jobs-today";
 import { JobsWeekSummary } from "@/components/jobs-week-summary";
 import { JobCreateSheet } from "@/components/sheets/job-create-sheet";
 import { JobsTable } from "@/components/tables/jobs-table";
+import { Button } from "@midday/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@midday/ui/toggle-group";
-import { LayoutGrid, List } from "lucide-react";
+import { LayoutGrid, List, Upload } from "lucide-react";
 import { useState } from "react";
 
 type Job = {
@@ -66,6 +68,7 @@ export function JobsPageClient({
   initialSummary,
 }: JobsPageClientProps) {
   const [viewMode, setViewMode] = useState<"table" | "grouped">("table");
+  const [showImporter, setShowImporter] = useState(false);
   const [jobs] = useState(initialJobs);
   const [summary] = useState(initialSummary);
 
@@ -94,6 +97,10 @@ export function JobsPageClient({
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
           <JobsSearchFilter />
+          <Button variant="outline" onClick={() => setShowImporter(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Import CSV
+          </Button>
           <ToggleGroup
             type="single"
             value={viewMode}
@@ -120,6 +127,7 @@ export function JobsPageClient({
       )}
 
       <JobCreateSheet />
+      <JobsCSVImporter open={showImporter} onOpenChange={setShowImporter} />
     </div>
   );
 }
