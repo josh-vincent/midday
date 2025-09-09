@@ -27,7 +27,7 @@ export function Sidebar() {
         )}
       >
         <Link href="/" className="absolute left-[22px] transition-none">
-          <Icons.LogoSmall />
+          <Icons.Tracker />
         </Link>
       </div>
 

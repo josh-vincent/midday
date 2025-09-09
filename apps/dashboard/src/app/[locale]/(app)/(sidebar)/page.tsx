@@ -1,21 +1,32 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useTRPC } from "@/trpc/client";
+import { Button } from "@midday/ui/button";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import type { SearchParams } from "nuqs";
+import { useRouter } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Overview | ToCLD",
-};
+export default function Overview() {
+  const trpc = useTRPC();
+  const router = useRouter();
 
-type Props = {
-  searchParams: Promise<SearchParams>;
-};
+  const { data: customersData, isLoading: customersLoading } = useQuery(
+    trpc.customers.get.queryOptions({
+      pageSize: 1,
+    })
+  );
 
-export default async function Overview(props: Props) {
+  const { data: templateConfig, isLoading: templateLoading } = useQuery(
+    trpc.invoiceTemplate.isConfigured.queryOptions()
+  );
+
+  const hasCustomers = customersData?.data && customersData.data.length > 0;
+  const hasInvoiceTemplate = templateConfig?.isConfigured ?? false;
+
   return (
-    <div className="flex flex-col h-full mt-8">
-     
-     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-     <Link
+    <div className="flex flex-col mt-8">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Link
           href="/jobs"
           className="group p-6 border rounded-lg hover:border-primary transition-colors"
         >
@@ -49,19 +60,51 @@ export default async function Overview(props: Props) {
             Manage customer information
           </p>
         </Link>
-
-        <Link
-          href="/settings"
-          className="group p-6 border rounded-lg hover:border-primary transition-colors"
-        >
-          <h3 className="font-semibold mb-2 group-hover:text-primary">
-            Settings
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Configure your business details
-          </p>
-        </Link>
       </div>
+
+      {!customersLoading && !templateLoading && (!hasCustomers || !hasInvoiceTemplate) && (
+        <div className="flex items-center justify-center min-h-[calc(100vh-300px)]">
+          <div className="flex flex-col items-center space-y-8">
+            {!hasCustomers && (
+              <div className="flex flex-col items-center">
+                <div className="text-center mb-6 space-y-2">
+                  <h2 className="font-medium text-lg">Add your first customer to get started</h2>
+                  <p className="text-[#606060] text-sm">
+                    You haven't created any customers yet. <br />
+                    Create your first customer to begin managing jobs and invoices.
+                  </p>
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() => router.push("/customers?createCustomer=true")}
+                >
+                  Add customer
+                </Button>
+              </div>
+            )}
+
+            {hasCustomers && !hasInvoiceTemplate && (
+              <div className="flex flex-col items-center">
+                <div className="text-center mb-6 space-y-2">
+                  <h2 className="font-medium text-lg">Setup your invoice templates</h2>
+                  <p className="text-[#606060] text-sm">
+                    Configure your company details and payment information <br />
+                    to start creating professional invoices.
+                  </p>
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() => router.push("/settings/invoice")}
+                >
+                  Setup invoicing
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

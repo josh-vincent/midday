@@ -11,6 +11,7 @@ export default function imageLoader({
   width,
   quality = 80,
 }: ImageLoaderParams): string {
+  return src;
   if (src.startsWith("/_next")) {
     return `${CDN_URL}/cdn-cgi/image/width=${width},quality=${quality}/https://app.midday.ai${src}`;
   }

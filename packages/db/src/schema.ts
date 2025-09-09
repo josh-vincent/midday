@@ -458,13 +458,13 @@ export const invoices = pgTable(
     exchangeRate: numericCasted("exchange_rate", { precision: 10, scale: 4 }).default(1),
     
     // Amounts
-    subtotal: integer().default(0).notNull(), // in cents
+    subtotal: numericCasted("subtotal", { precision: 10, scale: 2 }).default(0).notNull(), // in cents
     taxRate: numericCasted("tax_rate", { precision: 5, scale: 2 }).default(0),
-    taxAmount: integer("tax_amount").default(0).notNull(), // in cents
+    taxAmount: numericCasted("tax_amount", { precision: 10, scale: 2 }).default(0).notNull(), // in cents
     discountRate: numericCasted("discount_rate", { precision: 5, scale: 2 }).default(0),
     discountAmount: integer("discount_amount").default(0).notNull(), // in cents
-    totalAmount: integer("total_amount").default(0).notNull(), // in cents
-    paidAmount: integer("paid_amount").default(0).notNull(), // in cents
+    totalAmount: numericCasted("total_amount", { precision: 10, scale: 2 }).default(0).notNull(), // in cents
+    paidAmount: numericCasted("paid_amount", { precision: 10, scale: 2 }).default(0).notNull(), // in cents
     
     // Content
     lineItems: jsonb("line_items").default([]).notNull(),
@@ -476,13 +476,13 @@ export const invoices = pgTable(
     noteDetails: text("note_details"),
     template: jsonb(),
     token: text(),
-    amount: integer().default(0),
+    amount: numericCasted("amount", { precision: 10, scale: 2 }).default(0),
     userId: uuid("user_id").references(() => users.id),
     customerName: text("customer_name"),
     invoiceDate: date("invoice_date", { mode: "string" }),
-    tax: integer().default(0),
-    vat: integer().default(0),
-    discount: integer().default(0),
+    tax: numericCasted("tax", { precision: 10, scale: 2 }).default(0),
+    vat: numericCasted("vat", { precision: 10, scale: 2 }).default(0),
+    discount: numericCasted("discount", { precision: 10, scale: 2 }).default(0),
     topBlock: text("top_block"),
     bottomBlock: text("bottom_block"),
     scheduledAt: timestamp("scheduled_at", { mode: "string" }),
@@ -632,7 +632,7 @@ export const payments = pgTable(
     invoiceId: uuid("invoice_id")
       .references(() => invoices.id, { onDelete: "cascade" })
       .notNull(),
-    amount: integer().notNull(), // in cents
+    amount: numericCasted("amount", { precision: 10, scale: 2 }).notNull(), // in cents
     currency: currencyEnum().default("AUD").notNull(),
     paymentDate: date("payment_date", { mode: "string" }).notNull(),
     paymentMethod: paymentMethodEnum("payment_method").notNull(),
@@ -742,7 +742,7 @@ export const jobs = pgTable(
     equipmentType: varchar("equipment_type", { length: 100 }), // Truck & Trailer 22m3, Tandem 10m3, etc.
     materialType: varchar("material_type", { length: 100 }), // Dry Clean Fill, etc.
     pricePerUnit: numericCasted("price_per_unit", { precision: 10, scale: 2 }), // Price per cubic metre
-    cubicMetreCapacity: integer("cubic_metre_capacity"), // Load capacity in m3
+    cubicMetreCapacity: numericCasted("cubic_metre_capacity", { precision: 10, scale: 2 }), // Load capacity in m3
     
     // Date tracking
     jobDate: date("job_date", { mode: "string" }), // Date of the job
@@ -754,8 +754,8 @@ export const jobs = pgTable(
     dirtType: dirtTypeEnum("dirt_type"),
     quantityCubicMeters: numericCasted("quantity_cubic_meters", { precision: 10, scale: 2 }), // m³
     weightKg: numericCasted("weight_kg", { precision: 12, scale: 2 }), // kg (optional)
-    pricePerCubicMeter: integer("price_per_cubic_meter"), // cents per m³
-    totalAmount: integer("total_amount"), // total in cents
+    pricePerCubicMeter: numericCasted("price_per_cubic_meter", { precision: 10, scale: 2 }), // cents per m³
+    totalAmount: numericCasted("total_amount", { precision: 10, scale: 2 }), // total in cents
     
     // Tracking
     status: jobStatusEnum().default("pending").notNull(),

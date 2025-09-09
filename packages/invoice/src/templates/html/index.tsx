@@ -63,7 +63,7 @@ export function HtmlTemplate({ data, width, height }: Props) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-6 mb-4">
           <div>
-            <p className="text-[11px] text-[#878787] font-mono mb-2 block">
+            <p className="text-[11px] text-[#878787] font-mono mb-2 block text-pretty">
               {template.fromLabel}
             </p>
             <EditorContent content={fromDetails} />

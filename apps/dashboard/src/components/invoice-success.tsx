@@ -70,7 +70,8 @@ export function InvoiceSuccess() {
               <span className="font-mono text-[11px]">
                 {format(
                   new Date(invoice.dueDate!),
-                  invoice.template.dateFormat,
+                  // Fix legacy date formats for date-fns v2+: DD -> dd, YYYY -> yyyy
+                  invoice.template.dateFormat.replace(/DD/g, 'dd').replace(/YYYY/g, 'yyyy'),
                 )}
               </span>
             </div>

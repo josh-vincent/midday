@@ -17,8 +17,7 @@ export function CustomersHeader() {
 
         <div className="hidden sm:flex sm:gap-2">
           <Button variant="outline" onClick={() => setShowImporter(true)}>
-            <Upload className="mr-2 h-4 w-4" />
-            Import from CSV
+            <Upload className="h-4 w-4" />
           </Button>
           <OpenCustomerSheet />
         </div>

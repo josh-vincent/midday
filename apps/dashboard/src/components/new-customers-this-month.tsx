@@ -15,7 +15,7 @@ export function NewCustomersThisMonth() {
     <Card className="hidden sm:block">
       <CardHeader className="pb-3">
         <CardTitle className="font-mono font-medium text-2xl">
-          <NumberFlow value={data} willChange />
+          <NumberFlow value={data.data.count} willChange />
         </CardTitle>
       </CardHeader>
 

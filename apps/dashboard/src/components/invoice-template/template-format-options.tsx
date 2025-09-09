@@ -18,6 +18,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@midday/ui/form";
+import { Input } from "@midday/ui/input";
 import {
   Select,
   SelectContent,
@@ -27,7 +28,7 @@ import {
 } from "@midday/ui/select";
 import { SubmitButton } from "@midday/ui/submit-button";
 import { Switch } from "@midday/ui/switch";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { z } from "zod";
 
@@ -44,12 +45,31 @@ const formSchema = z.object({
   includeQr: z.boolean(),
   vatRate: z.number().min(0).max(100).optional(),
   taxRate: z.number().min(0).max(100).optional(),
+  quantityLabel: z.string().optional(),
 });
 
 export function TemplateFormatOptions({ template }: { template: any }) {
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  
   const updateMutation = useMutation(
-    trpc.invoiceTemplate.upsert.mutationOptions(),
+    trpc.invoiceTemplate.upsert.mutationOptions({
+      onSuccess: () => {
+        // Invalidate and refetch template data
+        queryClient.invalidateQueries({
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return queryKey[0] === 'trpc' && 
+                   queryKey[1] && 
+                   (queryKey[1].toString().startsWith('invoiceTemplate.get') ||
+                    queryKey[1].toString().startsWith('invoiceTemplate.isConfigured'));
+          },
+        });
+      },
+      onError: (error) => {
+        console.error("Failed to update template format options:", error);
+      },
+    }),
   );
 
   const form = useZodForm(formSchema, {
@@ -66,6 +86,7 @@ export function TemplateFormatOptions({ template }: { template: any }) {
       includeQr: template?.includeQr || false,
       vatRate: template?.vatRate || 0,
       taxRate: template?.taxRate || 0,
+      quantityLabel: template?.quantityLabel || "Qty",
     },
   });
 
@@ -84,11 +105,17 @@ export function TemplateFormatOptions({ template }: { template: any }) {
         includeQr: template.includeQr || false,
         vatRate: template.vatRate || 0,
         taxRate: template.taxRate || 0,
+        quantityLabel: template.quantityLabel || "Qty",
       });
     }
   }, [template, form]);
 
+  const watchIncludeTax = form.watch("includeTax");
+  const watchIncludeVat = form.watch("includeVat");
+  const watchIncludeUnits = form.watch("includeUnits");
+
   const onSubmit = form.handleSubmit((data) => {
+    console.log("Submitting format options:", data);
     updateMutation.mutate(data);
   });
 
@@ -192,14 +219,39 @@ export function TemplateFormatOptions({ template }: { template: any }) {
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FormLabel className="font-normal">Include VAT</FormLabel>
+                    
+                    {watchIncludeVat && (
+                      <FormField
+                        control={form.control}
+                        name="vatRate"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-2">
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="number"
+                                placeholder="20"
+                                className="w-[80px]"
+                                step="0.01"
+                                min="0"
+                                max="100"
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <span className="text-sm text-muted-foreground">%</span>
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
+                  
                   <FormField
                     control={form.control}
                     name="includeVat"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between space-y-0 w-full">
-                        <FormLabel className="font-normal">
-                          Include VAT
-                        </FormLabel>
+                      <FormItem>
                         <FormControl>
                           <Switch
                             checked={field.value}
@@ -212,14 +264,39 @@ export function TemplateFormatOptions({ template }: { template: any }) {
                 </div>
 
                 <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FormLabel className="font-normal">Include Sales Tax</FormLabel>
+                    
+                    {watchIncludeTax && (
+                      <FormField
+                        control={form.control}
+                        name="taxRate"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-2">
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="number"
+                                placeholder="10"
+                                className="w-[80px]"
+                                step="0.01"
+                                min="0"
+                                max="100"
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <span className="text-sm text-muted-foreground">%</span>
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
+                  
                   <FormField
                     control={form.control}
                     name="includeTax"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between space-y-0 w-full">
-                        <FormLabel className="font-normal">
-                          Include Sales Tax
-                        </FormLabel>
+                      <FormItem>
                         <FormControl>
                           <Switch
                             checked={field.value}
@@ -272,14 +349,33 @@ export function TemplateFormatOptions({ template }: { template: any }) {
                 </div>
 
                 <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <FormLabel className="font-normal">Include Units Field</FormLabel>
+                    
+                    {watchIncludeUnits && (
+                      <FormField
+                        control={form.control}
+                        name="quantityLabel"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-2">
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="Qty"
+                                className="w-[80px]"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
+                  
                   <FormField
                     control={form.control}
                     name="includeUnits"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between space-y-0 w-full">
-                        <FormLabel className="font-normal">
-                          Include Units Field
-                        </FormLabel>
+                      <FormItem>
                         <FormControl>
                           <Switch
                             checked={field.value}

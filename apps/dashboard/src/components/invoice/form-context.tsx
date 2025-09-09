@@ -137,22 +137,78 @@ export function FormContext({
     let lineItems = data?.lineItems;
     
     if (!data && jobData) {
-      // Single job conversion
+      // Single job conversion - Build comprehensive description
+      const buildJobDescription = (job: any) => {
+        const parts = [];
+        
+        // Add job number if available
+        if (job.jobNumber) {
+          parts.push(`Job ${job.jobNumber}`);
+        }
+        
+        // Add job date if available
+        if (job.jobDate) {
+          const date = new Date(job.jobDate);
+          const formattedDate = date.toLocaleDateString();
+          parts.push(formattedDate);
+        }
+        
+        // Add address/site if available
+        if (job.addressSite) {
+          parts.push(job.addressSite);
+        }
+        
+        // Add original description if available and not redundant
+        if (job.description && !parts.some(part => part.includes(job.description))) {
+          parts.push(job.description);
+        }
+        
+        return parts.length > 0 ? parts.join(' - ') : "Job Item";
+      };
+
       lineItems = [{
-        name: jobData.description || `Job ${jobData.jobNumber}`,
-        quantity: jobData.volume || 1,
-        unit: jobData.volume ? "m³" : undefined,
-        price: (jobData.totalAmount || 0) / 100, // Convert from cents to dollars
+        name: buildJobDescription(jobData),
+        quantity: Math.max(jobData.volume || jobData.cubicMetreCapacity || 1, 1),
+        unit: (jobData.volume || jobData.cubicMetreCapacity) ? "m³" : undefined,
+        price: jobData.pricePerUnit || Math.max((jobData.totalAmount || 0) / 100, 0), // Use price per unit (in dollars) first, fallback to total amount converted from cents
         jobId: jobData.id,
       }];
     } else if (!data && selectedJobs && selectedJobs.length > 0) {
       // Multiple jobs from bulk selection
+      const buildJobDescription = (job: any) => {
+        const parts = [];
+        
+        // Add job number if available
+        if (job.jobNumber) {
+          parts.push(`Job ${job.jobNumber}`);
+        }
+        
+        // Add job date if available
+        if (job.jobDate) {
+          const date = new Date(job.jobDate);
+          const formattedDate = date.toLocaleDateString();
+          parts.push(formattedDate);
+        }
+        
+        // Add address/site if available
+        if (job.addressSite) {
+          parts.push(job.addressSite);
+        }
+        
+        // Add original description if available and not redundant
+        if (job.description && !parts.some(part => part.includes(job.description))) {
+          parts.push(job.description);
+        }
+        
+        return parts.length > 0 ? parts.join(' - ') : "Job Item";
+      };
+
       lineItems = selectedJobs.flatMap((group: any) => 
         group.jobs.map((job: any) => ({
-          name: job.description || `Job ${job.jobNumber}`,
-          quantity: job.volume || 1,
-          unit: job.volume ? "m³" : undefined,
-          price: (job.totalAmount || 0) / 100, // Convert from cents to dollars
+          name: buildJobDescription(job),
+          quantity: Math.max(job.volume || job.cubicMetreCapacity || 1, 1),
+          unit: (job.volume || job.cubicMetreCapacity) ? "m³" : undefined,
+          price: job.pricePerUnit || Math.max((job.totalAmount || 0) / 100, 0), // Use price per unit (in dollars) first, fallback to total amount converted from cents
           jobId: job.id,
         }))
       );
@@ -173,24 +229,62 @@ export function FormContext({
     const customerName = data?.customerName ?? jobData?.companyName ?? customerFromJobs?.customerName ?? customerFromJobs?.companyName ?? undefined;
     const customerId = data?.customerId ?? jobData?.customerId ?? customerFromJobs?.customerId ?? defaultSettings?.customerId ?? undefined;
 
-    // Build customer details
+    // Build comprehensive customer details from job data
     let customerDetails = data?.customerDetails ?? defaultSettings?.customerDetails;
     if (!data && customerName && !customerDetails) {
+      const jobForCustomer = jobData || customerFromJobs;
+      const customerDetailsParts = [];
+      
+      // Add customer/company name
+      customerDetailsParts.push({
+        type: "paragraph",
+        content: [{
+          type: "text",
+          text: customerName,
+          marks: [{ type: "bold" }]
+        }],
+      });
+      
+      // Add contact person if available
+      if (jobForCustomer?.contactPerson) {
+        customerDetailsParts.push({
+          type: "paragraph", 
+          content: [{
+            type: "text",
+            text: `Contact: ${jobForCustomer.contactPerson}`,
+          }],
+        });
+      }
+      
+      // Add contact number if available
+      if (jobForCustomer?.contactNumber) {
+        customerDetailsParts.push({
+          type: "paragraph",
+          content: [{
+            type: "text", 
+            text: `Phone: ${jobForCustomer.contactNumber}`,
+          }],
+        });
+      }
+      
+      // Add address if available
+      if (jobForCustomer?.addressSite) {
+        customerDetailsParts.push({
+          type: "paragraph",
+          content: [{
+            type: "text",
+            text: jobForCustomer.addressSite,
+          }],
+        });
+      }
+
       customerDetails = JSON.stringify({
         type: "doc",
-        content: [
-          {
-            type: "paragraph",
-            content: [
-              {
-                type: "text",
-                text: customerName,
-              },
-            ],
-          },
-        ],
+        content: customerDetailsParts,
       });
     }
+
+    // No conversion needed - amounts should be in the correct format already
 
     // Build the form data with proper priority:
     // 1. Existing invoice data (when editing)
@@ -210,20 +304,38 @@ export function FormContext({
       customerName,
       customerDetails,
       // Priority: edited invoice > job lineItems > default lineItems
-      lineItems: lineItems && lineItems.length > 0 ? lineItems : (defaultSettings?.lineItems || []),
+      lineItems: lineItems && lineItems.length > 0 
+        ? lineItems 
+        : (data?.lineItems || defaultSettings?.lineItems || []),
+      // Use amounts as-is from the data
       subtotal: subtotal > 0 ? subtotal : (data?.subtotal || defaultSettings?.subtotal || 0),
       amount: amount > 0 ? amount : (data?.amount || defaultSettings?.amount || 0),
+      tax: data?.tax || defaultSettings?.tax || 0,
+      vat: data?.vat || defaultSettings?.vat || 0,
+      discount: data?.discount || defaultSettings?.discount || 0,
     };
 
     console.log("About to reset form with:", {
       lineItemsCount: formData.lineItems?.length,
       customerName: formData.customerName,
       customerId: formData.customerId,
+      customerDetails: formData.customerDetails,
       subtotal: formData.subtotal,
-      amount: formData.amount
+      amount: formData.amount,
+      hasJobData: !!jobData,
+      hasSelectedJobs: !!selectedJobs,
+      lineItems: formData.lineItems,
     });
 
     form.reset(formData);
+    
+    // Force the form to be dirty when we have job data so auto-save triggers
+    if ((selectedJobs || jobData) && !data) {
+      // Set a field to mark form as dirty and trigger auto-save
+      setTimeout(() => {
+        form.setValue('customerName', formData.customerName || '', { shouldDirty: true });
+      }, 100);
+    }
     
     // Mark as initialized based on what we have
     if (selectedJobs || jobData) {

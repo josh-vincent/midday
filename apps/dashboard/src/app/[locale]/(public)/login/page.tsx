@@ -11,6 +11,7 @@ import Image from "next/image";
 import Link from "next/link";
 import backgroundDark from "public/assets/bg-login-dark.jpg";
 import backgroundLight from "public/assets/bg-login.jpg";
+import dirtbg from "public/assets/dirt-bg.png";
 import { useState } from "react";
 
 export default function Page() {
@@ -21,7 +22,7 @@ export default function Page() {
       {/* Header - Logo */}
       <header className="absolute top-0 left-0 z-30 w-full">
         <div className="p-6 md:p-8">
-          <Icons.LogoSmall className="h-8 w-auto" />
+          <Icons.Tracker className="h-8 w-auto" />
         </div>
       </header>
 
@@ -30,14 +31,14 @@ export default function Page() {
         {/* Background Image Section - Hidden on mobile, visible on desktop */}
         <div className="hidden lg:flex lg:w-1/2 relative">
           <Image
-            src={backgroundLight}
+              src={dirtbg}
             alt="Background"
             className="object-cover dark:hidden"
             priority
             fill
           />
           <Image
-            src={backgroundDark}
+            src={dirtbg}
             alt="Background"
             className="object-cover hidden dark:block"
             priority

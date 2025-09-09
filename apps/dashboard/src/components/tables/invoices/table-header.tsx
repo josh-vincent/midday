@@ -61,19 +61,24 @@ export function TableHeader({ table, tableScroll }: Props) {
   return (
     <BaseTableHeader className="border-l-0 border-r-0">
       <TableRow>
-        {isVisible("invoiceNumber") && (
+        {isVisible("select") && (
+          <TableHead className="w-[40px] min-w-[40px] md:sticky md:left-0 bg-background z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background after:z-[-1]">
+            <span>Select</span>
+          </TableHead>
+        )}
+        {isVisible("title") && (
           <TableHead className="w-[220px] min-w-[220px] md:sticky md:left-0 bg-background z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background after:z-[-1]">
             <div className="flex items-center justify-between">
               <Button
                 className="p-0 hover:bg-transparent space-x-2"
                 variant="ghost"
-                onClick={() => createSortQuery("invoice_number")}
+                onClick={() => createSortQuery("title")}
               >
                 <span>Invoice no.</span>
-                {"invoiceNumber" === column && value === "asc" && (
+                {"title" === column && value === "asc" && (
                   <ArrowDown size={16} />
                 )}
-                {"invoiceNumber" === column && value === "desc" && (
+                {"title" === column && value === "desc" && (
                   <ArrowUp size={16} />
                 )}
               </Button>

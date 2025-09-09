@@ -366,6 +366,124 @@ export async function getJobsByTeamId(db: Database, teamId: string) {
     .orderBy(desc(jobs.createdAt));
 }
 
+export async function getUnlinkedJobsByCompanyName(
+  db: Database,
+  teamId: string,
+  companyName?: string,
+  limit = 50
+) {
+  let conditions: SQL[] = [
+    eq(jobs.teamId, teamId),
+    sql`${jobs.customerId} IS NULL`, // No customer linked
+    sql`${jobs.companyName} IS NOT NULL` // But has company name
+  ];
+
+  if (companyName) {
+    conditions.push(sql`${jobs.companyName} ILIKE ${`%${companyName}%`}`);
+  }
+
+  return db
+    .select()
+    .from(jobs)
+    .where(and(...conditions))
+    .orderBy(desc(jobs.createdAt))
+    .limit(limit);
+}
+
+type GetJobsAdvancedParams = {
+  teamId: string;
+  search?: string | null;
+  customerId?: string | null;
+  status?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  sort?: string[] | null;
+  cursor?: string | null;
+  limit?: number;
+};
+
+export async function getJobsAdvanced(db: Database, params: GetJobsAdvancedParams) {
+  const {
+    teamId,
+    search,
+    customerId,
+    status,
+    startDate,
+    endDate,
+    sort,
+    cursor,
+    limit = 50
+  } = params;
+
+  let conditions: SQL[] = [
+    eq(jobs.teamId, teamId),
+    sql`${jobs.invoiceId} IS NULL` // Filter out invoiced jobs
+  ];
+
+  // Search filter
+  if (search && search !== null) {
+    const searchLower = `%${search.toLowerCase()}%`;
+    conditions.push(
+      sql`(
+        ${jobs.jobNumber} ILIKE ${searchLower} OR 
+        ${jobs.companyName} ILIKE ${searchLower} OR 
+        ${jobs.addressSite} ILIKE ${searchLower} OR 
+        ${jobs.materialType} ILIKE ${searchLower} OR 
+        ${jobs.contactPerson} ILIKE ${searchLower}
+      )`
+    );
+  }
+
+  // Customer filter
+  if (customerId && customerId !== null) {
+    conditions.push(eq(jobs.customerId, customerId));
+  }
+
+  // Status filter
+  if (status && status !== null) {
+    conditions.push(eq(jobs.status, status));
+  }
+
+  // Date range filter
+  if ((startDate && startDate !== null) || (endDate && endDate !== null)) {
+    if (startDate && startDate !== null) {
+      conditions.push(sql`${jobs.jobDate} >= ${startDate}`);
+    }
+    if (endDate && endDate !== null) {
+      conditions.push(sql`${jobs.jobDate} <= ${endDate}`);
+    }
+  }
+
+  // Sorting
+  let orderBySql = desc(jobs.createdAt); // default sort
+  if (sort && sort !== null && sort.length > 0) {
+    const [column, direction] = sort[0].split(":");
+    const jobsColumn = jobs[column as keyof typeof jobs] as any;
+    
+    if (jobsColumn) {
+      orderBySql = direction === "desc" ? desc(jobsColumn) : asc(jobsColumn);
+    }
+  }
+
+  // Cursor-based pagination
+  const cursorIndex = cursor ? parseInt(cursor, 10) : 0;
+  
+  const results = await db
+    .select()
+    .from(jobs)
+    .where(and(...conditions))
+    .orderBy(orderBySql)
+    .limit(limit)
+    .offset(cursorIndex);
+
+  const nextCursor = results.length === limit ? String(cursorIndex + limit) : undefined;
+
+  return {
+    data: results,
+    cursor: nextCursor,
+  };
+}
+
 export async function deleteJob(db: Database, id: string) {
   const [result] = await db
     .delete(jobs)

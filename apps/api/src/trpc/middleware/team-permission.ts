@@ -97,9 +97,9 @@ export const withTeamPermission = async <TReturn>(opts: {
     hasAccess =
       result?.teamId === teamId ||
       (memberships &&
-        memberships.some((membership) => membership.teamId === teamId));
+        memberships.some((membership: any) => membership.teamId === teamId));
 
-    await teamCache.set(cacheKey, hasAccess);
+    await teamCache.set(cacheKey, hasAccess || false);
   }
 
   if (!hasAccess) {

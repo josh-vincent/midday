@@ -40,7 +40,7 @@ import {
   TooltipTrigger,
 } from "@midday/ui/tooltip";
 import { useToast } from "@midday/ui/use-toast";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarIcon, Info, Plus } from "lucide-react";
 import { useAction } from "next-safe-action/hooks";
@@ -103,6 +103,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
   const { setParams: setCustomerParams } = useCustomerParams();
   const { toast } = useToast();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   // Query customers for search
   const { data: customersData } = useQuery(
@@ -129,6 +130,16 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
   const createJobMutation = useMutation(
     trpc.job.create.mutationOptions({
       onSuccess: (data) => {
+        // Invalidate job queries to refresh table
+        queryClient.invalidateQueries({
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return queryKey[0] === 'trpc' && 
+                   queryKey[1] && 
+                   queryKey[1].toString().startsWith('job.');
+          },
+        });
+
         toast({
           title: "Job created",
           description: "The job has been created successfully.",
@@ -150,6 +161,16 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
   const updateJobMutation = useMutation(
     trpc.job.update.mutationOptions({
       onSuccess: (data) => {
+        // Invalidate job queries to refresh table and remove warning icons
+        queryClient.invalidateQueries({
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return queryKey[0] === 'trpc' && 
+                   queryKey[1] && 
+                   queryKey[1].toString().startsWith('job.');
+          },
+        });
+
         toast({
           title: "Job updated",
           description: "The job has been updated successfully.",
@@ -176,13 +197,13 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
       contactPerson: job?.contactPerson || "",
       contactNumber: job?.contactNumber || "",
       rego: job?.rego || "",
-      loadNumber: job?.loadNumber || undefined,
+      loadNumber: job?.loadNumber ?? undefined,
       companyName: job?.companyName || "",
       addressSite: job?.addressSite || "",
       equipmentType: job?.equipmentType || "",
       materialType: job?.materialType || "",
-      pricePerUnit: job?.pricePerUnit || undefined,
-      cubicMetreCapacity: job?.cubicMetreCapacity || undefined,
+      pricePerUnit: job?.pricePerUnit ?? undefined,
+      cubicMetreCapacity: job?.cubicMetreCapacity ?? undefined,
       jobDate: job?.jobDate ? new Date(job.jobDate) : undefined,
       status: job?.status || "pending",
       notes: job?.notes || "",
@@ -215,7 +236,8 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
       >
         <div className="flex-1 overflow-y-auto px-1 -mx-1">
           <div className="grid grid-cols-2 gap-4 pb-4">
-            <FormField
+            {/* We are using Company Name Instead to do this search 
+             <FormField
               control={form.control}
               name="customerId"
               render={({ field }) => (
@@ -235,8 +257,95 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
 
+<FormField
+              control={form.control}
+              name="companyName"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Company Name</FormLabel>
+                  <FormControl>
+                    <div className="relative customer-search-container">
+                      <Input
+                        placeholder="Search for customer or type new name"
+                        autoComplete="off"
+                        value={field.value}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setCustomerSearch(e.target.value);
+                          setShowCustomerSearch(true);
+                        }}
+                        onFocus={() => setShowCustomerSearch(true)}
+                      />
+                      {showCustomerSearch && customerSearch && (
+                        <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-auto rounded-md border bg-popover p-1 shadow-md">
+                          {customersData?.data &&
+                          customersData.data.length > 0 ? (
+                            <>
+                              {customersData.data.map((customer) => (
+                                <button
+                                  key={customer.id}
+                                  type="button"
+                                  className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                                  onClick={() => {
+                                    form.setValue("customerId", customer.id);
+                                    form.setValue("companyName", customer.name);
+                                    setShowCustomerSearch(false);
+                                  }}
+                                >
+                                  <div className="font-medium">
+                                    {customer.name}
+                                  </div>
+                                  {customer.email && (
+                                    <div className="text-xs text-muted-foreground">
+                                      {customer.email}
+                                    </div>
+                                  )}
+                                </button>
+                              ))}
+                              <div className="border-t mt-1 pt-1">
+                                <button
+                                  type="button"
+                                  className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
+                                  onClick={() => {
+                                    setCustomerParams({
+                                      createCustomer: true,
+                                      name: customerSearch,
+                                    });
+                                    setShowCustomerSearch(false);
+                                  }}
+                                >
+                                  <Plus className="h-3 w-3" />
+                                  Create "{customerSearch}" as new customer
+                                </button>
+                              </div>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
+                              onClick={() => {
+                                setCustomerParams({
+                                  createCustomer: true,
+                                  name: customerSearch,
+                                });
+                                setShowCustomerSearch(false);
+                              }}
+                            >
+                              <Plus className="h-3 w-3" />
+                              Create "{customerSearch}" as new customer
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
             <FormField
               control={form.control}
               name="jobNumber"
@@ -362,7 +471,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                       type="number"
                       placeholder="1"
                       autoComplete="off"
-                      {...field}
+                      value={field.value ?? ""}
                       onChange={(e) => {
                         const value = e.target.value
                           ? Number.parseInt(e.target.value, 10)
@@ -376,92 +485,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="companyName"
-              render={({ field }) => (
-                <FormItem className="col-span-2">
-                  <FormLabel>Company Name</FormLabel>
-                  <FormControl>
-                    <div className="relative customer-search-container">
-                      <Input
-                        placeholder="Search for customer or type new name"
-                        autoComplete="off"
-                        value={field.value}
-                        onChange={(e) => {
-                          field.onChange(e);
-                          setCustomerSearch(e.target.value);
-                          setShowCustomerSearch(true);
-                        }}
-                        onFocus={() => setShowCustomerSearch(true)}
-                      />
-                      {showCustomerSearch && customerSearch && (
-                        <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-64 overflow-auto rounded-md border bg-popover p-1 shadow-md">
-                          {customersData?.data &&
-                          customersData.data.length > 0 ? (
-                            <>
-                              {customersData.data.map((customer) => (
-                                <button
-                                  key={customer.id}
-                                  type="button"
-                                  className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
-                                  onClick={() => {
-                                    form.setValue("customerId", customer.id);
-                                    form.setValue("companyName", customer.name);
-                                    setShowCustomerSearch(false);
-                                  }}
-                                >
-                                  <div className="font-medium">
-                                    {customer.name}
-                                  </div>
-                                  {customer.email && (
-                                    <div className="text-xs text-muted-foreground">
-                                      {customer.email}
-                                    </div>
-                                  )}
-                                </button>
-                              ))}
-                              <div className="border-t mt-1 pt-1">
-                                <button
-                                  type="button"
-                                  className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
-                                  onClick={() => {
-                                    setCustomerParams({
-                                      createCustomer: true,
-                                      name: customerSearch,
-                                    });
-                                    setShowCustomerSearch(false);
-                                  }}
-                                >
-                                  <Plus className="h-3 w-3" />
-                                  Create "{customerSearch}" as new customer
-                                </button>
-                              </div>
-                            </>
-                          ) : (
-                            <button
-                              type="button"
-                              className="w-full rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
-                              onClick={() => {
-                                setCustomerParams({
-                                  createCustomer: true,
-                                  name: customerSearch,
-                                });
-                                setShowCustomerSearch(false);
-                              }}
-                            >
-                              <Plus className="h-3 w-3" />
-                              Create "{customerSearch}" as new customer
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            
 
             <FormField
               control={form.control}
@@ -560,7 +584,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                       step="0.01"
                       placeholder="85.00"
                       autoComplete="off"
-                      {...field}
+                      value={field.value ?? ""}
                       onChange={(e) => {
                         const value = e.target.value
                           ? Number.parseFloat(e.target.value)
@@ -585,7 +609,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                       type="number"
                       placeholder="22"
                       autoComplete="off"
-                      {...field}
+                      value={field.value ?? ""}
                       onChange={(e) => {
                         const value = e.target.value
                           ? Number.parseInt(e.target.value, 10)

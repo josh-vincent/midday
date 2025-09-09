@@ -32,7 +32,7 @@ interface JobsActionsProps {
 }
 
 export function JobsActions({ jobs = [] }: JobsActionsProps) {
-  const { setRowSelection, rowSelection } = useJobsStore();
+  const { setRowSelection, rowSelection, setOpenJobSheet } = useJobsStore();
   const router = useRouter();
 
   const jobIds = Object.keys(rowSelection);
@@ -71,7 +71,9 @@ export function JobsActions({ jobs = [] }: JobsActionsProps) {
     );
 
     // Navigate to invoice page and open creation sheet
-    router.push("/invoices?type=create&fromJobs=true");
+    // Clear job sheet state and URL parameters to prevent job sheet from opening
+    setOpenJobSheet(false);
+    router.replace("/invoices?type=create&fromJobs=true");
     setRowSelection(() => ({}));
   };
 

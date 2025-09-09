@@ -1,15 +1,15 @@
-CREATE TYPE "public"."currency" AS ENUM('USD', 'EUR', 'GBP', 'AUD', 'CAD', 'NZD', 'JPY', 'CNY', 'INR');--> statement-breakpoint
-CREATE TYPE "public"."dirt_type" AS ENUM('clean_fill', 'topsoil', 'contaminated', 'mixed', 'clay', 'sand', 'gravel', 'concrete', 'asphalt', 'other');--> statement-breakpoint
-CREATE TYPE "public"."document_processing_status" AS ENUM('pending', 'processing', 'completed', 'failed');--> statement-breakpoint
-CREATE TYPE "public"."invite_status" AS ENUM('pending', 'accepted', 'declined', 'expired');--> statement-breakpoint
-CREATE TYPE "public"."invoice_status" AS ENUM('draft', 'unpaid', 'paid', 'canceled', 'overdue', 'partially_paid', 'scheduled');--> statement-breakpoint
-CREATE TYPE "public"."job_status" AS ENUM('pending', 'in_progress', 'completed', 'invoiced', 'cancelled');--> statement-breakpoint
-CREATE TYPE "public"."notification_type" AS ENUM('invoice_created', 'invoice_paid', 'invoice_overdue', 'invoice_reminder', 'payment_received', 'payment_failed');--> statement-breakpoint
-CREATE TYPE "public"."payment_method" AS ENUM('bank_transfer', 'credit_card', 'cash', 'check', 'other');--> statement-breakpoint
-CREATE TYPE "public"."plans" AS ENUM('trial', 'free', 'pro', 'enterprise');--> statement-breakpoint
-CREATE TYPE "public"."reportTypes" AS ENUM('profit', 'revenue', 'burn_rate', 'expense');--> statement-breakpoint
-CREATE TYPE "public"."team_role" AS ENUM('owner', 'member');--> statement-breakpoint
-CREATE TYPE "public"."teamRoles" AS ENUM('owner', 'member');--> statement-breakpoint
+-- CREATE TYPE "public"."currency" AS ENUM('USD', 'EUR', 'GBP', 'AUD', 'CAD', 'NZD', 'JPY', 'CNY', 'INR');--> statement-breakpoint
+-- CREATE TYPE "public"."dirt_type" AS ENUM('clean_fill', 'topsoil', 'contaminated', 'mixed', 'clay', 'sand', 'gravel', 'concrete', 'asphalt', 'other');--> statement-breakpoint
+-- CREATE TYPE "public"."document_processing_status" AS ENUM('pending', 'processing', 'completed', 'failed');--> statement-breakpoint
+-- CREATE TYPE "public"."invite_status" AS ENUM('pending', 'accepted', 'declined', 'expired');--> statement-breakpoint
+-- CREATE TYPE "public"."invoice_status" AS ENUM('draft', 'unpaid', 'paid', 'canceled', 'overdue', 'partially_paid', 'scheduled');--> statement-breakpoint
+-- CREATE TYPE "public"."job_status" AS ENUM('pending', 'in_progress', 'completed', 'invoiced', 'cancelled');--> statement-breakpoint
+-- CREATE TYPE "public"."notification_type" AS ENUM('invoice_created', 'invoice_paid', 'invoice_overdue', 'invoice_reminder', 'payment_received', 'payment_failed');--> statement-breakpoint
+-- CREATE TYPE "public"."payment_method" AS ENUM('bank_transfer', 'credit_card', 'cash', 'check', 'other');--> statement-breakpoint
+-- CREATE TYPE "public"."plans" AS ENUM('trial', 'free', 'pro', 'enterprise');--> statement-breakpoint
+-- CREATE TYPE "public"."reportTypes" AS ENUM('profit', 'revenue', 'burn_rate', 'expense');--> statement-breakpoint
+-- CREATE TYPE "public"."team_role" AS ENUM('owner', 'member');--> statement-breakpoint
+-- CREATE TYPE "public"."teamRoles" AS ENUM('owner', 'member');--> statement-breakpoint
 CREATE TABLE "activities" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"team_id" uuid NOT NULL,

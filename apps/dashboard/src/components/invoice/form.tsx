@@ -36,26 +36,49 @@ export function Form() {
   const draftInvoiceMutation = useMutation(
     trpc.invoice.draft.mutationOptions({
       onSuccess: (data) => {
+        console.log("Draft saved successfully:", data);
         if (!invoiceId && data?.id) {
+          console.log("Setting invoice ID from draft:", data.id);
           setParams({ type: "edit", invoiceId: data.id });
         }
 
         setLastUpdated(new Date());
 
         queryClient.invalidateQueries({
-          queryKey: trpc.invoice.get.infiniteQueryKey(),
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return queryKey[0] === 'trpc' && 
+                   queryKey[1] && 
+                   (queryKey[1].toString().startsWith('invoice.get') ||
+                    queryKey[1].toString().startsWith('invoice.invoiceSummary') ||
+                    queryKey[1].toString().startsWith('invoice.getInvoiceByToken'));
+          },
         });
+      },
+      onError: (error) => {
+        console.error("Failed to save draft:", error);
+      },
+    }),
+  );
 
+  // Job status update mutation for when jobs are added to invoice
+  const updateJobStatusMutation = useMutation(
+    trpc.job.updateManyStatus.mutationOptions({
+      onSuccess: (data) => {
+        console.log(`Updated ${data.count} jobs to in_progress status`);
+        // Invalidate job queries to refresh UI
         queryClient.invalidateQueries({
-          queryKey: trpc.invoice.invoiceSummary.queryKey(),
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return queryKey[0] === 'trpc' && 
+                   queryKey[1] && 
+                   queryKey[1].toString().startsWith('job.');
+          },
         });
-
-        // Invalidate the getInvoiceByToken query to refresh preview
-        if (token) {
-          queryClient.invalidateQueries({
-            queryKey: trpc.invoice.getInvoiceByToken.queryKey({ token }),
-          });
-        }
+      },
+      onError: (error) => {
+        console.error("Failed to update job statuses:", error);
+        // Don't show error toast as this is a secondary operation
       },
     }),
   );
@@ -63,24 +86,72 @@ export function Form() {
   const createInvoiceMutation = useMutation(
     trpc.invoice.create.mutationOptions({
       onSuccess: (data) => {
-        queryClient.invalidateQueries({
-          queryKey: trpc.invoice.get.infiniteQueryKey(),
+        console.log("Invoice created successfully:", data);
+        console.log("Created invoice amounts:", {
+          amount: data.amount,
+          subtotal: data.subtotal,
+          tax: data.tax,
+          vat: data.vat,
+          lineItems: data.lineItems?.map((item: any) => ({ name: item.name, price: item.price, quantity: item.quantity }))
         });
+        
+        // Update job statuses to "in_progress" if jobs were used for this invoice
+        if (typeof window !== "undefined") {
+          const storedJobs = sessionStorage.getItem("selectedJobsForInvoice");
+          if (storedJobs) {
+            try {
+              const jobGroups = JSON.parse(storedJobs);
+              const allJobIds: string[] = [];
+              
+              // Extract all job IDs from the grouped structure
+              jobGroups.forEach((group: any) => {
+                if (group.jobs && Array.isArray(group.jobs)) {
+                  group.jobs.forEach((job: any) => {
+                    if (job.id) allJobIds.push(job.id);
+                  });
+                }
+              });
+              
+              if (allJobIds.length > 0) {
+                console.log(`Updating ${allJobIds.length} jobs to in_progress status`);
+                updateJobStatusMutation.mutate({
+                  ids: allJobIds,
+                  status: "in_progress"
+                });
+              }
+              
+              // Clear the stored jobs after processing
+              sessionStorage.removeItem("selectedJobsForInvoice");
+            } catch (error) {
+              console.error("Error processing stored jobs:", error);
+              sessionStorage.removeItem("selectedJobsForInvoice"); // Clear anyway
+            }
+          }
+        }
 
         queryClient.invalidateQueries({
-          queryKey: trpc.invoice.getById.queryKey(),
-        });
-
-        queryClient.invalidateQueries({
-          queryKey: trpc.invoice.invoiceSummary.queryKey(),
-        });
-
-        // Invalidate global search
-        queryClient.invalidateQueries({
-          queryKey: trpc.search.global.queryKey(),
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return queryKey[0] === 'trpc' && 
+                   queryKey[1] && 
+                   (queryKey[1].toString().startsWith('invoice.get') ||
+                    queryKey[1].toString().startsWith('invoice.getById') ||
+                    queryKey[1].toString().startsWith('invoice.invoiceSummary') ||
+                    queryKey[1].toString().startsWith('search.global'));
+          },
         });
 
         setParams({ type: "success", invoiceId: data.id });
+      },
+      onError: (error) => {
+        console.error("Failed to create invoice - Full error:", error);
+        console.error("Error message:", error.message);
+        console.error("Error data:", error.data);
+        console.error("Error shape:", error.shape);
+        console.error("Error code:", error.code);
+        console.error("Error stack:", error.stack);
+        console.error("Error keys:", Object.keys(error));
+        console.error("Stringified error:", JSON.stringify(error, null, 2));
       },
     }),
   );
@@ -96,11 +167,21 @@ export function Form() {
   const [debouncedValue] = useDebounceValue(formValues, 500);
 
   useEffect(() => {
-    if (isDirty && invoiceNumberValid) {
+    console.log("Draft save effect triggered:", {
+      isDirty,
+      invoiceNumberValid,
+      debouncedValue: !!debouncedValue,
+      isPending: draftInvoiceMutation.isPending,
+    });
+    
+    if (isDirty && invoiceNumberValid && !draftInvoiceMutation.isPending) {
       const currentFormValues = form.getValues();
+      const draftData = transformFormValuesToDraft(currentFormValues);
+      console.log("Saving draft with data:", draftData);
+      
       draftInvoiceMutation.mutate(
         // @ts-expect-error
-        transformFormValuesToDraft(currentFormValues),
+        draftData,
       );
     }
   }, [debouncedValue, isDirty, invoiceNumberValid]);
@@ -123,11 +204,63 @@ export function Form() {
 
   // Submit the form and the draft invoice
   const handleSubmit = (values: InvoiceFormValues) => {
-    createInvoiceMutation.mutate({
-      id: values.id,
-      deliveryType: values.template.deliveryType ?? "create",
-      scheduledAt: values.scheduledAt || undefined,
+    console.log("Form submitted with values:", values);
+    console.log("URL invoiceId:", invoiceId);
+    console.log("Form values.id:", values.id);
+    
+    const finalInvoiceId = values.id || invoiceId;
+    
+    if (!finalInvoiceId) {
+      console.error("No invoice ID available for creation!");
+      return;
+    }
+
+    console.log("Creating invoice with ID:", finalInvoiceId);
+    
+    // Always save draft first to ensure the latest data is persisted
+    const currentFormValues = form.getValues();
+    const draftData = transformFormValuesToDraft(currentFormValues);
+    
+    // Ensure the draft has the correct ID
+    draftData.id = finalInvoiceId;
+    
+    console.log("Saving final draft before invoice creation:", {
+      ...draftData,
+      lineItems: draftData.lineItems?.map(item => ({ 
+        name: item.name, 
+        quantity: item.quantity, 
+        price: item.price 
+      }))
     });
+    
+    // Save draft first, then create invoice
+    draftInvoiceMutation.mutate(
+      // @ts-expect-error
+      draftData,
+      {
+        onSuccess: (draftResult) => {
+          console.log("Final draft saved successfully:", draftResult);
+          const createId = draftResult?.id || finalInvoiceId;
+          console.log("Now creating invoice with ID:", createId);
+          
+          // Small delay to ensure draft is fully committed, then proceed with invoice creation
+          setTimeout(() => {
+            console.log("Draft save confirmed, proceeding with invoice creation");
+            createInvoiceMutation.mutate({
+              id: createId,
+              deliveryType: values.template.deliveryType ?? "create",
+              scheduledAt: values.scheduledAt || undefined,
+            });
+          }, 300);
+        },
+        onError: (error) => {
+          console.error("Failed to save final draft - Full error:", error);
+          console.error("Draft save error message:", error.message);
+          console.error("Draft save error data:", error.data);
+          console.error("Draft save error stringified:", JSON.stringify(error, null, 2));
+        }
+      }
+    );
   };
 
   // Prevent form from submitting when pressing enter
@@ -140,7 +273,10 @@ export function Form() {
   return (
     <form
       // @ts-expect-error
-      onSubmit={form.handleSubmit(handleSubmit)}
+      onSubmit={form.handleSubmit((values) => {
+        console.log("Form onSubmit triggered");
+        handleSubmit(values);
+      })}
       className="relative h-full"
       onKeyDown={handleKeyDown}
     >
@@ -209,6 +345,7 @@ export function Form() {
           </div>
 
           <SubmitButton
+            type="submit"
             isSubmitting={createInvoiceMutation.isPending}
             disabled={
               createInvoiceMutation.isPending || draftInvoiceMutation.isPending

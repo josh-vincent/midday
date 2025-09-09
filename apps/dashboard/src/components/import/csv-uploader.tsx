@@ -183,8 +183,8 @@ export function CSVUploader({
         </Alert>
       )}
 
-      <div className="rounded-lg bg-muted/50 p-4">
-        <h4 className="mb-2 font-medium">Expected Format:</h4>
+      {/* <div className="rounded-lg bg-muted/50 p-4"> */}
+        {/* <h4 className="mb-2 font-medium">Expected Format:</h4>
         <ul className="space-y-1 text-sm text-muted-foreground">
           <li>• First row should contain column headers</li>
           <li>
@@ -192,8 +192,8 @@ export function CSVUploader({
           </li>
           <li>• Dates should be in DD/MM/YYYY format</li>
           <li>• Maximum file size: {maxFileSize / 1024 / 1024}MB</li>
-        </ul>
-      </div>
+        </ul> */}
+      {/* </div> */}
     </div>
   );
 }

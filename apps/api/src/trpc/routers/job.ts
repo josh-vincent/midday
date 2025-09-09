@@ -3,6 +3,8 @@ import {
   createJob,
   deleteJob,
   getJobsByTeamId,
+  getJobsAdvanced,
+  getUnlinkedJobsByCompanyName,
   updateJob,
 } from "@midday/db/queries";
 import { TRPCError } from "@trpc/server";
@@ -98,95 +100,20 @@ export const jobsRouter = createTRPCRouter({
     )
     .query(async ({ ctx: { db, teamId }, input }) => {
       if (!teamId) {
-        return [];
+        return { data: [], cursor: undefined };
       }
       
-      // Get all jobs for the team
-      let jobs = await getJobsByTeamId(db, teamId);
-      
-      // Filter by search query
-      if (input?.q && input.q !== null) {
-        const searchLower = input.q.toLowerCase();
-        jobs = jobs.filter(
-          (job) =>
-            job.jobNumber?.toLowerCase().includes(searchLower) ||
-            job.companyName?.toLowerCase().includes(searchLower) ||
-            job.addressSite?.toLowerCase().includes(searchLower) ||
-            job.materialType?.toLowerCase().includes(searchLower) ||
-            job.contactPerson?.toLowerCase().includes(searchLower),
-        );
-      }
-      
-      // Filter by customer
-      if (input?.customerId && input.customerId !== null) {
-        jobs = jobs.filter((job) => job.customerId === input.customerId);
-      }
-      
-      // Filter by status
-      if (input?.status && input.status !== null) {
-        jobs = jobs.filter((job) => job.status === input.status);
-      }
-      
-      // Filter by date range
-      if ((input?.start && input.start !== null) || (input?.end && input.end !== null)) {
-        jobs = jobs.filter((job) => {
-          if (!job.jobDate) return false;
-          const jobDate = new Date(job.jobDate);
-          
-          if (input.start && input.start !== null && jobDate < new Date(input.start)) {
-            return false;
-          }
-          if (input.end && input.end !== null && jobDate > new Date(input.end)) {
-            return false;
-          }
-          return true;
-        });
-      }
-      
-      // Filter out invoiced jobs (those with invoiceId)
-      jobs = jobs.filter((job) => !job.invoiceId);
-      
-      // Sort
-      if (input?.sort && input.sort !== null && input.sort.length > 0) {
-        const [column, direction] = input.sort[0].split(":");
-        
-        jobs.sort((a, b) => {
-          let aVal: any = (a as any)[column];
-          let bVal: any = (b as any)[column];
-          
-          // Handle null/undefined values
-          if (aVal == null) aVal = "";
-          if (bVal == null) bVal = "";
-          
-          // Handle date comparison
-          if (column === "jobDate") {
-            aVal = new Date(aVal);
-            bVal = new Date(bVal);
-          }
-          
-          // Handle numeric comparison
-          if (column === "totalAmount" || column === "volume" || column === "weight") {
-            aVal = Number(aVal) || 0;
-            bVal = Number(bVal) || 0;
-          }
-          
-          // Compare
-          if (aVal < bVal) return direction === "desc" ? 1 : -1;
-          if (aVal > bVal) return direction === "desc" ? -1 : 1;
-          return 0;
-        });
-      }
-      
-      // For infinite scroll pagination
-      const limit = input?.limit || 50;
-      const cursorIndex = input?.cursor ? parseInt(input.cursor, 10) : 0;
-      const paginatedJobs = jobs.slice(cursorIndex, cursorIndex + limit);
-      const nextCursor = cursorIndex + limit < jobs.length ? String(cursorIndex + limit) : undefined;
-      
-      return {
-        data: paginatedJobs,
-        cursor: nextCursor,
-      };
+      return getJobsAdvanced(db, {
+        teamId,
+        search: input?.q,
+        customerId: input?.customerId,
+        status: input?.status,
+        startDate: input?.start,
+        endDate: input?.end,
+        sort: input?.sort,
+        cursor: input?.cursor,
+        limit: input?.limit,
+      });
     }),
 
   summary: protectedProcedure.query(async ({ ctx: { db, teamId } }) => {
@@ -621,6 +548,23 @@ export const jobsRouter = createTRPCRouter({
       // For now, return all jobs and filter on client
       const allJobs = await getJobsByTeamId(db, teamId);
       return allJobs.filter((job) => job.jobDate === input.date);
+    }),
+
+  // Get unlinked jobs by company name
+  unlinkedByCompany: protectedProcedure
+    .input(z.object({
+      companyName: z.string().optional(),
+      limit: z.number().default(50)
+    }).optional())
+    .query(async ({ ctx: { db, teamId }, input }) => {
+      if (!teamId) return [];
+      
+      return getUnlinkedJobsByCompanyName(
+        db, 
+        teamId, 
+        input?.companyName,
+        input?.limit
+      );
     }),
 
   // Get job summary by company

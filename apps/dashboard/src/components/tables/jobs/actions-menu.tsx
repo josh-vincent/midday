@@ -34,11 +34,13 @@ export function ActionsMenu({ row }: Props) {
   const { setParams } = useJobParams();
   const job = row.original;
 
-  const handleEdit = () => {
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setParams({ jobId: job.id });
   };
 
-  const handleDuplicate = () => {
+  const handleDuplicate = (e: React.MouseEvent) => {
+    e.stopPropagation();
     // TODO: Implement duplicate functionality
     toast({
       title: "Job duplicated",
@@ -46,7 +48,8 @@ export function ActionsMenu({ row }: Props) {
     });
   };
 
-  const handleDelete = () => {
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
     // TODO: Implement delete functionality  
     toast({
       title: "Delete functionality not yet implemented",
@@ -54,12 +57,14 @@ export function ActionsMenu({ row }: Props) {
     });
   };
 
-  const handleConvertToInvoice = () => {
+  const handleConvertToInvoice = (e: React.MouseEvent) => {
+    e.stopPropagation();
     // Navigate to invoices page and open sheet with job data
-    router.push(`/invoices?type=create&jobId=${job.id}`);
+    router.replace(`/invoices?type=create&jobId=${job.id}`);
   };
 
-  const handleStatusChange = (status: Job["status"]) => {
+  const handleStatusChange = (status: Job["status"]) => (e: React.MouseEvent) => {
+    e.stopPropagation();
     // TODO: Implement status change
     toast.success(`Job status changed to ${status}`);
   };
@@ -86,19 +91,19 @@ export function ActionsMenu({ row }: Props) {
         <DropdownMenuSeparator />
         
         <DropdownMenuLabel>Change Status</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => handleStatusChange("pending")}>
+        <DropdownMenuItem onClick={handleStatusChange("pending")}>
           <Clock className="mr-2 h-4 w-4" />
           Mark as Pending
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleStatusChange("in_progress")}>
+        <DropdownMenuItem onClick={handleStatusChange("in_progress")}>
           <Clock className="mr-2 h-4 w-4" />
           Mark as In Progress
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleStatusChange("completed")}>
+        <DropdownMenuItem onClick={handleStatusChange("completed")}>
           <CheckCircle className="mr-2 h-4 w-4" />
           Mark as Completed
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleStatusChange("cancelled")}>
+        <DropdownMenuItem onClick={handleStatusChange("cancelled")}>
           <XCircle className="mr-2 h-4 w-4" />
           Mark as Cancelled
         </DropdownMenuItem>

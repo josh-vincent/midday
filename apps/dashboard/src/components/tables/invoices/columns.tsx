@@ -14,12 +14,47 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { format, formatDistanceToNow } from "date-fns";
 import * as React from "react";
 import { ActionsMenu } from "./actions-menu";
+import { Checkbox } from "@midday/ui/checkbox";
 
 export type Invoice = NonNullable<
   RouterOutputs["invoice"]["get"]["data"]
 >[number];
 
 export const columns: ColumnDef<Invoice>[] = [
+  {
+    id: "select",
+    size: 40,
+    header: ({ table }) => (
+      <div className="flex items-center justify-center">
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      </div>
+    ),
+    cell: ({ row }) => {
+      return (
+        <div 
+          className="flex items-center justify-center"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
+        >
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => {
+              row.toggleSelected(!!value);
+            }}
+            aria-label="Select row"
+          />
+        </div>
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     header: "Title",
     accessorKey: "title",
@@ -30,6 +65,7 @@ export const columns: ColumnDef<Invoice>[] = [
     cell: ({ row }) => {
       // @ts-expect-error template is a jsonb field
       const title = row.original.template?.title as string | undefined;
+      const invoiceNumber = row.original.invoiceNumber;
       return (
         <span
           className={cn({
@@ -37,22 +73,10 @@ export const columns: ColumnDef<Invoice>[] = [
           })}
         >
           {title || "Invoice"}
+          <text className="flex items-center gap-1 text-xs text-muted-foreground font-mono">{invoiceNumber}</text>
         </span>
       );
     },
-  },
-  {
-    header: "Invoice no.",
-    accessorKey: "invoiceNumber",
-    cell: ({ row }) => (
-      <span
-        className={cn({
-          "line-through": row.original.status === "canceled",
-        })}
-      >
-        {row.getValue("invoiceNumber")}
-      </span>
-    ),
   },
   {
     header: "Status",

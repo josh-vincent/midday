@@ -14,6 +14,41 @@ export const invoiceTemplateRouter = createTRPCRouter({
     return template;
   }),
 
+  isConfigured: protectedProcedure.query(async ({ ctx: { db, teamId } }) => {
+    const template = await getDefaultInvoiceTemplate(db, teamId!);
+    
+    if (!template) {
+      return { isConfigured: false, needsSetup: ['template'] };
+    }
+
+    const needsSetup: string[] = [];
+    
+    // Check if essential fields are configured
+    if (!template.fromDetails || template.fromDetails === '{}' || template.fromDetails === '' || template.fromDetails === 'null') {
+      needsSetup.push('company_details');
+    }
+    
+    if (!template.paymentDetails || template.paymentDetails === '{}' || template.paymentDetails === '' || template.paymentDetails === 'null') {
+      needsSetup.push('payment_details');
+    }
+    
+    // Check if it's still the basic auto-generated template that needs customization
+    const isBasicTemplate = template.name === "Default Template" && 
+                           template.description === "Standard invoice template" &&
+                           (!template.fromDetails || template.fromDetails === '{}' || template.fromDetails === '' || template.fromDetails === 'null') &&
+                           (!template.paymentDetails || template.paymentDetails === '{}' || template.paymentDetails === '' || template.paymentDetails === 'null');
+    
+    if (isBasicTemplate) {
+      needsSetup.push('template_customization');
+    }
+
+    return {
+      isConfigured: needsSetup.length === 0,
+      needsSetup,
+      template
+    };
+  }),
+
   upsert: protectedProcedure
     .input(upsertInvoiceTemplateSchema)
     .mutation(async ({ ctx: { db, teamId }, input }) => {

@@ -11,12 +11,15 @@ import { TaxInput } from "./tax-input";
 import { VATInput } from "./vat-input";
 
 export function Summary() {
-  const { control, setValue } = useFormContext();
+  const { control, setValue, watch } = useFormContext();
 
   const trpc = useTRPC();
   const updateTemplateMutation = useMutation(
     trpc.invoiceTemplate.upsert.mutationOptions(),
   );
+
+  // Check if invoice is already created (not a draft)
+  const invoiceStatus = watch("status");
 
   const includeDecimals = useWatch({
     control,
@@ -84,6 +87,14 @@ export function Summary() {
   });
 
   const updateFormValues = useCallback(() => {
+    console.log("Summary component updating form values:", {
+      lineItems: lineItems?.map(item => ({ name: item.name, price: item.price, quantity: item.quantity })),
+      calculated: { total, totalVAT, totalTax, subTotal },
+      taxRate,
+      vatRate,
+      discount
+    });
+    
     setValue("amount", total, { shouldValidate: true });
     setValue("vat", totalVAT, { shouldValidate: true });
     setValue("tax", totalTax, { shouldValidate: true });
@@ -92,8 +103,13 @@ export function Summary() {
   }, [total, totalVAT, totalTax, subTotal, discount]);
 
   useEffect(() => {
-    updateFormValues();
-  }, [updateFormValues]);
+    // Only update form values for draft invoices to prevent corruption of created invoices
+    if (invoiceStatus === "draft") {
+      updateFormValues();
+    } else {
+      console.log("Skipping form value update - invoice is already created (status:", invoiceStatus, ")");
+    }
+  }, [updateFormValues, invoiceStatus]);
 
   useEffect(() => {
     if (!includeTax) {

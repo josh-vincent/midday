@@ -27,7 +27,7 @@ import {
 } from "@midday/ui/table";
 import { useToast } from "@midday/ui/use-toast";
 import { parseDate } from "@midday/utils";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   CheckCircle,
@@ -92,11 +92,33 @@ export function JobsCSVImporter({
 
   const { toast } = useToast();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   // Jobs bulk import mutation
   const jobsImportMutation = useMutation(
     trpc.job.bulkImport.mutationOptions({
       onSuccess: (data) => {
+        // Invalidate all job queries to refresh tables and remove warning icons
+        queryClient.invalidateQueries({
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return queryKey[0] === 'trpc' && 
+                   queryKey[1] && 
+                   (queryKey[1].toString().startsWith('job.') ||
+                    queryKey[1].toString().includes('job'));
+          },
+        });
+        
+        // Also invalidate job summary queries for dashboard cards
+        queryClient.invalidateQueries({
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return queryKey[0] === 'trpc' && 
+                   queryKey[1] && 
+                   queryKey[1].toString().includes('summary');
+          },
+        });
+
         toast({
           title: "Import successful",
           description: `Imported ${data.length} jobs successfully`,
@@ -322,7 +344,7 @@ export function JobsCSVImporter({
           <div className="space-y-6 py-4">
             <CSVUploader onUpload={handleCSVUpload} accept={[".csv"]} />
 
-            <div className="rounded-lg bg-muted/50 p-6">
+            {/* <div className="rounded-lg bg-muted/50 p-6">
               <h4 className="mb-3 font-medium text-base">Expected Format:</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>
@@ -335,7 +357,7 @@ export function JobsCSVImporter({
                 <li>• First row should contain column headers</li>
                 <li>• Dates should be in DD/MM/YYYY or YYYY-MM-DD format</li>
               </ul>
-            </div>
+            </div> */}
           </div>
         )}
 

@@ -26,7 +26,7 @@ import {
   TableRow,
 } from "@midday/ui/table";
 import { useToast } from "@midday/ui/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, Upload, Users } from "lucide-react";
 import { useState } from "react";
 import { CSVUploader } from "./csv-uploader";
@@ -79,11 +79,33 @@ export function CustomersCSVImporter({
 
   const { toast } = useToast();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   // Customers bulk import mutation
   const customersImportMutation = useMutation(
     trpc.customers.bulkImport.mutationOptions({
       onSuccess: (data) => {
+        // Invalidate all customer queries to refresh tables
+        queryClient.invalidateQueries({
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return queryKey[0] === 'trpc' && 
+                   queryKey[1] && 
+                   (queryKey[1].toString().startsWith('customers.') ||
+                    queryKey[1].toString().includes('customer'));
+          },
+        });
+        
+        // Also invalidate invoice queries that depend on customer data
+        queryClient.invalidateQueries({
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return queryKey[0] === 'trpc' && 
+                   queryKey[1] && 
+                   queryKey[1].toString().includes('invoice');
+          },
+        });
+
         toast({
           title: "Import successful",
           description: `Imported ${data.length} customers successfully`,
@@ -251,7 +273,7 @@ export function CustomersCSVImporter({
           <div className="space-y-6 py-4">
             <CSVUploader onUpload={handleCSVUpload} accept={[".csv"]} />
 
-            <div className="rounded-lg bg-muted/50 p-6">
+            {/* <div className="rounded-lg bg-muted/50 p-6">
               <h4 className="mb-3 font-medium text-base">Expected Format:</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>• Company Name, Email, Phone, Contact Person</li>
@@ -259,7 +281,7 @@ export function CustomersCSVImporter({
                 <li>• ABN, Website, Notes</li>
                 <li>• First row should contain column headers</li>
               </ul>
-            </div>
+            </div> */}
           </div>
         )}
 

@@ -33,7 +33,7 @@ import {
 } from "@midday/ui/dropdown-menu";
 
 export function JobsBulkActionsPopup() {
-  const { rowSelection, setRowSelection, jobs } = useJobsStore();
+  const { rowSelection, setRowSelection, jobs, setOpenJobSheet } = useJobsStore();
   const router = useRouter();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -148,7 +148,9 @@ export function JobsBulkActionsPopup() {
       JSON.stringify(Object.values(groupedByCustomer)),
     );
     
-    router.push("/invoices?type=create&fromJobs=true");
+    // Clear job sheet state to prevent it from opening on invoice page
+    setOpenJobSheet(false);
+    router.replace("/invoices?type=create&fromJobs=true");
     setRowSelection({});
   };
   
@@ -175,10 +177,10 @@ export function JobsBulkActionsPopup() {
                 <div className="flex gap-4 text-xs text-muted-foreground">
                   <span>
                     Total: {formatAmount({
-                      amount: summary.totalAmount,
+                      amount: summary.totalAmount / 100,
                       currency: summary.currency,
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
                     })}
                   </span>
                   {summary.totalVolume > 0 && (

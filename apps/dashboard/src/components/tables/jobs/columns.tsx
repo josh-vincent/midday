@@ -1,6 +1,6 @@
 "use client";
 
-import { formatAmount } from "@/utils/format";
+import { FormatAmount } from "@/components/format-amount";
 import { Checkbox } from "@midday/ui/checkbox";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -172,12 +172,10 @@ export const columns: ColumnDef<Job>[] = [
       
       return (
         <div className="text-right font-medium">
-          {formatAmount({
-            amount,
-            currency,
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          })}
+          <FormatAmount
+            amount={amount / 100}
+            currency={currency}
+          />
         </div>
       );
     },

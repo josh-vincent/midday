@@ -1,5 +1,5 @@
 {
-  "id": "026959c0-5524-4bb4-b808-5229b6db86f8",
+  "id": "f4911a81-15a4-4751-b6c3-a0da3d46dd62",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1532,7 +1532,7 @@
           "name": "customer_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "template_id": {
           "name": "template_id",
@@ -1589,7 +1589,7 @@
         },
         "subtotal": {
           "name": "subtotal",
-          "type": "numeric(10, 2)",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
@@ -1603,7 +1603,7 @@
         },
         "tax_amount": {
           "name": "tax_amount",
-          "type": "numeric(10, 2)",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
@@ -1624,14 +1624,14 @@
         },
         "total_amount": {
           "name": "total_amount",
-          "type": "numeric(10, 2)",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
         },
         "paid_amount": {
           "name": "paid_amount",
-          "type": "numeric(10, 2)",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 0
@@ -1693,7 +1693,7 @@
         },
         "amount": {
           "name": "amount",
-          "type": "numeric(10, 2)",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "default": 0
@@ -1718,21 +1718,21 @@
         },
         "tax": {
           "name": "tax",
-          "type": "numeric(10, 2)",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "default": 0
         },
         "vat": {
           "name": "vat",
-          "type": "numeric(10, 2)",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "default": 0
         },
         "discount": {
           "name": "discount",
-          "type": "numeric(10, 2)",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "default": 0
@@ -2209,7 +2209,7 @@
         },
         "cubic_metre_capacity": {
           "name": "cubic_metre_capacity",
-          "type": "numeric(10, 2)",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -2258,13 +2258,13 @@
         },
         "price_per_cubic_meter": {
           "name": "price_per_cubic_meter",
-          "type": "numeric(10, 2)",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
         "total_amount": {
           "name": "total_amount",
-          "type": "numeric(10, 2)",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
@@ -2704,7 +2704,7 @@
         },
         "amount": {
           "name": "amount",
-          "type": "numeric(10, 2)",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true
         },

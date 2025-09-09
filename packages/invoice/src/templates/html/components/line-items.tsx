@@ -29,7 +29,7 @@ export function LineItems({
   const maximumFractionDigits = includeDecimals ? 2 : 0;
 
   return (
-    <div className="mt-5 font-mono">
+    <div className="mt-5 font-mono text-pretty">
       <div className="grid grid-cols-[1.5fr_15%_15%_15%] gap-4 items-end relative group mb-2 w-full pb-1 border-b border-border">
         <div className="text-[11px] text-[#878787]">{descriptionLabel}</div>
         <div className="text-[11px] text-[#878787]">{quantityLabel}</div>

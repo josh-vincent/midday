@@ -395,10 +395,27 @@ export const invoiceRouter = createTRPCRouter({
           });
           return result;
         } catch (dbError) {
-          // If database insert fails, return the draft data anyway
-          // This allows the API to work even with database issues
+          // If database insert fails, we should throw the error instead of hiding it
+          // The frontend needs to know the draft save actually failed
           console.error("Database insert failed for draft:", dbError);
-          return draftData;
+          console.error("Database error message:", (dbError as Error)?.message);
+          console.error("Database error code:", (dbError as any)?.code);
+          console.error("Database error detail:", (dbError as any)?.detail);
+          console.error("Database error constraint:", (dbError as any)?.constraint);
+          console.error("Draft data that failed to save:", {
+            id: draftData.id,
+            teamId: draftData.teamId,
+            userId: draftData.userId,
+            status: draftData.status,
+            lineItemsCount: draftData.lineItems?.length,
+            hasCustomerDetails: !!draftData.customerDetails,
+            hasFromDetails: !!draftData.fromDetails,
+          });
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Failed to save draft to database: ${(dbError as Error)?.message || 'Unknown database error'}`,
+            cause: dbError,
+          });
         }
       } catch (error) {
         console.error("Error in draft mutation:", error);

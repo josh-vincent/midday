@@ -12,7 +12,7 @@ import {
 } from "@midday/ui/dialog";
 import { ScrollArea } from "@midday/ui/scroll-area";
 import { useToast } from "@midday/ui/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CheckCircle, LinkIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -32,6 +32,12 @@ interface Job {
   status: string;
   customerId: string | null;
   totalAmount: number | null;
+  contactPerson: string | null;
+  contactNumber: string | null;
+  addressSite: string | null;
+  equipmentType: string | null;
+  materialType: string | null;
+  createdAt: Date;
 }
 
 export function BulkLinkJobsDialog({
@@ -46,54 +52,24 @@ export function BulkLinkJobsDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Get all jobs using proper tRPC hook with authentication
-  const { data: allJobsResponse, error: jobsError, isLoading } = trpc.job.list.useQuery(
-    { limit: 200 },
-    {
-      enabled: open && !!customerName,
-      retry: 1,
-    }
+  // Get unlinked jobs by company name using the specific endpoint
+  const { data: allJobsResponse, error: jobsError, isLoading } = useQuery(
+    trpc.job.unlinkedByCompany.queryOptions(
+      { companyName: customerName, limit: 200 },
+      {
+        enabled: open && !!customerName,
+        retry: 3,
+        retryDelay: 1000,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+      }
+    )
   );
 
-  // Process and filter jobs for matching
+  // Process jobs data - the unlinkedByCompany endpoint already filters appropriately
   const jobsData = useMemo(() => {
     if (!allJobsResponse) return [];
-    
-    const jobs = allJobsResponse;
-    const unlinkedJobs = jobs.filter((job: Job) => !job.customerId);
-    
-    if (!customerName) return unlinkedJobs;
-    
-    // Improve matching logic with multiple strategies
-    const customerNameLower = customerName.toLowerCase();
-    const matchingJobs = unlinkedJobs.filter((job: Job) => {
-      if (!job.companyName) return false;
-      
-      const companyNameLower = job.companyName.toLowerCase();
-      
-      // Strategy 1: Exact contains match
-      if (companyNameLower.includes(customerNameLower) || 
-          customerNameLower.includes(companyNameLower)) {
-        return true;
-      }
-      
-      // Strategy 2: Word-based matching (split by spaces/punctuation)
-      const customerWords = customerNameLower.split(/[\s\-\._,]+/).filter(w => w.length > 2);
-      const companyWords = companyNameLower.split(/[\s\-\._,]+/).filter(w => w.length > 2);
-      
-      // Check if significant words match
-      const matchCount = customerWords.filter(customerWord => 
-        companyWords.some(companyWord => 
-          companyWord.includes(customerWord) || customerWord.includes(companyWord)
-        )
-      ).length;
-      
-      // Consider it a match if at least half the words match
-      return matchCount >= Math.min(2, Math.ceil(customerWords.length / 2));
-    });
-    
-    return matchingJobs;
-  }, [allJobsResponse, customerName]);
+    return allJobsResponse;
+  }, [allJobsResponse]);
 
   if (jobsError) {
     console.error('Jobs query error:', jobsError);
@@ -109,7 +85,30 @@ export function BulkLinkJobsDialog({
     }
   }, [matchingJobs]);
 
-  // Bulk update jobs using manual mutation approach with proper error handling
+  // Individual job update mutation using correct tRPC pattern
+  const updateJobMutation = useMutation(
+    trpc.job.update.mutationOptions({
+      onSuccess: () => {
+        // Invalidate job queries to refresh UI and remove warning icons
+        queryClient.invalidateQueries({
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return queryKey[0] === 'trpc' && 
+                   queryKey[1] && 
+                   (queryKey[1] === 'job.list' || 
+                    queryKey[1] === 'job.get' ||
+                    queryKey[1] === 'job.unlinkedByCompany' ||
+                    queryKey[1].toString().startsWith('job.'));
+          },
+        });
+      },
+      onError: (error) => {
+        console.error('Job update error:', error);
+      },
+    }),
+  );
+
+  // Bulk update jobs using proper tRPC mutation approach
   const bulkUpdateMutation = useMutation({
     mutationFn: async (jobIds: string[]) => {
       const results = [];
@@ -119,7 +118,7 @@ export function BulkLinkJobsDialog({
       // Process jobs sequentially to avoid overwhelming the API
       for (const jobId of jobIds) {
         try {
-          const result = await trpc.job.update.mutate({
+          const result = await updateJobMutation.mutateAsync({
             id: jobId,
             customerId,
             companyName: customerName,
@@ -148,13 +147,16 @@ export function BulkLinkJobsDialog({
         });
       }
 
-      // Invalidate all job-related queries to refresh the table
+      // Invalidate all job-related queries to refresh the table and remove warning icons
       queryClient.invalidateQueries({
         predicate: (query) => {
           const queryKey = query.queryKey;
           return queryKey[0] === 'trpc' && 
                  queryKey[1] && 
-                 queryKey[1].toString().includes('job');
+                 (queryKey[1].toString().startsWith('job.') || 
+                  queryKey[1] === 'job.list' || 
+                  queryKey[1] === 'job.get' ||
+                  queryKey[1] === 'job.unlinkedByCompany');
         },
       });
 
@@ -309,13 +311,25 @@ export function BulkLinkJobsDialog({
                       </span>
                     </div>
                     
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                       <span className="truncate">{job.companyName}</span>
                       {job.jobDate && (
                         <span>{format(new Date(job.jobDate), "MMM d, yyyy")}</span>
                       )}
+                      {job.contactPerson && (
+                        <span>Contact: {job.contactPerson}</span>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                      {job.addressSite && (
+                        <span className="truncate">{job.addressSite}</span>
+                      )}
+                      {job.materialType && (
+                        <span>{job.materialType}</span>
+                      )}
                       {job.totalAmount && (
-                        <span>${(job.totalAmount / 100).toFixed(2)}</span>
+                        <span className="font-medium">${(Number(job.totalAmount)).toFixed(2)}</span>
                       )}
                     </div>
                   </div>

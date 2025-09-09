@@ -78,7 +78,7 @@ export function Summary({
           <Text style={{ fontSize: 9, textAlign: "right" }}>
             {currency &&
               formatCurrencyForPDF({
-                amount: discount,
+                amount: discount ?? 0,
                 currency,
                 locale,
                 maximumFractionDigits,

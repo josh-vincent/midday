@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
       <header className="absolute top-0 left-0 z-30 w-full">
         <div className="p-6 md:p-8">
           <Link href="/login">
-            <Icons.LogoSmall className="h-8 w-auto" />
+            <Icons.Tracker className="h-8 w-auto" />
           </Link>
         </div>
       </header>
