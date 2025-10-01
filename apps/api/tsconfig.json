@@ -15,7 +15,9 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@api/*": ["./src/*"],
+      "@db/*": ["../../packages/db/src/*"]
     },
     "types": ["bun-types"]
   },
