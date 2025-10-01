@@ -3,6 +3,5 @@
   "public": false,
   "github": {
     "enabled": false
-  },
-  "regions": ["fra1", "iad1", "sfo1"]
+  }
 }
