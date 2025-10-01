@@ -1,19 +1,11 @@
 {
   "version": 2,
   "public": false,
-  "buildCommand": "echo 'Skipping build - Vercel will build automatically'",
-  "installCommand": "bun install",
   "framework": null,
-  "outputDirectory": ".",
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api"
-    }
-  ],
-  "build": {
-    "env": {
-      "SKIP_ENV_VALIDATION": "true"
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 30,
+      "memory": 1024
     }
   }
 }
