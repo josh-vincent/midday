@@ -3,6 +3,9 @@
   "type": "module",
   "scripts": {
     "dev": "TZ=UTC PORT=3334 bun run --hot src/index.ts",
+    "dev:wrangler": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:production": "wrangler deploy --env production",
     "start": "node --loader tsx src/index.ts",
     "build": "echo 'No build step required'",
     "lint": "biome check .",
@@ -47,6 +50,7 @@
     "zod-openapi": "^4.2.4"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.16"
+    "@types/bun": "^1.2.16",
+    "wrangler": "^3.98.0"
   }
 }
