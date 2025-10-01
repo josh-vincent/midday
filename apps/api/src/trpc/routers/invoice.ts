@@ -46,7 +46,9 @@ import {
   updateInvoice,
 } from "@midday/db/queries";
 import { verify } from "@midday/invoice/token";
-import { transformCustomerToContent } from "@midday/invoice-core/utils";
+// @midday/invoice-core package doesn't exist - stub function for MVP
+// import { transformCustomerToContent } from "@midday/invoice-core/utils";
+const transformCustomerToContent = (customer: any) => customer; // Stub
 // Disabled - trigger.dev
 // import { runs, tasks } from "@trigger.dev/sdk";
 import { TRPCError } from "@trpc/server";
