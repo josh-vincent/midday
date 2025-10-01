@@ -8,7 +8,8 @@ export const runtime = "nodejs";
 export default async function handler(req: Request) {
   try {
     // Dynamically import to avoid build-time issues
-    const { app } = await import("../src/index");
+    // Use .js extension for Node.js ESM resolution
+    const { app } = await import("../src/index.js");
 
     // Use Hono's native fetch handler
     return await app.fetch(req, {
@@ -21,6 +22,7 @@ export default async function handler(req: Request) {
       JSON.stringify({
         error: "Internal Server Error",
         message: error instanceof Error ? error.message : "Unknown error",
+        stack: process.env.NODE_ENV === "development" ? (error instanceof Error ? error.stack : undefined) : undefined,
       }),
       {
         status: 500,

@@ -1,14 +1,21 @@
 {
   "version": 2,
   "public": false,
-  "framework": null,
-  "buildCommand": "echo 'No build required for serverless functions'",
+  "buildCommand": "echo 'No build required'",
   "outputDirectory": ".",
   "installCommand": "bun install",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/api"
+    }
+  ],
   "functions": {
     "api/index.ts": {
+      "runtime": "nodejs20.x",
       "maxDuration": 30,
-      "memory": 1024
+      "memory": 1024,
+      "includeFiles": "src/**"
     }
   }
 }
