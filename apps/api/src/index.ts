@@ -60,22 +60,22 @@ app.doc("/openapi", {
   openapi: "3.1.0",
   info: {
     version: "0.0.1",
-    title: "Midday API",
+    title: "DirtWorks API",
     description:
-      "Midday is a platform for Invoicing, Time tracking, File reconciliation, Storage, Financial Overview & your own Assistant.",
+      "DirtWorks is a platform for Invoicing, Time tracking, Job management, and Financial Overview.",
     contact: {
-      name: "Midday Support",
-      email: "engineer@midday.ai",
-      url: "https://midday.ai",
+      name: "DirtWorks Support",
+      email: "support@dirtworks.com",
+      url: "https://dirtworks.com",
     },
     license: {
       name: "AGPL-3.0 license",
-      url: "https://github.com/midday-ai/midday/blob/main/LICENSE",
+      url: "https://github.com/josh-vincent/midday/blob/main/LICENSE",
     },
   },
   servers: [
     {
-      url: "https://api.midday.ai",
+      url: "https://dirtworks-api.vendors-f81.workers.dev",
       description: "Production API",
     },
   ],
@@ -92,12 +92,12 @@ app.openAPIRegistry.registerComponent("securitySchemes", "token", {
   type: "http",
   scheme: "bearer",
   description: "Default authentication mechanism",
-  "x-speakeasy-example": "MIDDAY_API_KEY",
+  "x-speakeasy-example": "DIRTWORKS_API_KEY",
 });
 
 app.get(
   "/",
-  Scalar({ url: "/openapi", pageTitle: "Midday API", theme: "saturn" }),
+  Scalar({ url: "/openapi", pageTitle: "DirtWorks API", theme: "saturn" }),
 );
 
 app.route("/", routers);
