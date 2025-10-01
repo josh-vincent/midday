@@ -13,10 +13,15 @@ const app = new OpenAPIHono<Context>();
 
 app.use(secureHeaders());
 
-app.use(
-  "*",
-  cors({
-    origin: process.env.ALLOWED_API_ORIGINS?.split(",") ?? [],
+app.use("*", async (c, next) => {
+  // Get allowed origins from env (works in both Node.js and Cloudflare Workers)
+  // @ts-ignore - c.env exists in Cloudflare Workers
+  const allowedOrigins = (c.env?.ALLOWED_API_ORIGINS || process.env.ALLOWED_API_ORIGINS || "")
+    .split(",")
+    .filter(Boolean);
+
+  const corsMiddleware = cors({
+    origin: allowedOrigins,
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowHeaders: [
       "Authorization",
@@ -29,8 +34,10 @@ app.use(
     ],
     exposeHeaders: ["Content-Length"],
     maxAge: 86400,
-  }),
-);
+  });
+
+  return corsMiddleware(c, next);
+});
 
 app.use(
   "/trpc/*",

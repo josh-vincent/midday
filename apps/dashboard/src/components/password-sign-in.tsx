@@ -34,6 +34,8 @@ export function PasswordSignIn({ className }: Props) {
       if (error) {
         setError(error.message);
       } else {
+        // Refresh the router to ensure server components get new session
+        router.refresh();
         router.push("/");
       }
     } catch (err) {

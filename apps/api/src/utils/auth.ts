@@ -19,13 +19,17 @@ type SupabaseJWTPayload = JWTPayload & {
 
 export async function verifyAccessToken(
   accessToken?: string,
+  jwtSecret?: string,
 ): Promise<Session | null> {
   if (!accessToken) return null;
+
+  const secret = jwtSecret || process.env.SUPABASE_JWT_SECRET;
+  if (!secret) return null;
 
   try {
     const { payload } = await jwtVerify(
       accessToken,
-      new TextEncoder().encode(process.env.SUPABASE_JWT_SECRET),
+      new TextEncoder().encode(secret),
     );
 
     const supabasePayload = payload as SupabaseJWTPayload;

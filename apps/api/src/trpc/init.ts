@@ -24,8 +24,17 @@ export const createTRPCContext = async (
   c: Context,
 ): Promise<TRPCContext> => {
   const accessToken = c.req.header("Authorization")?.split(" ")[1];
-  const session = await verifyAccessToken(accessToken);
-  const supabase = await createClient(accessToken);
+
+  // Get env vars from Cloudflare Workers context or process.env
+  // @ts-ignore - c.env exists in Cloudflare Workers
+  const supabaseUrl = c.env?.SUPABASE_URL || process.env.SUPABASE_URL;
+  // @ts-ignore - c.env exists in Cloudflare Workers
+  const supabaseServiceKey = c.env?.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_KEY;
+  // @ts-ignore - c.env exists in Cloudflare Workers
+  const supabaseJwtSecret = c.env?.SUPABASE_JWT_SECRET || process.env.SUPABASE_JWT_SECRET;
+
+  const session = await verifyAccessToken(accessToken, supabaseJwtSecret);
+  const supabase = await createClient(accessToken, supabaseUrl, supabaseServiceKey);
   const db = await connectDb();
   const geo = getGeoContext(c.req);
 
