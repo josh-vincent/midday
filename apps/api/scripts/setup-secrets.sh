@@ -32,7 +32,7 @@ echo -e "${GREEN}Reading environment variables from .env.local${NC}\n"
 
 # Array of required secrets
 SECRETS=(
-  "DATABASE_PRIMARY_URL"
+  "DATABASE_URL"
   "SUPABASE_JWT_SECRET"
   "SUPABASE_SERVICE_KEY"
   "SUPABASE_URL"
@@ -41,6 +41,10 @@ SECRETS=(
   "ALLOWED_API_ORIGINS"
   "INVOICE_JWT_SECRET"
   "REDIS_URL"
+  "NEXT_PUBLIC_URL"
+  "SUPABASE_ANON_KEY"
+  "SUPABASE_SERVICE_KEY"
+  "SUPABASE_JWT_SECRET"
 )
 
 # Optional secrets (will skip if not found)
@@ -52,6 +56,7 @@ OPTIONAL_SECRETS=(
   "TRIGGER_SECRET_KEY"
   "POLAR_ACCESS_TOKEN"
   "GOOGLE_GENERATIVE_AI_API_KEY"
+  "AI_GATEWAY_API_KEY"
 )
 
 # Function to set a secret
