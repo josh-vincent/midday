@@ -102,6 +102,10 @@ app.get(
 
 app.route("/", routers);
 
+// Export the Hono app for Vercel
+export { app };
+
+// Export Bun server config
 export default {
   port: process.env.PORT ? Number.parseInt(process.env.PORT) : 3000,
   fetch: app.fetch,
