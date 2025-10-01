@@ -17,7 +17,8 @@ import {
   FileText,
   CheckCircle,
   XCircle,
-  Clock
+  Clock,
+  Eye
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useJobParams } from "@/hooks/use-job-params";
@@ -59,8 +60,26 @@ export function ActionsMenu({ row }: Props) {
 
   const handleConvertToInvoice = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Navigate to invoices page and open sheet with job data
-    router.replace(`/invoices?type=create&jobId=${job.id}`);
+    // Navigate to invoices page and open sheet with job data and customer
+    const params = new URLSearchParams({
+      type: "create",
+      jobId: job.id,
+    });
+
+    // Add customerId if available
+    if (job.customerId) {
+      params.set("selectedCustomerId", job.customerId);
+    }
+
+    router.replace(`/invoices?${params.toString()}`);
+  };
+
+  const handlePreviewInvoice = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Navigate to invoice details page
+    if (job.invoiceId) {
+      router.push(`/invoices/${job.invoiceId}`);
+    }
   };
 
   const handleStatusChange = (status: Job["status"]) => (e: React.MouseEvent) => {
@@ -110,10 +129,17 @@ export function ActionsMenu({ row }: Props) {
         
         <DropdownMenuSeparator />
         
-        <DropdownMenuItem onClick={handleConvertToInvoice}>
-          <FileText className="mr-2 h-4 w-4" />
-          Convert to Invoice
-        </DropdownMenuItem>
+        {job.invoiceId ? (
+          <DropdownMenuItem onClick={handlePreviewInvoice}>
+            <Eye className="mr-2 h-4 w-4" />
+            Preview Invoice
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem onClick={handleConvertToInvoice}>
+            <FileText className="mr-2 h-4 w-4" />
+            Convert to Invoice
+          </DropdownMenuItem>
+        )}
         
         <DropdownMenuSeparator />
         

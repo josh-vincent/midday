@@ -52,6 +52,7 @@
     "./sheet": "./src/components/sheet.tsx",
     "./badge": "./src/components/badge.tsx",
     "./separator": "./src/components/separator.tsx",
+    "./sidebar": "./src/components/sidebar.tsx",
     "./skeleton": "./src/components/skeleton.tsx",
     "./spinner": "./src/components/spinner.tsx",
     "./switch": "./src/components/switch.tsx",

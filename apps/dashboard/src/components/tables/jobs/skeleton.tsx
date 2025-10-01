@@ -35,7 +35,7 @@ export function JobsSkeleton() {
                   <Skeleton className="h-4 w-48" />
                 </TableCell>
                 <TableCell>
-                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-6 w-20 rounded-none" />
                 </TableCell>
                 <TableCell>
                   <Skeleton className="h-4 w-16" />

@@ -9,8 +9,8 @@ import {
   trackerProjects,
 } from "@db/schema";
 import { buildSearchQuery } from "@midday/db/utils/search-query";
-import { generateToken } from "@midday/invoice/token";
-import type { EditorDoc, LineItem } from "@midday/invoice/types";
+import { generateToken } from "@midday/invoice-core/token";
+import type { EditorDoc, LineItem } from "@midday/invoice-core/types";
 import camelcaseKeys from "camelcase-keys";
 import { addMonths } from "date-fns";
 import {

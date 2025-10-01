@@ -1,6 +1,7 @@
 "use client";
 
-import { generateInvoiceFilters } from "@/actions/ai/filters/generate-invoice-filters";
+import { smartBadgeRenderer } from "@midday/ai-search";
+import { generateInvoiceFilters } from "@/actions/ai/generate-invoice-filters";
 import { useInvoiceFilterParams } from "@/hooks/use-invoice-filter-params";
 import { useI18n } from "@/locales/client";
 import { useTRPC } from "@/trpc/client";
@@ -21,7 +22,6 @@ import {
 import { Icons } from "@midday/ui/icons";
 import { Input } from "@midday/ui/input";
 import { useQuery } from "@tanstack/react-query";
-// Removed readStreamableValue as we're not using streaming anymore
 import { formatISO } from "date-fns";
 import { useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
@@ -44,7 +44,7 @@ export function InvoiceSearchFilter() {
   const [isOpen, setIsOpen] = useState(false);
   const trpc = useTRPC();
 
-  const { setFilter, filter } = useInvoiceFilterParams();
+  const { setParams, filter } = useInvoiceFilterParams();
 
   const { data: customersData } = useQuery(trpc.customers.get.queryOptions());
 
@@ -58,7 +58,7 @@ export function InvoiceSearchFilter() {
     "esc",
     () => {
       setPrompt("");
-      setFilter(null);
+      setParams(null);
       setIsOpen(false);
     },
     {
@@ -73,65 +73,52 @@ export function InvoiceSearchFilter() {
   });
 
   const handleSearch = (evt: React.ChangeEvent<HTMLInputElement>) => {
-    const value = evt.target.value;
-
-    if (value) {
-      setPrompt(value);
-    } else {
-      setFilter(null);
-      setPrompt("");
-    }
+    setPrompt(evt.target.value);
   };
 
   const handleSubmit = async () => {
-    // If the user is typing a query with multiple words, we want to stream the results
-    if (prompt.split(" ").length > 1) {
-      setStreaming(true);
-
-      setStreaming(true);
-
-      const { object } = await generateInvoiceFilters(
-        prompt,
-        `Invoice payment statuses: ${statusFilters.map((filter) => filter.name).join(", ")}
-         Customers: ${customersData?.data?.map((customer) => customer.name).join(", ")}
-      `,
-      );
-
-      // Since we're no longer streaming, we can directly use the object
-      const finalObject = object
-        ? {
-            statuses: Array.isArray(object?.statuses)
-              ? object?.statuses
-              : object?.statuses
-                ? [object.statuses]
-                : null,
-            customers:
-              object?.customers?.map(
-                (name: string) =>
-                  customersData?.data?.find(
-                    (customer) => customer.name === name,
-                  )?.id,
-              ) ?? null,
-            q: object?.name ?? null,
-            start: object?.start ?? null,
-            end: object?.end ?? null,
-          }
-        : {};
-
-      setFilter({
-        q: null,
-        ...finalObject,
-      });
-
-      setStreaming(false);
-    } else {
-      setFilter({ q: prompt.length > 0 ? prompt : null });
+    if (!prompt) {
+      setParams(null);
+      return;
     }
+
+    setStreaming(true);
+
+    // Use AI to generate filters from natural language
+    const { object } = await generateInvoiceFilters(
+      prompt,
+      `Available statuses: ${statusFilters.map((s) => s.name).join(", ")}
+       Available customers: ${customersData?.data?.map((c) => c.name).join(", ")}`,
+    );
+
+    if (object) {
+      // Map customer names to IDs if needed
+      const customerIds = object.customers?.map((nameOrId) => {
+        // Check if it's already an ID
+        if (customersData?.data?.find((c) => c.id === nameOrId)) {
+          return nameOrId;
+        }
+        // Otherwise find by name
+        const customer = customersData?.data?.find((c) =>
+          c.name.toLowerCase().includes(nameOrId.toLowerCase())
+        );
+        return customer?.id;
+      }).filter(Boolean);
+
+      setParams({
+        q: object.q || null,
+        statuses: object.statuses || null,
+        customers: customerIds || null,
+        start: object.start || null,
+        end: object.end || null,
+      });
+    }
+
+    setStreaming(false);
   };
 
-  const validFilters = Object.fromEntries(
-    Object.entries(filter).filter(([key]) => key !== "q"),
-  );
+  // Include all filters including search query
+  const validFilters = filter;
 
   const hasValidFilters = Object.values(validFilters).some(
     (value) => value !== null,
@@ -178,9 +165,10 @@ export function InvoiceSearchFilter() {
         <FilterList
           filters={validFilters}
           loading={streaming}
-          onRemove={setFilter}
+          onRemove={setParams}
           statusFilters={statusFilters}
           customers={customersData?.data}
+          badgeRenderer={smartBadgeRenderer}
         />
       </div>
 
@@ -211,7 +199,7 @@ export function InvoiceSearchFilter() {
                     to: filter?.end ? new Date(filter.end) : undefined,
                   }}
                   onSelect={(range) => {
-                    setFilter({
+                    setParams({
                       start: range?.from
                         ? formatISO(range.from, { representation: "date" })
                         : null,
@@ -241,8 +229,9 @@ export function InvoiceSearchFilter() {
                 {customersData?.data?.map((customer) => (
                   <DropdownMenuCheckboxItem
                     key={customer.id}
+                    checked={filter?.customers?.includes(customer.id)}
                     onCheckedChange={() => {
-                      setFilter({
+                      setParams({
                         customers: filter?.customers?.includes(customer.id)
                           ? filter.customers.filter((s) => s !== customer.id)
                           : [...(filter?.customers ?? []), customer.id],
@@ -278,8 +267,9 @@ export function InvoiceSearchFilter() {
                 {statusFilters?.map((status) => (
                   <DropdownMenuCheckboxItem
                     key={status.id}
+                    checked={filter?.statuses?.includes(status.id)}
                     onCheckedChange={() => {
-                      setFilter({
+                      setParams({
                         statuses: filter?.statuses?.includes(status.id)
                           ? filter.statuses.filter((s) => s !== status.id)
                           : [...(filter?.statuses ?? []), status.id],

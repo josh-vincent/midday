@@ -1,0 +1,166 @@
+---
+# Quick deployment for Cloudflare Tunnel
+# This assumes you'll create the secret separately
+#
+# PREREQUISITES:
+# 1. Create a Cloudflare tunnel: cloudflared tunnel create workbooks-tunnel
+# 2. Create the secret with credentials:
+#    kubectl create secret generic tunnel-credentials \
+#      --from-file=credentials.json=$HOME/.cloudflared/<TUNNEL_ID>.json \
+#      -n cloudflare
+# 3. Route DNS in Cloudflare:
+#    cloudflared tunnel route dns workbooks-tunnel workbooks.tocld.com
+#    cloudflared tunnel route dns workbooks-tunnel workbooks-api.tocld.com
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloudflare
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflare-tunnel-config
+  namespace: cloudflare
+data:
+  config.yaml: |
+    tunnel: workbooks-tunnel
+    credentials-file: /etc/cloudflared/creds/credentials.json
+    metrics: 0.0.0.0:2000
+    no-autoupdate: true
+    
+    # Define ingress rules for routing
+    ingress:
+      # Main dashboard route
+      - hostname: workbooks.tocld.com
+        service: http://workbooks-dashboard.default.svc.cluster.local:3001
+        originRequest:
+          noTLSVerify: true
+          connectTimeout: 30s
+          
+      # API route  
+      - hostname: workbooks-api.tocld.com
+        service: http://workbooks-api.default.svc.cluster.local:3003
+        originRequest:
+          noTLSVerify: true
+          connectTimeout: 30s
+      
+      # Health check endpoint (optional)
+      - hostname: health.workbooks.tocld.com
+        service: http_status:200
+      
+      # Catch-all rule (must be last)
+      - service: http_status:404
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+  namespace: cloudflare
+  labels:
+    app: cloudflared
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cloudflared
+  template:
+    metadata:
+      labels:
+        app: cloudflared
+      annotations:
+        # Force pod restart on config changes
+        checksum/config: "{{ .Values.configChecksum }}"
+    spec:
+      containers:
+      - name: cloudflared
+        image: cloudflare/cloudflared:2024.11.1  # Using specific version for stability
+        args:
+        - tunnel
+        - --config
+        - /etc/cloudflared/config/config.yaml
+        - --no-autoupdate
+        - run
+        env:
+        - name: TUNNEL_METRICS
+          value: "0.0.0.0:2000"
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: 2000
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 2000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: config
+          mountPath: /etc/cloudflared/config
+          readOnly: true
+        - name: creds
+          mountPath: /etc/cloudflared/creds
+          readOnly: true
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: config
+        configMap:
+          name: cloudflare-tunnel-config
+      - name: creds
+        secret:
+          secretName: tunnel-credentials
+      # Anti-affinity to spread pods across nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - cloudflared
+              topologyKey: kubernetes.io/hostname
+
+---
+# Service for monitoring metrics (optional)
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloudflared-metrics
+  namespace: cloudflare
+  labels:
+    app: cloudflared
+spec:
+  type: ClusterIP
+  ports:
+  - port: 2000
+    targetPort: 2000
+    protocol: TCP
+    name: metrics
+  selector:
+    app: cloudflared

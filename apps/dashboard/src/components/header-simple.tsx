@@ -12,7 +12,6 @@ export function HeaderSimple() {
       <OpenSearchButton />
       <div className="flex space-x-2 ml-auto">
         <Trial />
-        <ConnectionStatus />
         <NotificationCenter />
         <UserMenu />
       </div>

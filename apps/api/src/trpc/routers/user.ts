@@ -41,10 +41,6 @@ export const userRouter = createTRPCRouter({
   }),
 
   invites: authProcedure.query(async ({ ctx: { db, session } }) => {
-    if (!session.user.email) {
-      return [];
-    }
-
-    return getUserInvites(db, session.user.email);
+    return getUserInvites(db, session.user.email! );
   }),
 });

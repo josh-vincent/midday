@@ -1,0 +1,72 @@
+{
+  "name": "@midday/invoice-core",
+  "private": true,
+  "main": "src/index.tsx",
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.tsx",
+      "default": "./src/index.tsx"
+    },
+    "./token": {
+      "types": "./src/token/index.ts",
+      "default": "./src/token/index.ts"
+    },
+    "./number": {
+      "types": "./src/utils/number.ts",
+      "default": "./src/utils/number.ts"
+    },
+    "./templates/html": {
+      "types": "./src/templates/html/index.tsx",
+      "default": "./src/templates/html/index.tsx"
+    },
+    "./templates/pdf": {
+      "types": "./src/templates/pdf/index.tsx",
+      "default": "./src/templates/pdf/index.tsx"
+    },
+    "./templates/og": {
+      "types": "./src/templates/og/index.tsx",
+      "default": "./src/templates/og/index.tsx"
+    },
+    "./editor": {
+      "types": "./src/editor/index.tsx",
+      "default": "./src/editor/index.tsx"
+    },
+    "./calculate": {
+      "types": "./src/utils/calculate.ts",
+      "default": "./src/utils/calculate.ts"
+    },
+    "./format-to-html": {
+      "types": "./src/templates/html/format.tsx",
+      "default": "./src/templates/html/format.tsx"
+    },
+    "./content": {
+      "types": "./src/utils/content.ts",
+      "default": "./src/utils/content.ts"
+    },
+    "./types": {
+      "types": "./src/types/index.ts",
+      "default": "./src/types/index.ts"
+    },
+    "./utils": {
+      "types": "./src/utils/transform.ts",
+      "default": "./src/utils/transform.ts"
+    }
+  },
+  "dependencies": {
+    "@midday/ui": "workspace:*",
+    "@midday/utils": "workspace:*",
+    "@react-pdf/renderer": "^4.3.0",
+    "date-fns": "^4.1.0",
+    "jose": "^6.0.11",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.5"
+  }
+}

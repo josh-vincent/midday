@@ -1,31 +1,13 @@
 "use client";
 
-import { parseAsString, useQueryStates } from "nuqs";
+import { createFilterParamsHook } from "@midday/ai-search";
+import { jobFilterSchema } from "@/config/jobs-filters";
 
-const searchParamsCache = {
-  status: parseAsString,
-  q: parseAsString,
-  customerId: parseAsString,
-  start: parseAsString,
-  end: parseAsString,
-};
-
-export function useJobFilterParams() {
-  const [params, setParams] = useQueryStates(searchParamsCache, {
-    shallow: false,
-  });
-
-  const hasFilters = Object.values(params).some((value) => value !== null);
-
-  return {
-    filter: {
-      status: params.status,
-      q: params.q,
-      customerId: params.customerId,
-      start: params.start,
-      end: params.end,
-    },
-    setParams,
-    hasFilters,
-  };
-}
+/**
+ * Type-safe hook for job filter URL parameters
+ * Automatically syncs with URL using nuqs
+ */
+export const useJobFilterParams = createFilterParamsHook(jobFilterSchema, {
+  shallow: true,
+  excludeFromHasFilters: ["groupBy"], // Don't count groupBy as an active filter
+});

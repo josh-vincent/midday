@@ -1,0 +1,44 @@
+{
+  "name": "@midday/filter-components",
+  "version": "1.0.0",
+  "private": true,
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types/index.ts",
+    "./components": "./src/components/index.ts",
+    "./hooks": "./src/hooks/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./components/search-field": "./src/components/search-field.tsx",
+    "./components/date-range-picker": "./src/components/date-range-picker.tsx",
+    "./components/multi-select-filter": "./src/components/multi-select-filter.tsx",
+    "./components/tag-filter": "./src/components/tag-filter.tsx",
+    "./components/status-filter": "./src/components/status-filter.tsx",
+    "./components/amount-range-filter": "./src/components/amount-range-filter.tsx",
+    "./components/saved-filters": "./src/components/saved-filters.tsx",
+    "./components/filter-builder": "./src/components/filter-builder.tsx",
+    "./hooks/use-filters": "./src/hooks/use-filters.ts",
+    "./hooks/use-filter-sync": "./src/hooks/use-filter-sync.ts",
+    "./hooks/use-debounce-filter": "./src/hooks/use-debounce-filter.ts",
+    "./hooks/use-saved-filters": "./src/hooks/use-saved-filters.ts"
+  },
+  "dependencies": {
+    "@midday/ui": "workspace:*",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.511.0",
+    "react-day-picker": "9.8.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.6",
+    "@types/react-dom": "^19.0.2",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "typescript": "^5.9.2"
+  }
+}

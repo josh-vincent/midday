@@ -1,0 +1,1 @@
+ALTER TABLE public.jobs DROP CONSTRAINT jobs_team_id_job_number_unique;

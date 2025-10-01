@@ -1,0 +1,27 @@
+{
+  "name": "@midday/stripe-sync",
+  "version": "1.0.0",
+  "description": "Stripe webhook handler and subscription sync for Midday",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@midday/db": "workspace:*",
+    "@midday/queue": "workspace:*",
+    "@midday/logger": "workspace:*",
+    "stripe": "^17.0.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@midday/tsconfig": "workspace:*",
+    "@types/node": "^22.0.0",
+    "eslint": "^8.57.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.6.2"
+  }
+}

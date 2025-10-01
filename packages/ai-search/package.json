@@ -1,0 +1,65 @@
+{
+  "name": "@midday/ai-search",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-powered search and filtering for any database table",
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./actions": {
+      "types": "./src/actions/index.ts",
+      "default": "./src/actions/index.ts"
+    },
+    "./components": {
+      "types": "./src/components/index.ts",
+      "default": "./src/components/index.ts"
+    },
+    "./hooks": {
+      "types": "./src/hooks/index.ts",
+      "default": "./src/hooks/index.ts"
+    },
+    "./utils": {
+      "types": "./src/utils/index.ts",
+      "default": "./src/utils/index.ts"
+    },
+    "./types": {
+      "types": "./src/types/index.ts",
+      "default": "./src/types/index.ts"
+    }
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.0.9",
+    "@midday/ui": "workspace:*",
+    "ai": "^4.0.34",
+    "date-fns": "^4.1.0",
+    "drizzle-orm": "^0.38.3",
+    "framer-motion": "^12.0.0",
+    "little-date": "^1.0.0",
+    "lucide-react": "^0.511.0",
+    "nuqs": "^2.2.5",
+    "react-hotkeys-hook": "^4.6.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.6",
+    "@types/react-dom": "^19.0.2",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "typescript": "^5.9.2"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  }
+}

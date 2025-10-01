@@ -1,6 +1,7 @@
 import { Text, View } from "@react-pdf/renderer";
-import type { LineItem } from "../../../types";
+import type { LineItem, Template } from "../../../types";
 import { calculateLineItemTotal } from "../../../utils/calculate";
+import { applyAutoItemizationRules } from "../../../utils/auto-itemization";
 import { formatCurrencyForPDF } from "../../../utils/pdf-format";
 import { Description } from "./description";
 
@@ -14,6 +15,10 @@ type Props = {
   locale: string;
   includeDecimals?: boolean;
   includeUnits?: boolean;
+  includeItemDetails?: boolean;
+  groupConsolidatedItems?: boolean;
+  consolidatedItemLabel?: string;
+  template?: Template;
 };
 
 export function LineItems({
@@ -26,8 +31,61 @@ export function LineItems({
   locale,
   includeDecimals,
   includeUnits,
+  includeItemDetails = true,
+  groupConsolidatedItems = false,
+  consolidatedItemLabel = "Services",
+  template,
 }: Props) {
   const maximumFractionDigits = includeDecimals ? 2 : 0;
+
+  // Apply auto-itemization rules if template is provided
+  const autoProcessedItems = template 
+    ? applyAutoItemizationRules(lineItems, template)
+    : lineItems;
+
+  // Process line items based on itemization settings
+  const processedItems = (() => {
+    if (!groupConsolidatedItems) {
+      return autoProcessedItems;
+    }
+
+    // Group items by groupId or showDetails flag
+    const detailedItems: LineItem[] = [];
+    const consolidatedGroups = new Map<string, LineItem[]>();
+    
+    autoProcessedItems.forEach(item => {
+      if (item.showDetails !== false) {
+        detailedItems.push(item);
+      } else {
+        const groupId = item.groupId || 'default';
+        const existing = consolidatedGroups.get(groupId) || [];
+        existing.push(item);
+        consolidatedGroups.set(groupId, existing);
+      }
+    });
+
+    // Create consolidated items
+    const consolidatedItems: LineItem[] = Array.from(consolidatedGroups.entries()).map(([groupId, items]) => {
+      const totalAmount = items.reduce((sum, item) => 
+        sum + calculateLineItemTotal({ price: item.price, quantity: item.quantity }), 0
+      );
+      
+      return {
+        name: consolidatedItemLabel || "Consolidated Services",
+        quantity: 1,
+        price: totalAmount,
+        showDetails: false,
+        groupId,
+      };
+    });
+
+    return [...detailedItems, ...consolidatedItems];
+  })();
+
+  const shouldShowDetails = (item: LineItem) => {
+    if (!includeItemDetails) return false;
+    return item.showDetails !== false;
+  };
 
   return (
     <View style={{ marginTop: 20 }}>
@@ -43,12 +101,21 @@ export function LineItems({
         <Text style={{ flex: 3, fontSize: 9, fontWeight: 500 }}>
           {descriptionLabel}
         </Text>
-        <Text style={{ flex: 1, fontSize: 9, fontWeight: 500 }}>
-          {quantityLabel}
-        </Text>
-        <Text style={{ flex: 1, fontSize: 9, fontWeight: 500 }}>
-          {priceLabel}
-        </Text>
+        {includeItemDetails ? (
+          <>
+            <Text style={{ flex: 1, fontSize: 9, fontWeight: 500 }}>
+              {quantityLabel}
+            </Text>
+            <Text style={{ flex: 1, fontSize: 9, fontWeight: 500 }}>
+              {priceLabel}
+            </Text>
+          </>
+        ) : (
+          <>
+            <View style={{ flex: 1 }} />
+            <View style={{ flex: 1 }} />
+          </>
+        )}
         <Text
           style={{
             flex: 1,
@@ -60,7 +127,8 @@ export function LineItems({
           {totalLabel}
         </Text>
       </View>
-      {lineItems.map((item, index) => (
+      
+      {processedItems.map((item, index) => (
         <View
           key={`line-item-${index.toString()}`}
           style={{
@@ -73,18 +141,26 @@ export function LineItems({
             <Description content={item.name} />
           </View>
 
-          <Text style={{ flex: 1, fontSize: 9 }}>{item.quantity ?? 0}</Text>
-
-          <Text style={{ flex: 1, fontSize: 9 }}>
-            {currency &&
-              formatCurrencyForPDF({
-                amount: item.price ?? 0,
-                currency,
-                locale,
-                maximumFractionDigits,
-              })}
-            {includeUnits && item.unit ? ` / ${item.unit}` : null}
-          </Text>
+          {shouldShowDetails(item) ? (
+            <>
+              <Text style={{ flex: 1, fontSize: 9 }}>{item.quantity ?? 0}</Text>
+              <Text style={{ flex: 1, fontSize: 9 }}>
+                {currency &&
+                  formatCurrencyForPDF({
+                    amount: item.price ?? 0,
+                    currency,
+                    locale,
+                    maximumFractionDigits,
+                  })}
+                {includeUnits && item.unit ? ` / ${item.unit}` : null}
+              </Text>
+            </>
+          ) : (
+            <>
+              <View style={{ flex: 1 }} />
+              <View style={{ flex: 1 }} />
+            </>
+          )}
 
           <Text style={{ flex: 1, fontSize: 9, textAlign: "right" }}>
             {currency &&

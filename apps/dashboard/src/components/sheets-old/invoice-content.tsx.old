@@ -1,0 +1,16 @@
+"use client";
+
+import { InvoiceSuccess } from "@/components/invoice-success";
+import { Form } from "@/components/invoice/form";
+import { SettingsMenu } from "@/components/invoice/settings-menu";
+import { InvoiceContent as BaseInvoiceContent } from "@midday/invoice-components/sheet";
+
+export function InvoiceContent() {
+  return (
+    <BaseInvoiceContent
+      InvoiceSuccess={InvoiceSuccess}
+      Form={Form}
+      SettingsMenu={SettingsMenu}
+    />
+  );
+}

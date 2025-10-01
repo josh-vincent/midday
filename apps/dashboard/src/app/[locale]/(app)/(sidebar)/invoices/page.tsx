@@ -11,7 +11,7 @@ import { InvoicesPaid } from "@/components/invoices-paid";
 import { InvoiceSheet } from "@/components/sheets/invoice-sheet";
 import { DataTable } from "@/components/tables/invoices/data-table";
 import { InvoiceSkeleton } from "@/components/tables/invoices/skeleton";
-import { loadInvoiceFilterParams } from "@/hooks/use-invoice-filter-params";
+import { loadInvoiceFilterParams } from "@/hooks/use-invoice-filter-params.server";
 import { loadSortParams } from "@/hooks/use-sort-params.server";
 import { batchPrefetch, trpc } from "@/trpc/server";
 import { getInitialInvoicesColumnVisibility } from "@/utils/columns";

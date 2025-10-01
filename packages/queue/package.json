@@ -1,0 +1,39 @@
+{
+  "name": "@midday/queue",
+  "version": "0.1.0",
+  "description": "Queue management system with BullMQ for reliable job processing",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -w",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "bullmq": "^5.32.1",
+    "ioredis": "^5.4.2",
+    "@midday/logger": "workspace:*",
+    "@midday/redis": "workspace:*",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "queue",
+    "job",
+    "bullmq",
+    "redis",
+    "webhook",
+    "retry",
+    "background"
+  ],
+  "license": "MIT"
+}

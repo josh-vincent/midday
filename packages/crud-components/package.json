@@ -1,0 +1,61 @@
+{
+  "name": "@midday/crud-components",
+  "version": "1.0.0",
+  "private": true,
+  "sideEffects": false,
+  "files": ["src"],
+  "main": "src/index.ts",
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./create-sheet": "./src/components/create-sheet.tsx",
+    "./edit-sheet": "./src/components/edit-sheet.tsx",
+    "./delete-confirmation": "./src/components/delete-confirmation.tsx",
+    "./bulk-edit-sheet": "./src/components/bulk-edit-sheet.tsx",
+    "./import-sheet": "./src/components/import-sheet.tsx",
+    "./export-dialog": "./src/components/export-dialog.tsx",
+    "./duplicate-dialog": "./src/components/duplicate-dialog.tsx",
+    "./archive-confirmation": "./src/components/archive-confirmation.tsx",
+    "./hooks": "./src/hooks/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./types": "./src/types/index.ts"
+  },
+  "dependencies": {
+    "@midday/ui": "workspace:*",
+    "@midday/overlay-components": "workspace:*",
+    "@hookform/resolvers": "^3.9.1",
+    "@radix-ui/react-alert-dialog": "^1.1.14",
+    "@radix-ui/react-dialog": "^1.1.14",
+    "@radix-ui/react-select": "^2.2.5",
+    "@radix-ui/react-progress": "^1.1.7",
+    "@radix-ui/react-toast": "^1.2.14",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^12.0.0",
+    "lucide-react": "^0.511.0",
+    "papaparse": "^5.4.1",
+    "react-hook-form": "^7.55.0",
+    "tailwind-merge": "2.5.3",
+    "xlsx": "^0.18.5",
+    "zod": "^3.24.1",
+    "zustand": "^4.5.2"
+  },
+  "devDependencies": {
+    "@types/papaparse": "^5.3.14",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "typescript": "^5.9.2"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  }
+}

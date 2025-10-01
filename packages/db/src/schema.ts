@@ -21,7 +21,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 import tsvector from "./tsvector";
-import { invoiceDeliveryTypeEnum, invoiceSizeEnum } from "./schema-old";
+
 
 // Custom types
 export const numericCasted = customType<{
@@ -56,6 +56,14 @@ export const invoiceStatusEnum = pgEnum("invoice_status", [
   "partially_paid",
   "scheduled",
 ]);
+export const invoiceDeliveryTypeEnum = pgEnum("invoice_delivery_type", [
+  "create",
+  "create_and_send",
+  "scheduled",
+]);
+
+export const invoiceSizeEnum = pgEnum("invoice_size", ["a4", "letter"]);
+
 export const teamRolesEnum = pgEnum("teamRoles", ["owner", "member"]);
 
 export const paymentMethodEnum = pgEnum("payment_method", [
@@ -164,7 +172,7 @@ export const usersInAuth = pgTable(
     isAnonymous: boolean("is_anonymous").notNull().default(false),
   },
   (table) => [
-    primaryKey({ columns: [table.id], name: "users_pkey" }),
+    // primaryKey({ columns: [table.id], name: "users_pkey" }),
     unique("users_phone_key").on(table.phone),
     unique("confirmation_token_idx").on(table.confirmationToken),
     unique("email_change_token_current_idx").on(table.emailChangeTokenCurrent),
@@ -211,7 +219,7 @@ export const users = pgTable(
   (table) => [
     index("users_team_id_idx").using(
       "btree",
-      table.teamId.asc().nullsLast().op("uuid_ops"),
+      table.teamId.asc().nullsLast(),
     ),
     foreignKey({
       columns: [table.id],
@@ -295,11 +303,11 @@ export const usersOnTeam = pgTable(
   (table) => [
     index("users_on_team_team_id_idx").using(
       "btree",
-      table.teamId.asc().nullsLast().op("uuid_ops"),
+      table.teamId.asc().nullsLast(),
     ),
     index("users_on_team_user_id_idx").using(
       "btree",
-      table.userId.asc().nullsLast().op("uuid_ops"),
+      table.userId.asc().nullsLast(),
     ),
     foreignKey({
       columns: [table.teamId],
@@ -372,7 +380,6 @@ export const customers = pgTable(
       .notNull(),
     name: varchar({ length: 255 }).notNull(),
     email: varchar({ length: 255 }),
-    billingEmail: text(),
     phone: varchar({ length: 50 }),
     website: varchar({ length: 255 }),
     addressLine1: text("address_line_1"),
@@ -401,13 +408,11 @@ export const customers = pgTable(
 					COALESCE(contact, ''::text) || ' ' ||
 					COALESCE(phone, ''::text) || ' ' ||
 					COALESCE(email, ''::text) || ' ' ||
-          COALESCE(billingEmail, ''::text) || ' ' ||
-          COALESCE(abn, ''::text) || ' ' ||
 					COALESCE(address_line_1, ''::text) || ' ' ||
 					COALESCE(address_line_2, ''::text) || ' ' ||
 					COALESCE(city, ''::text) || ' ' ||
 					COALESCE(state, ''::text) || ' ' ||
-					COALESCE(postalCode, ''::text) || ' ' ||
+					COALESCE(postal_code, ''::text) || ' ' ||
 					COALESCE(country, ''::text)
 				)
 			`,
@@ -539,73 +544,159 @@ export const invoices = pgTable(
   ]
 );
 
+// Invoice Products - reusable product catalog for line items
+export const invoiceProducts = pgTable(
+  "invoice_products",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      withTimezone: true,
+      mode: "string",
+    }).defaultNow(),
+    teamId: uuid("team_id")
+      .notNull()
+      .references(() => teams.id, { onDelete: "cascade" }),
+    createdBy: uuid("created_by").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    name: text().notNull(),
+    description: text(),
+    price: numericCasted({ precision: 10, scale: 2 }),
+    currency: text(),
+    unit: text(),
+    isActive: boolean("is_active").default(true).notNull(),
+    usageCount: integer("usage_count").default(0).notNull(),
+    lastUsedAt: timestamp("last_used_at", {
+      withTimezone: true,
+      mode: "string",
+    }),
+    // Full-text search for product names and descriptions
+    fts: tsvector("fts")
+      .notNull()
+      .generatedAlwaysAs(
+        (): SQL => sql`
+          to_tsvector(
+            'english',
+            (
+              (COALESCE(name, ''::text) || ' '::text) || COALESCE(description, ''::text)
+            )
+          )
+        `,
+      ),
+  },
+  (table) => [
+    index("invoice_products_team_id_idx").on(table.teamId),
+    index("invoice_products_created_by_idx").on(table.createdBy),
+    index("invoice_products_fts_idx").using("gin", table.fts),
+    index("invoice_products_name_idx").on(table.name),
+    index("invoice_products_usage_count_idx").on(table.usageCount),
+    index("invoice_products_last_used_at_idx").on(table.lastUsedAt),
+    // Composite index for team + active status for fast filtering
+    index("invoice_products_team_active_idx").on(table.teamId, table.isActive),
+    // Unique constraint for upsert operations (team + name + currency + price combination)
+    unique("invoice_products_team_name_currency_price_unique").on(
+      table.teamId,
+      table.name,
+      table.currency,
+      table.price,
+    ),
+    pgPolicy("Enable read access for team members", {
+      as: "permissive",
+      for: "select",
+      to: ["public"],
+      using: sql`team_id = (select auth.jwt() ->> 'team_id')::uuid`,
+    }),
+    pgPolicy("Enable insert access for team members", {
+      as: "permissive",
+      for: "insert",
+      to: ["public"],
+      withCheck: sql`team_id = (select auth.jwt() ->> 'team_id')::uuid`,
+    }),
+    pgPolicy("Enable update access for team members", {
+      as: "permissive",
+      for: "update",
+      to: ["public"],
+      using: sql`team_id = (select auth.jwt() ->> 'team_id')::uuid`,
+    }),
+    pgPolicy("Enable delete access for team members", {
+      as: "permissive",
+      for: "delete",
+      to: ["public"],
+      using: sql`team_id = (select auth.jwt() ->> 'team_id')::uuid`,
+    }),
+  ]
+);
+
 export const invoiceTemplates = pgTable(
   "invoice_templates",
   {
     id: uuid().defaultRandom().primaryKey().notNull(),
-    teamId: uuid("team_id")
-      .references(() => teams.id, { onDelete: "cascade" })
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .defaultNow()
       .notNull(),
-    name: varchar({ length: 255 }).notNull(),
+    teamId: uuid("team_id").notNull(),
+    name: text().notNull().default("Default Template"),
     description: text(),
     isDefault: boolean("is_default").default(false).notNull(),
-    
-    // Template settings
-    title: varchar({ length: 255 }).default("Invoice"),
+    customerLabel: text("customer_label"),
+    fromLabel: text("from_label"),
+    invoiceNoLabel: text("invoice_no_label"),
+    issueDateLabel: text("issue_date_label"),
+    dueDateLabel: text("due_date_label"),
+    descriptionLabel: text("description_label"),
+    priceLabel: text("price_label"),
+    quantityLabel: text("quantity_label"),
+    totalLabel: text("total_label"),
+    vatLabel: text("vat_label"),
+    taxLabel: text("tax_label"),
+    paymentLabel: text("payment_label"),
+    noteLabel: text("note_label"),
     logoUrl: text("logo_url"),
-    primaryColor: varchar("primary_color", { length: 7 }).default("#000000"),
-    currency: varchar({ length: 3 }).default("AUD"),
-    dateFormat: varchar("date_format", { length: 20 }).default("dd/MM/yyyy"),
-    size: varchar({ length: 10 }).default("a4"),
-    includeQr: boolean("include_qr").default(false),
-    includeTaxNumber: boolean("include_tax_number").default(true),
-    includePaymentDetails: boolean("include_payment_details").default(true),
-    includeVat: boolean("include_vat").default(false),
-    includeTax: boolean("include_tax").default(false),
-    includeDiscount: boolean("include_discount").default(false),
-    includeDecimals: boolean("include_decimals").default(true),
-    includePdf: boolean("include_pdf").default(true),
-    includeUnits: boolean("include_units").default(false),
-    sendCopy: boolean("send_copy").default(false),
-    
-    // Labels
-    customerLabel: varchar("customer_label", { length: 255 }).default("To"),
-    fromLabel: varchar("from_label", { length: 255 }).default("From"),
-    invoiceNoLabel: varchar("invoice_no_label", { length: 255 }).default("Invoice No"),
-    issueDateLabel: varchar("issue_date_label", { length: 255 }).default("Issue Date"),
-    dueDateLabel: varchar("due_date_label", { length: 255 }).default("Due Date"),
-    descriptionLabel: varchar("description_label", { length: 255 }).default("Description"),
-    priceLabel: varchar("price_label", { length: 255 }).default("Price"),
-    quantityLabel: varchar("quantity_label", { length: 255 }).default("Quantity"),
-    totalLabel: varchar("total_label", { length: 255 }).default("Total"),
-    totalSummaryLabel: varchar("total_summary_label", { length: 255 }).default("Total"),
-    vatLabel: varchar("vat_label", { length: 255 }).default("VAT"),
-    taxLabel: varchar("tax_label", { length: 255 }).default("Tax"),
-    subtotalLabel: varchar("subtotal_label", { length: 255 }).default("Subtotal"),
-    discountLabel: varchar("discount_label", { length: 255 }).default("Discount"),
-    paymentLabel: varchar("payment_label", { length: 255 }).default("Payment Details"),
-    noteLabel: varchar("note_label", { length: 255 }).default("Note"),
-    
-    // Rates
-    taxRate: numericCasted("tax_rate", { precision: 5, scale: 2 }).default(0),
-    vatRate: numericCasted("vat_rate", { precision: 5, scale: 2 }).default(0),
-    
-    // Content templates
-    paymentTerms: integer("payment_terms"), // days
-    note: text(),
-    terms: text(),
-    paymentDetails: text("payment_details"),
-    fromDetails: text("from_details"),
-    noteDetails: text("note_details"),
-    deliveryType: varchar("delivery_type", { length: 20 }).default("create"),
-    
-    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+    currency: text(),
+    paymentDetails: jsonb("payment_details"),
+    fromDetails: jsonb("from_details"),
+    size: invoiceSizeEnum().default("a4"),
+    dateFormat: text("date_format"),
+    includeVat: boolean("include_vat"),
+    includeTax: boolean("include_tax"),
+    taxRate: numericCasted("tax_rate", { precision: 10, scale: 2 }),
+    deliveryType: invoiceDeliveryTypeEnum("delivery_type")
+      .default("create")
+      .notNull(),
+    discountLabel: text("discount_label"),
+    includeDiscount: boolean("include_discount"),
+    includeDecimals: boolean("include_decimals"),
+    includeQr: boolean("include_qr"),
+    totalSummaryLabel: text("total_summary_label"),
+    title: text(),
+    vatRate: numericCasted("vat_rate", { precision: 10, scale: 2 }),
+    includeUnits: boolean("include_units"),
+    subtotalLabel: text("subtotal_label"),
+    includePdf: boolean("include_pdf"),
+    sendCopy: boolean("send_copy"),
   },
   (table) => [
-    index("invoice_templates_team_idx").on(table.teamId),
-  ]
+    foreignKey({
+      columns: [table.teamId],
+      foreignColumns: [teams.id],
+      name: "invoice_settings_team_id_fkey",
+    }).onDelete("cascade"),
+    // Removed unique constraint on teamId to allow multiple templates per team
+    // unique("invoice_templates_team_id_key").on(table.teamId),
+    // Ensure template names are unique within a team
+    unique("invoice_templates_team_name_key").on(table.teamId, table.name),
+    // pgPolicy("Invoice templates can be handled by a member of the team", {
+    //   as: "permissive",
+    //   for: "all",
+    //   to: ["public"],
+    //   using: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
+    // }),
+  ],
 );
+
 
 export const invoiceComments = pgTable(
   "invoice_comments",
@@ -698,6 +789,7 @@ export const jobStatusEnum = pgEnum("job_status", [
   "pending",
   "in_progress", 
   "completed",
+  "delivered",
   "invoiced",
   "cancelled"
 ]);
@@ -763,8 +855,10 @@ export const jobs = pgTable(
     arrivalTime: timestamp("arrival_time", { mode: "string" }),
     completedTime: timestamp("completed_time", { mode: "string" }),
     
-    // Linking
+    // Linking - invoiceId for relationship, invoiceNumber for quick display
+    // invoiceStatus is NOT stored - always derived from invoice table to stay in sync
     invoiceId: uuid("invoice_id").references(() => invoices.id, { onDelete: "set null" }),
+    invoiceNumber: varchar("invoice_number", { length: 50 }), // Store for display without join
     
     // Additional info
     truckNumber: varchar("truck_number", { length: 50 }),
@@ -790,150 +884,6 @@ export const jobs = pgTable(
   ]
 );
 
-
-export const documents = pgTable(
-  "documents",
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    name: text(),
-    createdAt: timestamp("created_at", {
-      withTimezone: true,
-      mode: "string",
-    }).defaultNow(),
-    metadata: jsonb(),
-    pathTokens: text("path_tokens").array(),
-    teamId: uuid("team_id"),
-    parentId: text("parent_id"),
-    objectId: uuid("object_id"),
-    ownerId: uuid("owner_id"),
-    tag: text(),
-    title: text(),
-    body: text(),
-    fts: tsvector("fts")
-      .notNull()
-      .generatedAlwaysAs(
-        (): SQL =>
-          sql`to_tsvector('english'::regconfig, ((title || ' '::text) || body))`,
-      ),
-    summary: text(),
-    content: text(),
-    date: date(),
-    language: text(),
-    processingStatus:
-      documentProcessingStatusEnum("processing_status").default("pending"),
-    ftsSimple: tsvector("fts_simple"),
-    ftsEnglish: tsvector("fts_english"),
-    ftsLanguage: tsvector("fts_language"),
-  },
-  (table) => [
-    index("documents_name_idx").using(
-      "btree",
-      table.name.asc().nullsLast().op("text_ops"),
-    ),
-    index("documents_team_id_idx").using(
-      "btree",
-      table.teamId.asc().nullsLast().op("uuid_ops"),
-    ),
-    index("documents_team_id_parent_id_idx").using(
-      "btree",
-      table.teamId.asc().nullsLast().op("text_ops"),
-      table.parentId.asc().nullsLast().op("text_ops"),
-    ),
-    index("idx_documents_fts_english").using(
-      "gin",
-      table.ftsEnglish.asc().nullsLast().op("tsvector_ops"),
-    ),
-    index("idx_documents_fts_language").using(
-      "gin",
-      table.ftsLanguage.asc().nullsLast().op("tsvector_ops"),
-    ),
-    index("idx_documents_fts_simple").using(
-      "gin",
-      table.ftsSimple.asc().nullsLast().op("tsvector_ops"),
-    ),
-    index("idx_gin_documents_title").using(
-      "gin",
-      table.title.asc().nullsLast().op("gin_trgm_ops"),
-    ),
-    foreignKey({
-      columns: [table.ownerId],
-      foreignColumns: [users.id],
-      name: "documents_created_by_fkey",
-    }).onDelete("set null"),
-    foreignKey({
-      columns: [table.teamId],
-      foreignColumns: [teams.id],
-      name: "storage_team_id_fkey",
-    }).onDelete("cascade"),
-    pgPolicy("Documents can be deleted by a member of the team", {
-      as: "permissive",
-      for: "all",
-      to: ["public"],
-      using: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
-    }),
-    pgPolicy("Documents can be selected by a member of the team", {
-      as: "permissive",
-      for: "all",
-      to: ["public"],
-    }),
-    pgPolicy("Documents can be updated by a member of the team", {
-      as: "permissive",
-      for: "update",
-      to: ["public"],
-    }),
-    pgPolicy("Enable insert for authenticated users only", {
-      as: "permissive",
-      for: "insert",
-      to: ["authenticated"],
-    }),
-  ],
-);
-
-
-export const documentTagAssignments = pgTable(
-  "document_tag_assignments",
-  {
-    documentId: uuid("document_id").notNull(),
-    tagId: uuid("tag_id").notNull(),
-    teamId: uuid("team_id").notNull(),
-  },
-  (table) => [
-    index("idx_document_tag_assignments_document_id").using(
-      "btree",
-      table.documentId.asc().nullsLast().op("uuid_ops"),
-    ),
-    index("idx_document_tag_assignments_tag_id").using(
-      "btree",
-      table.tagId.asc().nullsLast().op("uuid_ops"),
-    ),
-    foreignKey({
-      columns: [table.documentId],
-      foreignColumns: [documents.id],
-      name: "document_tag_assignments_document_id_fkey",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.tagId],
-      foreignColumns: [documentTags.id],
-      name: "document_tag_assignments_tag_id_fkey",
-    }).onDelete("cascade"),
-    foreignKey({
-      columns: [table.teamId],
-      foreignColumns: [teams.id],
-      name: "document_tag_assignments_team_id_fkey",
-    }).onDelete("cascade"),
-    primaryKey({
-      columns: [table.documentId, table.tagId],
-      name: "document_tag_assignments_pkey",
-    }),
-    unique("document_tag_assignments_unique").on(table.documentId, table.tagId),
-    pgPolicy("Tags can be handled by a member of the team", {
-      as: "permissive",
-      for: "all",
-      to: ["public"],
-      using: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
-    }),
-  ],
-);
 
 export const apps = pgTable(
   "apps",
@@ -961,12 +911,12 @@ export const apps = pgTable(
       name: "integrations_team_id_fkey",
     }).onDelete("cascade"),
     unique("unique_app_id_team_id").on(table.teamId, table.appId),
-    pgPolicy("Apps can be deleted by a member of the team", {
-      as: "permissive",
-      for: "delete",
-      to: ["public"],
-      using: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
-    }),
+    // pgPolicy("Apps can be deleted by a member of the team", {
+    //   as: "permissive",
+    //   for: "delete",
+    //   to: ["public"],
+    //   using: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
+    // }),
     pgPolicy("Apps can be inserted by a member of the team", {
       as: "permissive",
       for: "insert",
@@ -1003,12 +953,12 @@ export const documentTags = pgTable(
       name: "document_tags_team_id_fkey",
     }).onDelete("cascade"),
     unique("unique_slug_per_team").on(table.slug, table.teamId),
-    pgPolicy("Tags can be handled by a member of the team", {
-      as: "permissive",
-      for: "all",
-      to: ["public"],
-      using: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
-    }),
+    // pgPolicy("Tags can be handled by a member of the team", {
+    //   as: "permissive",
+    //   for: "all",
+    //   to: ["public"],
+    //   using: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
+    // }),
   ],
 );
 
@@ -1033,15 +983,15 @@ export const shortLinks = pgTable(
   (table) => [
     index("short_links_short_id_idx").using(
       "btree",
-      table.shortId.asc().nullsLast().op("text_ops"),
+      table.shortId.asc().nullsLast(),
     ),
     index("short_links_team_id_idx").using(
       "btree",
-      table.teamId.asc().nullsLast().op("uuid_ops"),
+      table.teamId.asc().nullsLast(),
     ),
     index("short_links_user_id_idx").using(
       "btree",
-      table.userId.asc().nullsLast().op("uuid_ops"),
+      table.userId.asc().nullsLast(),
     ),
     foreignKey({
       columns: [table.userId],
@@ -1054,30 +1004,30 @@ export const shortLinks = pgTable(
       name: "short_links_team_id_fkey",
     }).onDelete("cascade"),
     unique("short_links_short_id_unique").on(table.shortId),
-    pgPolicy("Short links can be created by a member of the team", {
-      as: "permissive",
-      for: "insert",
-      to: ["authenticated"],
-      withCheck: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
-    }),
-    pgPolicy("Short links can be selected by a member of the team", {
-      as: "permissive",
-      for: "select",
-      to: ["authenticated"],
-      using: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
-    }),
-    pgPolicy("Short links can be updated by a member of the team", {
-      as: "permissive",
-      for: "update",
-      to: ["authenticated"],
-      using: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
-    }),
-    pgPolicy("Short links can be deleted by a member of the team", {
-      as: "permissive",
-      for: "delete",
-      to: ["authenticated"],
-      using: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
-    }),
+    // pgPolicy("Short links can be created by a member of the team", {
+    //   as: "permissive",
+    //   for: "insert",
+    //   to: ["authenticated"],
+    //   withCheck: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
+    // }),
+    // pgPolicy("Short links can be selected by a member of the team", {
+    //   as: "permissive",
+    //   for: "select",
+    //   to: ["authenticated"],
+    //   using: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
+    // }),
+    // pgPolicy("Short links can be updated by a member of the team", {
+    //   as: "permissive",
+    //   for: "update",
+    //   to: ["authenticated"],
+    //   using: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
+    // }),
+    // pgPolicy("Short links can be deleted by a member of the team", {
+    //   as: "permissive",
+    //   for: "delete",
+    //   to: ["authenticated"],
+    //   using: sql`(team_id IN ( SELECT private.get_teams_for_authenticated_user() AS get_teams_for_authenticated_user))`,
+    // }),
   ],
 );
 
@@ -1101,7 +1051,7 @@ export const reports = pgTable(
   (table) => [
     index("reports_team_id_idx").using(
       "btree",
-      table.teamId.asc().nullsLast().op("uuid_ops"),
+      table.teamId.asc().nullsLast(),
     ),
     foreignKey({
       columns: [table.createdBy],
@@ -1135,7 +1085,6 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   reports: many(reports),
   notificationSettings: many(notificationSettings),
   jobsCreated: many(jobs),
-  documents: many(documents),
 }));
 
 export const shortLinksRelations = relations(shortLinks, ({ one }) => ({
@@ -1149,18 +1098,6 @@ export const shortLinksRelations = relations(shortLinks, ({ one }) => ({
   }),
 }));
 
-export const documentsRelations = relations(documents, ({ one, many }) => ({
-  user: one(users, {
-    fields: [documents.ownerId],
-    references: [users.id],
-  }),
-  team: one(teams, {
-    fields: [documents.teamId],
-    references: [teams.id],
-  }),
-  documentTagAssignments: many(documentTagAssignments),
-}));
-
 export const teamsRelations = relations(teams, ({ many }) => ({
   users: many(users),
   usersOnTeams: many(usersOnTeam),
@@ -1169,8 +1106,7 @@ export const teamsRelations = relations(teams, ({ many }) => ({
   invoices: many(invoices),
   templates: many(invoiceTemplates),
   activities: many(activities),
-  jobs: many(jobs),
-  documents: many(documents),
+  jobs: many(jobs)
 }));
 
 export const usersOnTeamRelations = relations(usersOnTeam, ({ one }) => ({
@@ -1213,6 +1149,17 @@ export const invoicesRelations = relations(invoices, ({ one, many }) => ({
   comments: many(invoiceComments),
   payments: many(payments),
   jobs: many(jobs),
+}));
+
+export const invoiceProductsRelations = relations(invoiceProducts, ({ one }) => ({
+  team: one(teams, {
+    fields: [invoiceProducts.teamId],
+    references: [teams.id],
+  }),
+  createdBy: one(users, {
+    fields: [invoiceProducts.createdBy],
+    references: [users.id],
+  }),
 }));
 
 export const invoiceTemplatesRelations = relations(invoiceTemplates, ({ one, many }) => ({
@@ -1259,3 +1206,325 @@ export const jobsRelations = relations(jobs, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// ============================================
+// Stripe Integration Tables
+// ============================================
+
+// Stripe-specific enums
+export const subscriptionStatusEnum = pgEnum("subscription_status", [
+  "trialing",
+  "active", 
+  "canceled",
+  "incomplete",
+  "incomplete_expired",
+  "past_due",
+  "unpaid",
+  "paused"
+]);
+
+export const intervalEnum = pgEnum("interval", [
+  "day",
+  "week",
+  "month",
+  "year"
+]);
+
+// Stripe Customer table - links teams to Stripe customers
+export const stripeCustomers = pgTable(
+  "stripe_customers",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    teamId: uuid("team_id")
+      .references(() => teams.id, { onDelete: "cascade" })
+      .notNull(),
+    stripeCustomerId: varchar("stripe_customer_id", { length: 255 })
+      .unique()
+      .notNull(),
+    email: varchar({ length: 255 }),
+    name: varchar({ length: 255 }),
+    currency: varchar({ length: 3 }).default("USD"),
+    defaultPaymentMethod: varchar("default_payment_method", { length: 255 }),
+    invoicePrefix: varchar("invoice_prefix", { length: 10 }),
+    balance: integer().default(0), // In cents
+    delinquent: boolean().default(false),
+    metadata: jsonb(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("stripe_customers_team_idx").on(table.teamId),
+    index("stripe_customers_stripe_id_idx").on(table.stripeCustomerId),
+  ]
+);
+
+// Stripe Products - your subscription products
+export const stripeProducts = pgTable(
+  "stripe_products",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    stripeProductId: varchar("stripe_product_id", { length: 255 })
+      .unique()
+      .notNull(),
+    name: varchar({ length: 255 }).notNull(),
+    description: text(),
+    active: boolean().default(true).notNull(),
+    features: jsonb(), // Array of feature strings
+    metadata: jsonb(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("stripe_products_stripe_id_idx").on(table.stripeProductId),
+    index("stripe_products_active_idx").on(table.active),
+  ]
+);
+
+// Stripe Prices - pricing for your products
+export const stripePrices = pgTable(
+  "stripe_prices",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    stripePriceId: varchar("stripe_price_id", { length: 255 })
+      .unique()
+      .notNull(),
+    stripeProductId: varchar("stripe_product_id", { length: 255 })
+      .references(() => stripeProducts.stripeProductId, { onDelete: "cascade" })
+      .notNull(),
+    active: boolean().default(true).notNull(),
+    unitAmount: integer("unit_amount"), // In cents, null for custom pricing
+    currency: varchar({ length: 3 }).default("USD").notNull(),
+    type: varchar({ length: 20 }).notNull(), // 'recurring' or 'one_time'
+    interval: intervalEnum(),
+    intervalCount: integer("interval_count"),
+    trialPeriodDays: integer("trial_period_days"),
+    metadata: jsonb(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("stripe_prices_stripe_id_idx").on(table.stripePriceId),
+    index("stripe_prices_product_idx").on(table.stripeProductId),
+    index("stripe_prices_active_idx").on(table.active),
+  ]
+);
+
+// Stripe Subscriptions - active subscriptions
+export const stripeSubscriptions = pgTable(
+  "stripe_subscriptions",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    teamId: uuid("team_id")
+      .references(() => teams.id, { onDelete: "cascade" })
+      .notNull(),
+    stripeCustomerId: varchar("stripe_customer_id", { length: 255 })
+      .references(() => stripeCustomers.stripeCustomerId, { onDelete: "cascade" })
+      .notNull(),
+    stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 })
+      .unique()
+      .notNull(),
+    stripePriceId: varchar("stripe_price_id", { length: 255 })
+      .references(() => stripePrices.stripePriceId)
+      .notNull(),
+    status: subscriptionStatusEnum().notNull(),
+    quantity: integer().default(1).notNull(),
+    cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
+    canceledAt: timestamp("canceled_at", { mode: "string" }),
+    cancelAt: timestamp("cancel_at", { mode: "string" }),
+    currentPeriodStart: timestamp("current_period_start", { mode: "string" }).notNull(),
+    currentPeriodEnd: timestamp("current_period_end", { mode: "string" }).notNull(),
+    endedAt: timestamp("ended_at", { mode: "string" }),
+    trialStart: timestamp("trial_start", { mode: "string" }),
+    trialEnd: timestamp("trial_end", { mode: "string" }),
+    metadata: jsonb(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("stripe_subscriptions_team_idx").on(table.teamId),
+    index("stripe_subscriptions_customer_idx").on(table.stripeCustomerId),
+    index("stripe_subscriptions_stripe_id_idx").on(table.stripeSubscriptionId),
+    index("stripe_subscriptions_status_idx").on(table.status),
+  ]
+);
+
+// Stripe Payment Methods
+export const stripePaymentMethods = pgTable(
+  "stripe_payment_methods",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    stripeCustomerId: varchar("stripe_customer_id", { length: 255 })
+      .references(() => stripeCustomers.stripeCustomerId, { onDelete: "cascade" })
+      .notNull(),
+    stripePaymentMethodId: varchar("stripe_payment_method_id", { length: 255 })
+      .unique()
+      .notNull(),
+    type: varchar({ length: 50 }).notNull(), // 'card', 'bank_account', etc
+    card: jsonb(), // Card details (last4, brand, exp_month, exp_year)
+    billingDetails: jsonb("billing_details"),
+    isDefault: boolean("is_default").default(false).notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("stripe_payment_methods_customer_idx").on(table.stripeCustomerId),
+    index("stripe_payment_methods_stripe_id_idx").on(table.stripePaymentMethodId),
+  ]
+);
+
+// Stripe Invoices - sync Stripe invoices
+export const stripeInvoices = pgTable(
+  "stripe_invoices",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    stripeInvoiceId: varchar("stripe_invoice_id", { length: 255 })
+      .unique()
+      .notNull(),
+    stripeCustomerId: varchar("stripe_customer_id", { length: 255 })
+      .references(() => stripeCustomers.stripeCustomerId)
+      .notNull(),
+    stripeSubscriptionId: varchar("stripe_subscription_id", { length: 255 }),
+    number: varchar({ length: 255 }),
+    status: varchar({ length: 50 }), // 'draft', 'open', 'paid', 'void', 'uncollectible'
+    amountDue: integer("amount_due").notNull(), // In cents
+    amountPaid: integer("amount_paid").default(0).notNull(),
+    amountRemaining: integer("amount_remaining").default(0).notNull(),
+    currency: varchar({ length: 3 }).notNull(),
+    dueDate: timestamp("due_date", { mode: "string" }),
+    paidAt: timestamp("paid_at", { mode: "string" }),
+    periodStart: timestamp("period_start", { mode: "string" }),
+    periodEnd: timestamp("period_end", { mode: "string" }),
+    hostedInvoiceUrl: text("hosted_invoice_url"),
+    invoicePdf: text("invoice_pdf"),
+    metadata: jsonb(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("stripe_invoices_customer_idx").on(table.stripeCustomerId),
+    index("stripe_invoices_subscription_idx").on(table.stripeSubscriptionId),
+    index("stripe_invoices_stripe_id_idx").on(table.stripeInvoiceId),
+    index("stripe_invoices_status_idx").on(table.status),
+  ]
+);
+
+// Webhook Events Log - track all webhook events
+export const webhookEvents = pgTable(
+  "webhook_events",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    provider: varchar({ length: 50 }).notNull(), // 'stripe', 'gmail', 'outlook', etc
+    eventId: varchar("event_id", { length: 255 }).unique().notNull(),
+    eventType: varchar("event_type", { length: 100 }).notNull(),
+    payload: jsonb().notNull(),
+    processed: boolean().default(false).notNull(),
+    processedAt: timestamp("processed_at", { mode: "string" }),
+    error: text(),
+    retryCount: integer("retry_count").default(0).notNull(),
+    nextRetryAt: timestamp("next_retry_at", { mode: "string" }),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("webhook_events_provider_idx").on(table.provider),
+    index("webhook_events_type_idx").on(table.eventType),
+    index("webhook_events_processed_idx").on(table.processed),
+    index("webhook_events_retry_idx").on(table.nextRetryAt),
+  ]
+);
+
+// Stripe Checkout Sessions - track checkout sessions
+export const stripeCheckoutSessions = pgTable(
+  "stripe_checkout_sessions",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    sessionId: varchar("session_id", { length: 255 }).unique().notNull(),
+    teamId: uuid("team_id").references(() => teams.id),
+    stripeCustomerId: varchar("stripe_customer_id", { length: 255 }),
+    stripePriceId: varchar("stripe_price_id", { length: 255 }),
+    status: varchar({ length: 50 }).notNull(), // 'open', 'complete', 'expired'
+    mode: varchar({ length: 20 }).notNull(), // 'payment', 'setup', 'subscription'
+    successUrl: text("success_url"),
+    cancelUrl: text("cancel_url"),
+    metadata: jsonb(),
+    expiresAt: timestamp("expires_at", { mode: "string" }),
+    completedAt: timestamp("completed_at", { mode: "string" }),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("stripe_checkout_sessions_session_idx").on(table.sessionId),
+    index("stripe_checkout_sessions_team_idx").on(table.teamId),
+    index("stripe_checkout_sessions_status_idx").on(table.status),
+  ]
+);
+
+// Usage Records - track usage for metered billing
+export const stripeUsageRecords = pgTable(
+  "stripe_usage_records",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    stripeSubscriptionItemId: varchar("stripe_subscription_item_id", { length: 255 }).notNull(),
+    quantity: integer().notNull(),
+    timestamp: timestamp({ mode: "string" }).notNull(),
+    idempotencyKey: varchar("idempotency_key", { length: 255 }).unique(),
+    metadata: jsonb(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("stripe_usage_records_subscription_item_idx").on(table.stripeSubscriptionItemId),
+    index("stripe_usage_records_timestamp_idx").on(table.timestamp),
+  ]
+);
+
+// ============================================
+// Stripe Relations
+// ============================================
+
+export const stripeCustomersRelations = relations(stripeCustomers, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [stripeCustomers.teamId],
+    references: [teams.id],
+  }),
+  subscriptions: many(stripeSubscriptions),
+  paymentMethods: many(stripePaymentMethods),
+  invoices: many(stripeInvoices),
+}));
+
+export const stripeProductsRelations = relations(stripeProducts, ({ many }) => ({
+  prices: many(stripePrices),
+}));
+
+export const stripePricesRelations = relations(stripePrices, ({ one, many }) => ({
+  product: one(stripeProducts, {
+    fields: [stripePrices.stripeProductId],
+    references: [stripeProducts.stripeProductId],
+  }),
+  subscriptions: many(stripeSubscriptions),
+}));
+
+export const stripeSubscriptionsRelations = relations(stripeSubscriptions, ({ one }) => ({
+  team: one(teams, {
+    fields: [stripeSubscriptions.teamId],
+    references: [teams.id],
+  }),
+  customer: one(stripeCustomers, {
+    fields: [stripeSubscriptions.stripeCustomerId],
+    references: [stripeCustomers.stripeCustomerId],
+  }),
+  price: one(stripePrices, {
+    fields: [stripeSubscriptions.stripePriceId],
+    references: [stripePrices.stripePriceId],
+  }),
+}));
+
+export const stripePaymentMethodsRelations = relations(stripePaymentMethods, ({ one }) => ({
+  customer: one(stripeCustomers, {
+    fields: [stripePaymentMethods.stripeCustomerId],
+    references: [stripeCustomers.stripeCustomerId],
+  }),
+}));
+
+export const stripeInvoicesRelations = relations(stripeInvoices, ({ one }) => ({
+  customer: one(stripeCustomers, {
+    fields: [stripeInvoices.stripeCustomerId],
+    references: [stripeCustomers.stripeCustomerId],
+  }),
+}));
+
+export * from "./schema/pricing";

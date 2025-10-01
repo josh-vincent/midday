@@ -3,6 +3,10 @@ export type LineItem = {
   quantity?: number;
   price?: number;
   unit?: string;
+  // Control whether to show itemized details or just summary
+  showDetails?: boolean;
+  // Group identifier for consolidated items
+  groupId?: string;
   // Dirt-specific weighbridge fields
   ticketNumber?: string;
   truckRego?: string;
@@ -95,6 +99,24 @@ export type Template = {
   includeDecimals: boolean;
   includeUnits: boolean;
   includeQr: boolean;
+  // Itemization control settings
+  includeItemDetails: boolean;
+  groupConsolidatedItems: boolean;
+  consolidatedItemLabel?: string;
+  // Auto-grouping rules
+  autoGroupingRules?: {
+    enabled: boolean;
+    // Group items with the same name
+    groupByName?: boolean;
+    // Group items below a certain price threshold
+    groupBelowPrice?: number;
+    // Group items with quantity of 1
+    groupSingleQuantity?: boolean;
+    // Group items matching certain patterns
+    groupByPattern?: string[];
+    // Auto-hide quantity/hours for grouped items
+    autoHideDetails?: boolean;
+  };
   taxRate: number;
   vatRate: number;
   size: "a4" | "letter";

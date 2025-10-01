@@ -62,7 +62,7 @@ export function TemplateFormatOptions({ template }: { template: any }) {
             return queryKey[0] === 'trpc' && 
                    queryKey[1] && 
                    (queryKey[1].toString().startsWith('invoiceTemplate.get') ||
-                    queryKey[1].toString().startsWith('invoiceTemplate.isConfigured'));
+                    queryKey[1].toString().startsWith('invoice.templateIsConfigured'));
           },
         });
       },

@@ -9,13 +9,11 @@ export default function GlobalError({
   error: Error & { digest?: string };
 }) {
   useEffect(() => {
-    // Only capture exceptions in production
-    if (process.env.NODE_ENV === "production") {
-      // Dynamically import Sentry only in production
-      import("@sentry/nextjs").then((Sentry) => {
-        Sentry.captureException(error);
-      });
+    // Log error in development
+    if (process.env.NODE_ENV === "development") {
+      console.error("Global error:", error);
     }
+    // Sentry removed for MVP - can be re-enabled later if needed
   }, [error]);
 
   return (

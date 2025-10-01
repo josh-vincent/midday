@@ -4,6 +4,7 @@ import { FormatAmount } from "@/components/format-amount";
 import { Checkbox } from "@midday/ui/checkbox";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
+import Link from "next/link";
 import { ActionsMenu } from "./actions-menu";
 import { CompanyCell } from "./company-cell";
 
@@ -14,13 +15,23 @@ export type Job = {
   companyName: string | null;
   customerName?: string | null;
   description: string | null;
-  status: "pending" | "in_progress" | "completed" | "cancelled" | "invoiced";
+  status: "pending" | "in_progress" | "completed" | "cancelled" | "delivered" | "invoiced";
   totalAmount: number | null;
   currency: string;
+  rego: string | null;
+  pricePerUnit: number | null;
+  cubicMetreCapacity: number | null;
+  loadNumber: number | null;
+  contactPerson: string | null;
+  contactNumber: string | null;
+  notes: string | null;
   teamId: string;
   customerId: string | null;
   volume: number | null;
   weight: number | null;
+  invoiceId?: string | null;
+  invoiceNumber?: string | null;
+  invoiceStatus?: "draft" | "unpaid" | "paid" | "canceled" | "overdue" | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -30,15 +41,24 @@ const statusColors = {
   in_progress: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
   completed: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
   cancelled: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
+  delivered: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
   invoiced: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+};
+
+const invoiceStatusColors = {
+  draft: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
+  unpaid: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+  paid: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+  canceled: "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400",
+  overdue: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
 };
 
 export const columns: ColumnDef<Job>[] = [
   {
     id: "select",
-    size: 40,
+    size: 50,
     header: ({ table }) => (
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center px-3">
         <Checkbox
           checked={table.getIsAllPageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
@@ -49,7 +69,7 @@ export const columns: ColumnDef<Job>[] = [
     cell: ({ row }) => {
       return (
         <div 
-          className="flex items-center justify-center"
+          className="flex items-center justify-center px-3"
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -127,13 +147,68 @@ export const columns: ColumnDef<Job>[] = [
       const status = row.getValue("status") as Job["status"];
       return (
         <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
-            statusColors[status] || statusColors.pending
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-none text-xs font-medium capitalize ${
+              statusColors[status] || statusColors.delivered
           }`}
         >
           {status.replace("_", " ")}
         </span>
       );
+    },
+  },
+  {
+    id: "rego",
+    accessorKey: "rego",
+    header: "Rego",
+    enableSorting: true,
+    enableHiding: true,
+    cell: ({ row }) => {
+      const rego = row.getValue("rego") as string | null;
+      return rego ? rego : "-";
+    },
+  },
+  {
+    id: "pricePerUnit",
+    accessorKey: "pricePerUnit",
+    header: "Price Per Unit",
+    enableSorting: true,
+    enableHiding: true,
+    cell: ({ row }) => {
+      const pricePerUnit = row.getValue("pricePerUnit") as number | null;
+      return pricePerUnit ? `$${pricePerUnit}` : "-";
+    },
+  },
+  {
+    id: "cubicMetreCapacity",
+    accessorKey: "cubicMetreCapacity",
+    header: "Cubic Metre Capacity",
+    enableSorting: true,
+    enableHiding: true,
+    cell: ({ row }) => {
+      const cubicMetreCapacity = row.getValue("cubicMetreCapacity") as number | null;
+      return cubicMetreCapacity ? `${cubicMetreCapacity} m³` : "-";
+    },
+  },
+  {
+    id: "loadNumber",
+    accessorKey: "loadNumber",
+    header: "Load Number",
+    enableSorting: true,
+    enableHiding: true,
+    cell: ({ row }) => {
+      const loadNumber = row.getValue("loadNumber") as number | null;
+      return loadNumber ? `${loadNumber}` : "-";
+    },
+  },
+  {
+    id: "contactPerson",
+    accessorKey: "contactPerson",
+    header: "Contact Person",
+    enableSorting: true,
+    enableHiding: true,
+    cell: ({ row }) => {
+      const contactPerson = row.getValue("contactPerson") as string | null;
+      return contactPerson ? contactPerson : "-";
     },
   },
   {
@@ -177,6 +252,56 @@ export const columns: ColumnDef<Job>[] = [
             currency={currency}
           />
         </div>
+      );
+    },
+  },
+  {
+    id: "invoiceNumber",
+    accessorKey: "invoiceNumber",
+    header: "Invoice #",
+    enableSorting: true,
+    enableHiding: true,
+    cell: ({ row }) => {
+      const invoiceNumber = row.getValue("invoiceNumber") as string | null;
+      const invoiceId = row.original.invoiceId;
+
+      if (!invoiceNumber) {
+        return <span className="text-muted-foreground">-</span>;
+      }
+
+      if (invoiceId) {
+        return (
+          <Link
+            href={`/invoices?type=edit&invoiceId=${invoiceId}`}
+            className="font-mono text-sm text-primary hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {invoiceNumber}
+          </Link>
+        );
+      }
+
+      return <span className="font-mono text-sm">{invoiceNumber}</span>;
+    },
+  },
+  {
+    id: "invoiceStatus",
+    accessorKey: "invoiceStatus",
+    header: "Invoice Status",
+    enableSorting: true,
+    enableHiding: true,
+    cell: ({ row }) => {
+      const invoiceStatus = row.getValue("invoiceStatus") as Job["invoiceStatus"];
+      if (!invoiceStatus) return <span className="text-muted-foreground">-</span>;
+      
+      return (
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-none text-xs font-medium capitalize ${
+            invoiceStatusColors[invoiceStatus] || invoiceStatusColors.draft
+          }`}
+        >
+          {invoiceStatus}
+        </span>
       );
     },
   },

@@ -4,10 +4,11 @@ import { InactiveClients } from "@/components/inactive-clients";
 import { InvoiceSummarySkeleton } from "@/components/invoice-summary";
 import { MostActiveClient } from "@/components/most-active-client";
 import { NewCustomersThisMonth } from "@/components/new-customers-this-month";
+import { CustomerSheet } from "@/components/sheets/customer-sheet";
 import { DataTable } from "@/components/tables/customers/data-table";
 import { CustomersSkeleton } from "@/components/tables/customers/skeleton";
 import { TopRevenueClient } from "@/components/top-revenue-client";
-import { loadCustomerFilterParams } from "@/hooks/use-customer-filter-params";
+import { loadCustomerFilterParams } from "@/hooks/use-customer-filter-params.server";
 import { loadSortParams } from "@/hooks/use-sort-params.server";
 import {
   HydrateClient,
@@ -77,6 +78,8 @@ export default async function Page(props: Props) {
           </Suspense>
         </ErrorBoundary>
       </div>
+      
+      <CustomerSheet />
     </HydrateClient>
   );
 }

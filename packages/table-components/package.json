@@ -1,0 +1,50 @@
+{
+  "name": "@midday/table-components",
+  "version": "1.0.0",
+  "private": true,
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types/index.ts",
+    "./providers/mock": "./src/providers/mock-data-provider.ts",
+    "./providers/trpc": "./src/providers/trpc-data-provider.ts",
+    "./components": "./src/components/index.ts",
+    "./hooks": "./src/hooks/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./invoices": "./src/tables/invoices/index.ts",
+    "./customers": "./src/tables/customers/index.ts",
+    "./transactions": "./src/tables/transactions/index.ts",
+    "./jobs": "./src/tables/jobs/index.ts",
+    "./documents": "./src/tables/documents/index.ts",
+    "./emails": "./src/tables/emails/index.ts",
+    "./subscriptions": "./src/tables/subscriptions/index.ts",
+    "./workers": "./src/tables/workers/index.ts",
+    "./time": "./src/tables/time/index.ts",
+    "./queue-jobs": "./src/tables/queue-jobs/index.ts",
+    "./database-tables": "./src/tables/database-tables/index.ts",
+    "./migrations": "./src/tables/migrations/index.ts",
+    "./stripe-customers": "./src/tables/stripe-customers/index.ts"
+  },
+  "dependencies": {
+    "@midday/ui": "workspace:*",
+    "@tanstack/react-table": "^8.20.5",
+    "@tanstack/react-query": "^5.62.16",
+    "lucide-react": "^0.511.0",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^11.12.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.6",
+    "@types/react-dom": "^19.0.2",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "typescript": "^5.9.2"
+  }
+}

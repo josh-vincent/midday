@@ -1,6 +1,5 @@
 import { logger } from "@/utils/logger";
 import { resend } from "@api/services/resend";
-import { getAllowedAttachments } from "@midday/documents";
 import { LogEvents } from "@midday/events/events";
 import { setupAnalytics } from "@midday/events/server";
 import { getInboxIdFromEmail, inboxWebhookPostSchema } from "@midday/inbox";
@@ -12,6 +11,11 @@ import { getExtensionFromMimeType } from "@midday/utils";
 import { nanoid } from "nanoid";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+
+// @midday/documents removed for MVP - stub function
+function getAllowedAttachments(attachments: any[]) {
+  return attachments;
+}
 
 // https://postmarkapp.com/support/article/800-ips-for-firewalls#webhooks
 const ipRange = [

@@ -1,6 +1,6 @@
 "use client";
 
-import { useJobsFilterParams } from "@/hooks/use-jobs-filter-params";
+import { useJobFilterParams } from "@/hooks/use-job-filter-params";
 import { Card, CardContent, CardHeader, CardTitle } from "@midday/ui/card";
 import { AnimatedNumber } from "./animated-number";
 
@@ -12,7 +12,7 @@ interface JobsPendingProps {
 }
 
 export function JobsPending({ summary }: JobsPendingProps) {
-  const { setFilter } = useJobsFilterParams();
+  const { setParams } = useJobFilterParams();
   
   const pendingCount = summary?.count || 0;
   const pendingValue = summary?.potentialRevenue || 0;
@@ -21,8 +21,8 @@ export function JobsPending({ summary }: JobsPendingProps) {
     <button
       type="button"
       onClick={() =>
-        setFilter({
-          status: ["pending", "in_progress"],
+        setParams({
+          status: "pending", // Note: This will only set one status at a time with current implementation
         })
       }
       className="hidden sm:block text-left"

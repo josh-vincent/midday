@@ -12,6 +12,7 @@ import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { CopyInput } from "./copy-input";
 import { FormatAmount } from "./format-amount";
+import { InvoiceAttachedJobsDetailed } from "./invoice-attached-jobs-detailed";
 import { InvoiceSheetHeader } from "./invoice-sheet-header";
 import { OpenURL } from "./open-url";
 
@@ -153,6 +154,12 @@ export function InvoiceSuccess() {
                 </Button>
               </div>
             </div>
+
+            {/* Attached Jobs Section */}
+            <InvoiceAttachedJobsDetailed 
+              invoiceId={invoice.id} 
+              currency={invoice.currency || "AUD"} 
+            />
           </motion.div>
 
           <motion.div

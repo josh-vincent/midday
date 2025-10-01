@@ -17,7 +17,7 @@ export default function Overview() {
   );
 
   const { data: templateConfig, isLoading: templateLoading } = useQuery(
-    trpc.invoiceTemplate.isConfigured.queryOptions()
+    trpc.invoice.templateIsConfigured.queryOptions()
   );
 
   const hasCustomers = customersData?.data && customersData.data.length > 0;
@@ -25,7 +25,7 @@ export default function Overview() {
 
   return (
     <div className="flex flex-col mt-8">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Link
           href="/jobs"
           className="group p-6 border rounded-lg hover:border-primary transition-colors"
@@ -60,6 +60,59 @@ export default function Overview() {
             Manage customer information
           </p>
         </Link>
+
+        <div
+          className="group p-6 border rounded-lg hover:border-primary transition-colors cursor-pointer"
+          onClick={() => {
+            // Open a dropdown or modal for quick add options
+            const quickAddMenu = document.getElementById('quick-add-menu');
+            if (quickAddMenu) {
+              quickAddMenu.classList.toggle('hidden');
+            }
+          }}
+        >
+          <h3 className="font-semibold mb-2 group-hover:text-primary">
+            Quick Add
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Quickly create new items
+          </p>
+          <div id="quick-add-menu" className="hidden mt-4 space-y-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push("/jobs?createJob=true");
+              }}
+            >
+              + New Job
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push("/invoices?createInvoice=true");
+              }}
+            >
+              + New Invoice
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full justify-start"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push("/customers?createCustomer=true");
+              }}
+            >
+              + New Customer
+            </Button>
+          </div>
+        </div>
       </div>
 
       {!customersLoading && !templateLoading && (!hasCustomers || !hasInvoiceTemplate) && (

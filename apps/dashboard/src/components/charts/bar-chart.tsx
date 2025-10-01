@@ -5,8 +5,9 @@
 import { useUserQuery } from "@/hooks/use-user";
 import { useI18n } from "@/locales/client";
 import { formatAmount } from "@/utils/format";
-import { cn } from "@midday/ui/cn";
 import { format } from "date-fns";
+import { Status } from "./status";
+import { cn } from "@midday/ui/cn";
 import {
   Bar,
   BarChart as BaseBarChart,
@@ -17,7 +18,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Status } from "./status";
 
 const ToolTipContent = ({ payload = {} }) => {
   const t = useI18n();
@@ -102,11 +102,20 @@ export function BarChart({ data, height = 290 }) {
   const formattedData = data?.result?.map((item) => ({
     ...item,
     meta: data.meta,
+    formattedDate: format(
+      new Date(item.date),
+      data.meta.period === "weekly" ? "w" : "MMM",
+    ),
     date: format(
       new Date(item.date),
       data.meta.period === "weekly" ? "w" : "MMM",
     ),
   }));
+
+  const currentLightColor = "#121212";
+  const currentDarkColor = "#F5F5F3";
+  const previousLightColor = "#C6C6C6";
+  const previousDarkColor = "#323232";
 
   return (
     <div className="relative h-full w-full">
@@ -116,7 +125,7 @@ export function BarChart({ data, height = 290 }) {
           <span className="text-sm text-[#606060]">Current Period</span>
         </div>
         <div className="flex space-x-2 items-center">
-          <span className="w-2 h-2 rounded-full bg-[#C6C6C6] dark:bg-[#606060]" />
+          <span className="w-2 h-2 rounded-full bg-[#C6C6C6] dark:bg-[#323232]" />
           <span className="text-sm text-[#606060]">Last Period</span>
         </div>
       </div>
@@ -166,7 +175,7 @@ export function BarChart({ data, height = 290 }) {
                   "fill-[#41191A]",
                   entry?.previous?.value &&
                     +entry.previous.value > 0 &&
-                    "dark:fill-[#323232] fill-[#C6C6C6]",
+                    `dark:fill-[${previousDarkColor}] fill-[${previousLightColor}]`,
                 )}
               />
             ))}
@@ -180,7 +189,7 @@ export function BarChart({ data, height = 290 }) {
                   "fill-[#FF3638]",
                   entry?.current?.value &&
                   +entry.current.value > 0 &&
-                    "dark:fill-[#F5F5F3] fill-[#121212]",
+                    `dark:fill-[${currentDarkColor}] fill-[${currentLightColor}]`,
                 )}
               />
             ))}

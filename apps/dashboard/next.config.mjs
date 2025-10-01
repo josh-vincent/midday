@@ -20,7 +20,10 @@ const config = {
     "@midday/ui",
     "@midday/tailwind",
     "@midday/invoice",
+    "@midday/invoice-core",
+    "@midday/invoice-components",
     "@midday/api",
+    "@midday/ai-search",
   ],
   serverExternalPackages: ["@react-pdf/renderer", "pdfjs-dist"],
   eslint: {

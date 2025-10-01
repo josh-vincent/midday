@@ -166,7 +166,12 @@ export const teamRouter = createTRPCRouter({
   }),
 
   invitesByEmail: authProcedure.query(async ({ ctx: { db, session } }) => {
-    return getInvitesByEmail(db, session.user.email!);
+    // If email is not available in session, return empty array
+    if (!session.user.email) {
+      console.log("No email in session for user:", session.user.id);
+      return [];
+    }
+    return getInvitesByEmail(db, session.user.email);
   }),
 
   invite: protectedProcedure

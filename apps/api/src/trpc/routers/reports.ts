@@ -26,7 +26,7 @@ export const reportsRouter = createTRPCRouter({
         .from(invoices)
         .where(
           and(
-            eq(invoices.teamId, teamId),
+            eq(invoices.teamId, teamId!),
             eq(invoices.status, "paid"),
             between(invoices.issueDate, input.startDate, input.endDate),
           ),
@@ -45,14 +45,14 @@ export const reportsRouter = createTRPCRouter({
         .from(invoices)
         .where(
           and(
-            eq(invoices.teamId, teamId),
+            eq(invoices.teamId, teamId!),
             eq(invoices.status, "paid"),
             between(invoices.issueDate, prevFrom, prevTo),
           ),
         );
 
       const currentTotal = currentPeriod.reduce(
-        (acc, item) => acc + Number(item.total || 0),
+        (acc: number, item: any) => acc + Number(item.total || 0),
         0,
       );
       const prevTotal = Number(prevPeriod[0]?.total || 0);
@@ -68,7 +68,7 @@ export const reportsRouter = createTRPCRouter({
           period: "monthly",
           currency: input.currency || "USD",
         },
-        result: currentPeriod.map((item) => ({
+        result: currentPeriod.map((item: any) => ({
           date: item.date,
           value: Number(item.total || 0) / 100,
         })),
@@ -185,7 +185,7 @@ export const reportsRouter = createTRPCRouter({
         .from(invoices)
         .where(
           and(
-            eq(invoices.teamId, teamId),
+            eq(invoices.teamId, teamId!),
             between(invoices.issueDate, input.startDate, input.endDate),
           ),
         )
@@ -202,13 +202,13 @@ export const reportsRouter = createTRPCRouter({
         .from(invoices)
         .where(
           and(
-            eq(invoices.teamId, teamId),
+            eq(invoices.teamId, teamId!),
             between(invoices.issueDate, prevFrom, prevTo),
           ),
         );
 
       const currentTotal = currentPeriod.reduce(
-        (acc, item) => acc + Number(item.total || 0),
+        (acc: number, item: any) => acc + Number(item.total || 0),
         0,
       );
       const prevTotal = Number(prevPeriod[0]?.total || 0);
@@ -224,7 +224,7 @@ export const reportsRouter = createTRPCRouter({
           period: "monthly",
           currency: input.currency || "USD",
         },
-        result: currentPeriod.map((item) => ({
+        result: currentPeriod.map((item: any) => ({
           date: item.date,
           value: Number(item.total || 0) / 100,
         })),
@@ -245,7 +245,7 @@ export const reportsRouter = createTRPCRouter({
         .from(jobs)
         .where(
           and(
-            eq(jobs.teamId, teamId),
+            eq(jobs.teamId, teamId!),
             between(jobs.jobDate, input.startDate, input.endDate),
           ),
         )
@@ -261,11 +261,11 @@ export const reportsRouter = createTRPCRouter({
         })
         .from(jobs)
         .where(
-          and(eq(jobs.teamId, teamId), between(jobs.jobDate, prevFrom, prevTo)),
+          and(eq(jobs.teamId, teamId!), between(jobs.jobDate, prevFrom, prevTo)),
         );
 
       const currentTotal = currentPeriod.reduce(
-        (acc, item) => acc + Number(item.count || 0),
+        (acc: number, item: any) => acc + Number(item.count || 0),
         0,
       );
       const prevTotal = Number(prevPeriod[0]?.count || 0);
@@ -281,7 +281,7 @@ export const reportsRouter = createTRPCRouter({
           period: "monthly",
           currency: null,
         },
-        result: currentPeriod.map((item) => ({
+        result: currentPeriod.map((item: any) => ({
           date: item.date,
           value: Number(item.count || 0),
         })),
@@ -304,7 +304,7 @@ export const reportsRouter = createTRPCRouter({
         .from(jobs)
         .where(
           and(
-            eq(jobs.teamId, teamId),
+            eq(jobs.teamId, teamId!),
             between(jobs.jobDate, input.startDate, input.endDate),
           ),
         )
@@ -322,7 +322,7 @@ export const reportsRouter = createTRPCRouter({
         })
         .from(jobs)
         .where(
-          and(eq(jobs.teamId, teamId), between(jobs.jobDate, prevFrom, prevTo)),
+          and(eq(jobs.teamId, teamId!), between(jobs.jobDate, prevFrom, prevTo)),
         );
 
       const currentTotal = currentPeriod.reduce(
@@ -342,7 +342,7 @@ export const reportsRouter = createTRPCRouter({
           period: "monthly",
           currency: null,
         },
-        result: currentPeriod.map((item) => ({
+        result: currentPeriod.map((item: any) => ({
           date: item.date,
           value: Number(item.volume || 0),
         })),

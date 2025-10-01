@@ -3,9 +3,9 @@
 import { Button } from "@midday/ui/button";
 import { Upload } from "lucide-react";
 import { useState } from "react";
+import { CustomerSearchFilter } from "./customer-search-filter";
 import { CustomersCSVImporter } from "./import/customers-csv-importer";
 import { OpenCustomerSheet } from "./open-customer-sheet";
-import { SearchField } from "./search-field";
 
 export function CustomersHeader() {
   const [showImporter, setShowImporter] = useState(false);
@@ -13,7 +13,7 @@ export function CustomersHeader() {
   return (
     <>
       <div className="flex items-center justify-between">
-        <SearchField placeholder="Search customers" />
+        <CustomerSearchFilter />
 
         <div className="hidden sm:flex sm:gap-2">
           <Button variant="outline" onClick={() => setShowImporter(true)}>

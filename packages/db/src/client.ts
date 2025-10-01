@@ -12,11 +12,11 @@ const connectionConfig = {
   connect_timeout: 30, // Longer timeout for development
 };
 
-// Use DATABASE_URL or fallback to Supabase URL
+// Use DATABASE_URL or fallback to Supabase URL (using session pooler for correct schema handling)
 const databaseUrl =
   process.env.DATABASE_PRIMARY_URL ||
   process.env.DATABASE_URL ||
-  "postgresql://postgres.ulncfblvuijlgniydjju:MikeTheDogSupabase!@aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres";
+  "postgresql://postgres.ulncfblvuijlgniydjju:MikeTheDogSupabase!@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres";
 
 const primaryPool = postgres(databaseUrl, connectionConfig);
 

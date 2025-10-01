@@ -1,5 +1,5 @@
 import type { Database } from "@db/client";
-import { customers, invoiceStatusEnum, invoices, teams } from "@db/schema";
+import { customers, invoiceStatusEnum, invoices, teams, jobs } from "@db/schema";
 import { buildSearchQuery } from "@midday/db/utils/search-query";
 import { generateToken } from "@midday/invoice/token";
 import type { EditorDoc, LineItem } from "@midday/invoice/types";
@@ -112,21 +112,34 @@ export async function getInvoices(db: Database, params: GetInvoicesParams) {
       whereConditions.push(inArray(invoices.customerId, customerIds));
     }
 
-    // Apply search query filter
+    // Apply search query filter - search across multiple fields
     if (q) {
-      // If the query is a number, search by amount
-      if (!Number.isNaN(Number.parseInt(q))) {
-        whereConditions.push(
-          sql`${invoices.amount}::text = ${Number(q).toString()}`,
-        );
-      } else {
-        const query = buildSearchQuery(q);
+      const searchConditions: SQL[] = [];
 
-        // Search using customerName
-        whereConditions.push(
-          sql`${invoices.customerName} ILIKE '%' || ${q} || '%'`,
+      // Always search invoice number (most common use case)
+      searchConditions.push(
+        sql`${invoices.invoiceNumber} ILIKE '%' || ${q} || '%'`
+      );
+
+      // Search customer name
+      searchConditions.push(
+        sql`${invoices.customerName} ILIKE '%' || ${q} || '%'`
+      );
+
+      // Search note details if present
+      searchConditions.push(
+        sql`${invoices.note} ILIKE '%' || ${q} || '%'`
+      );
+
+      // If numeric, also search by amount (partial match)
+      if (!Number.isNaN(Number.parseInt(q))) {
+        searchConditions.push(
+          sql`${invoices.amount}::text ILIKE '%' || ${q} || '%'`
         );
       }
+
+      // Use OR condition to match any field
+      whereConditions.push(or(...searchConditions));
     }
 
     // Start building the query
@@ -409,19 +422,76 @@ export async function getNextInvoiceNumber(
       sql`SELECT get_next_invoice_number(${teamId}) AS next_invoice_number`,
     );
 
-    if (!row) {
+    if (!row || !row.next_invoice_number) {
       console.error("No invoice number result for team:", teamId);
-      // Generate a fallback invoice number
-      const timestamp = Date.now().toString(36).toUpperCase();
-      return `INV-${timestamp}`;
+      // Generate a fallback invoice number with better format
+      return await generateFallbackInvoiceNumber(db, teamId);
     }
 
-    return row.next_invoice_number as string;
+    // Handle both formats: plain number "42" or formatted "INV-00042"
+    const invoiceNumber = row.next_invoice_number as string;
+
+    // If it's already formatted with INV- prefix, return it
+    if (invoiceNumber.startsWith('INV-')) {
+      return invoiceNumber;
+    }
+
+    // Otherwise, format it as INV-##### (zero-padded to 5 digits)
+    return `INV-${invoiceNumber.padStart(5, '0')}`;
   } catch (error) {
     console.error("Error in getNextInvoiceNumber:", error);
-    // Generate a fallback invoice number on error
-    const timestamp = Date.now().toString(36).toUpperCase();
-    return `INV-${timestamp}`;
+    console.error("Error details:", {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      teamId,
+    });
+
+    // Generate a fallback invoice number with better format
+    return await generateFallbackInvoiceNumber(db, teamId);
+  }
+}
+
+/**
+ * Generate a fallback invoice number when the database function fails
+ * Uses format: INV-YYYY-#### (year + sequential count)
+ */
+async function generateFallbackInvoiceNumber(
+  db: Database,
+  teamId: string,
+): Promise<string> {
+  try {
+    const currentYear = new Date().getFullYear();
+
+    // Try to get the highest invoice number for this year
+    const result = await db
+      .select({
+        maxNumber: sql<string>`MAX(CAST(REGEXP_REPLACE(${invoices.invoiceNumber}, '[^0-9]', '', 'g') AS INTEGER))`,
+      })
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.teamId, teamId),
+          sql`EXTRACT(YEAR FROM ${invoices.createdAt}) = ${currentYear}`,
+          sql`${invoices.invoiceNumber} ~ '^INV-[0-9]+'`,
+        )
+      );
+
+    const lastNumber = result[0]?.maxNumber ? parseInt(result[0].maxNumber, 10) : 0;
+    const nextNumber = lastNumber + 1;
+
+    // Format: INV-YYYY-#### (4 digits)
+    return `INV-${currentYear}-${nextNumber.toString().padStart(4, '0')}`;
+  } catch (error) {
+    console.error("Error generating fallback invoice number:", error);
+
+    // Ultimate fallback: timestamp-based but more readable
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const time = now.getTime().toString().slice(-4); // Last 4 digits of timestamp
+
+    return `INV-${year}${month}${day}-${time}`;
   }
 }
 
@@ -517,7 +587,7 @@ export async function draftInvoice(db: Database, params: DraftInvoiceParams) {
     invoiceNumber,
     logoUrl,
     vat,
-    tax,
+    tax, // This will be mapped to taxAmount below
     discount,
     subtotal,
     topBlock,
@@ -546,7 +616,7 @@ export async function draftInvoice(db: Database, params: DraftInvoiceParams) {
       invoiceNumber,
       logoUrl,
       vat,
-      tax,
+      taxAmount: tax || 0, // Fix: use taxAmount field name and provide default
       discount,
       subtotal,
       topBlock,
@@ -577,7 +647,7 @@ export async function draftInvoice(db: Database, params: DraftInvoiceParams) {
         invoiceNumber,
         logoUrl,
         vat,
-        tax,
+        taxAmount: tax || 0, // Fix: use taxAmount field name and provide default
         discount,
         subtotal,
         topBlock,
@@ -596,6 +666,22 @@ export async function draftInvoice(db: Database, params: DraftInvoiceParams) {
       },
     })
     .returning();
+
+  // Extract job IDs from lineItems and update jobs with invoice information
+  if (lineItems && Array.isArray(lineItems)) {
+    const jobIds = lineItems
+      .filter((item: any) => item.jobId)
+      .map((item: any) => item.jobId);
+    
+    if (jobIds.length > 0) {
+      await updateJobsWithInvoice(db, {
+        invoiceId: result.id,
+        invoiceNumber: result.invoiceNumber,
+        invoiceStatus: result.status,
+        jobIds,
+      });
+    }
+  }
 
   return result;
 }
@@ -805,6 +891,30 @@ export async function updateInvoice(db: Database, params: UpdateInvoiceParams) {
     }
   }
 
+  // Update linked jobs with new invoice status
+  if (result && rest.status) {
+    // Get the invoice to find linked jobs via lineItems
+    const invoice = await getInvoiceById(db, {
+      id,
+      teamId,
+    });
+    
+    if (invoice?.lineItems && Array.isArray(invoice.lineItems)) {
+      const jobIds = invoice.lineItems
+        .filter((item: any) => item.jobId)
+        .map((item: any) => item.jobId);
+      
+      if (jobIds.length > 0) {
+        await updateJobsWithInvoice(db, {
+          invoiceId: result.id,
+          invoiceNumber: result.invoiceNumber,
+          invoiceStatus: result.status,
+          jobIds,
+        });
+      }
+    }
+  }
+
   return result;
 }
 
@@ -945,4 +1055,35 @@ export async function getAverageInvoiceSize(
     .groupBy(invoices.currency);
 
   return result;
+}
+
+export type UpdateJobsWithInvoiceParams = {
+  invoiceId: string;
+  invoiceNumber: string;
+  invoiceStatus: typeof invoiceStatusEnum.enumValues[number];
+  jobIds: string[];
+};
+
+export async function updateJobsWithInvoice(
+  db: Database,
+  params: UpdateJobsWithInvoiceParams,
+) {
+  const { invoiceId, invoiceNumber, invoiceStatus, jobIds } = params;
+
+  if (jobIds.length === 0) {
+    return [];
+  }
+
+  // Update all jobs with the invoice information
+  const updatedJobs = await db
+    .update(jobs)
+    .set({
+      invoiceId,
+      invoiceNumber,
+      invoiceStatus,
+    })
+    .where(inArray(jobs.id, jobIds))
+    .returning();
+
+  return updatedJobs;
 }

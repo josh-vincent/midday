@@ -88,6 +88,9 @@ export function HtmlTemplate({ data, width, height }: Props) {
           includeDecimals={template.includeDecimals}
           locale={template.locale}
           includeUnits={template.includeUnits}
+          includeItemDetails={template.includeItemDetails}
+          groupConsolidatedItems={template.groupConsolidatedItems}
+          consolidatedItemLabel={template.consolidatedItemLabel}
         />
 
         <div className="mt-10 md:mt-12 flex justify-end mb-6 md:mb-8">

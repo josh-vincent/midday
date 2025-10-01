@@ -24,6 +24,7 @@ const itemVariant = {
 };
 
 type FilterKey =
+  | "q"
   | "start"
   | "end"
   | "amount_range"
@@ -36,9 +37,11 @@ type FilterKey =
   | "customers"
   | "assignees"
   | "owners"
-  | "status";
+  | "status"
+  | "groupBy";
 
 type FilterValue = {
+  q: string;
   start: string;
   end: string;
   amount_range: string;
@@ -52,12 +55,26 @@ type FilterValue = {
   assignees: string[];
   owners: string[];
   status: string;
+  groupBy: string[];
 };
 
 interface FilterValueProps {
   key: FilterKey;
   value: FilterValue[FilterKey];
 }
+
+type BadgeRenderer = (
+  key: string,
+  value: any,
+  context?: {
+    statusFilters?: { id: string; name: string }[];
+    customers?: { id: string; name: string }[];
+    categories?: { id: string; name: string; slug: string | null }[];
+    accounts?: { id: string; name: string; currency: string }[];
+    members?: { id: string; name: string }[];
+    tags?: { id: string; name: string; slug?: string }[];
+  }
+) => string | null;
 
 interface Props {
   filters: Partial<FilterValue>;
@@ -72,6 +89,7 @@ interface Props {
   recurringFilters?: { id: string; name: string }[];
   tags?: { id: string; name: string; slug?: string }[];
   amountRange?: [number, number];
+  badgeRenderer?: BadgeRenderer;
 }
 
 export function FilterList({
@@ -87,9 +105,59 @@ export function FilterList({
   attachmentsFilters,
   recurringFilters,
   amountRange,
+  badgeRenderer,
 }: Props) {
   const renderFilter = ({ key, value }: FilterValueProps) => {
+    // Handle date ranges specially - check if we should show date range badge
+    if (key === "start" && filters.end) {
+      const startValue = value as FilterValue["start"];
+      return formatDateRange(new Date(startValue), new Date(filters.end), {
+        includeTime: false,
+      });
+    }
+
+    // Use custom badge renderer if provided
+    if (badgeRenderer) {
+      const context = {
+        statusFilters,
+        customers,
+        categories,
+        accounts,
+        members,
+        tags,
+      };
+      const result = badgeRenderer(key, value, context);
+      if (result !== null) {
+        return result;
+      }
+      // Fall through to default rendering if badgeRenderer returns null
+    }
+
     switch (key) {
+      case "q": {
+        const queryValue = value as FilterValue["q"];
+
+        // Detect invoice number pattern (starts with letters or #, contains numbers)
+        // Common patterns: INV-123, #123, Invoice123, etc.
+        const invoicePattern = /^(INV|invoice|#)/i;
+        if (invoicePattern.test(queryValue)) {
+          return `Invoice #: ${queryValue}`;
+        }
+
+        // Detect if it's purely numeric (amount search)
+        const numericValue = queryValue.replace(/[,\s]/g, '');
+        if (!Number.isNaN(Number(numericValue)) && /^\d+(\.\d+)?$/.test(numericValue)) {
+          const amount = Number(numericValue);
+          return `Amount: ${amount.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}`;
+        }
+
+        // Default to generic search for customer names, notes, etc.
+        return `Search: "${queryValue}"`;
+      }
+
       case "start": {
         const startValue = value as FilterValue["start"];
         if (startValue && filters.end) {
@@ -199,6 +267,22 @@ export function FilterList({
             return member?.name;
           })
           .join(", ");
+      }
+
+      case "groupBy": {
+        const groupByValue = value as FilterValue["groupBy"];
+        if (!groupByValue) return null;
+        const groupLabels: { [key: string]: string } = {
+          customer: "Customer",
+          company: "Company",
+          jobNumber: "Job Number",
+          rego: "Rego",
+          date: "Date",
+          material: "Material",
+        };
+        return "Group: " + groupByValue
+          .map((field) => groupLabels[field] || field)
+          .join(" + ");
       }
 
       default:

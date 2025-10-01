@@ -22,7 +22,7 @@ export const customersRouter = createTRPCRouter({
       const queryParams = {
         teamId: teamId!,
         limit: input?.pageSize,
-        search: input?.q,
+        search: input?.q ?? undefined,
         sort: input?.sort?.[0],
         order: input?.sort?.[1] as "asc" | "desc" | undefined,
       };
@@ -30,7 +30,7 @@ export const customersRouter = createTRPCRouter({
       const result = await getCustomers(db, queryParams);
 
       // Database fields now match API fields, minimal mapping needed
-      const mappedData = result.data.map((customer) => {
+      const mappedData = result.data.map((customer: typeof result.data[number]) => {
         return {
           ...customer,
           zip: customer.postalCode, // Keep backward compatibility

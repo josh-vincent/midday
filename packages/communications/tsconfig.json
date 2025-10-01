@@ -1,0 +1,13 @@
+{
+  "extends": "@midday/tsconfig/base.json",
+  "include": ["src", "../../types"],
+  "exclude": ["node_modules"],
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  }
+}

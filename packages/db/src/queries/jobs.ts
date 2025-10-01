@@ -240,6 +240,11 @@ type UpdateJobParams = {
   totalAmount?: number;
   photos?: string[];
 
+  // Invoice relationship fields
+  invoiceId?: string | null;
+  invoiceNumber?: string | null;
+  // invoiceStatus is NOT stored - always derived from invoice table
+
   updatedBy?: string;
 };
 
@@ -295,6 +300,9 @@ export async function updateJob(db: Database, params: UpdateJobParams) {
     updateData.pricePerCubicMeter = rest.pricePerCubicMeter;
   if (rest.totalAmount !== undefined) updateData.totalAmount = rest.totalAmount;
   if (rest.photos !== undefined) updateData.photos = rest.photos;
+  // Invoice relationship fields
+  if (rest.invoiceId !== undefined) updateData.invoiceId = rest.invoiceId;
+  if (rest.invoiceNumber !== undefined) updateData.invoiceNumber = rest.invoiceNumber;
 
   const [job] = await db
     .update(jobs)
@@ -400,6 +408,10 @@ type GetJobsAdvancedParams = {
   sort?: string[] | null;
   cursor?: string | null;
   limit?: number;
+  groupBy?: string[] | null;
+  minCubicMeters?: number | null;
+  maxCubicMeters?: number | null;
+  invoiceStatus?: string | null;
 };
 
 export async function getJobsAdvanced(db: Database, params: GetJobsAdvancedParams) {
@@ -412,23 +424,26 @@ export async function getJobsAdvanced(db: Database, params: GetJobsAdvancedParam
     endDate,
     sort,
     cursor,
-    limit = 50
+    limit = 50,
+    minCubicMeters,
+    maxCubicMeters,
+    invoiceStatus
   } = params;
 
   let conditions: SQL[] = [
-    eq(jobs.teamId, teamId),
-    sql`${jobs.invoiceId} IS NULL` // Filter out invoiced jobs
+    eq(jobs.teamId, teamId)
   ];
 
-  // Search filter
+  // Search filter - include rego
   if (search && search !== null) {
     const searchLower = `%${search.toLowerCase()}%`;
     conditions.push(
       sql`(
-        ${jobs.jobNumber} ILIKE ${searchLower} OR 
-        ${jobs.companyName} ILIKE ${searchLower} OR 
-        ${jobs.addressSite} ILIKE ${searchLower} OR 
-        ${jobs.materialType} ILIKE ${searchLower} OR 
+        ${jobs.rego} ILIKE ${searchLower} OR
+        ${jobs.jobNumber} ILIKE ${searchLower} OR
+        ${jobs.companyName} ILIKE ${searchLower} OR
+        ${jobs.addressSite} ILIKE ${searchLower} OR
+        ${jobs.materialType} ILIKE ${searchLower} OR
         ${jobs.contactPerson} ILIKE ${searchLower}
       )`
     );
@@ -454,6 +469,19 @@ export async function getJobsAdvanced(db: Database, params: GetJobsAdvancedParam
     }
   }
 
+  // Cubic meters range filter
+  if (minCubicMeters !== null && minCubicMeters !== undefined) {
+    conditions.push(sql`${jobs.cubicMetreCapacity} >= ${minCubicMeters}`);
+  }
+  if (maxCubicMeters !== null && maxCubicMeters !== undefined) {
+    conditions.push(sql`${jobs.cubicMetreCapacity} <= ${maxCubicMeters}`);
+  }
+
+  // Invoice status filter
+  if (invoiceStatus && invoiceStatus !== null) {
+    conditions.push(eq(invoices.status, invoiceStatus));
+  }
+
   // Sorting
   let orderBySql = desc(jobs.createdAt); // default sort
   if (sort && sort !== null && sort.length > 0) {
@@ -467,15 +495,168 @@ export async function getJobsAdvanced(db: Database, params: GetJobsAdvancedParam
 
   // Cursor-based pagination
   const cursorIndex = cursor ? parseInt(cursor, 10) : 0;
-  
+
+  // Join with invoices to get invoice status
   const results = await db
-    .select()
+    .select({
+      ...jobs,
+      invoiceStatus: invoices.status,
+    })
     .from(jobs)
+    .leftJoin(invoices, eq(jobs.invoiceId, invoices.id))
     .where(and(...conditions))
     .orderBy(orderBySql)
     .limit(limit)
     .offset(cursorIndex);
 
+  const nextCursor = results.length === limit ? String(cursorIndex + limit) : undefined;
+
+  return {
+    data: results,
+    cursor: nextCursor,
+  };
+}
+
+export async function getJobsGrouped(db: Database, params: GetJobsAdvancedParams) {
+  const {
+    teamId,
+    search,
+    customerId,
+    status,
+    startDate,
+    endDate,
+    sort,
+    cursor,
+    limit = 50,
+    groupBy = ["rego", "date"] // default grouping
+  } = params;
+
+
+  let conditions: SQL[] = [
+    eq(jobs.teamId, teamId)
+  ];
+
+  // Apply same filters as getJobsAdvanced
+  if (search && search !== null) {
+    const searchLower = `%${search.toLowerCase()}%`;
+    conditions.push(
+      sql`(
+        ${jobs.jobNumber} ILIKE ${searchLower} OR 
+        ${jobs.companyName} ILIKE ${searchLower} OR 
+        ${jobs.addressSite} ILIKE ${searchLower} OR 
+        ${jobs.materialType} ILIKE ${searchLower} OR 
+        ${jobs.contactPerson} ILIKE ${searchLower}
+      )`
+    );
+  }
+
+  if (customerId && customerId !== null) {
+    conditions.push(eq(jobs.customerId, customerId));
+  }
+
+  if (status && status !== null) {
+    conditions.push(eq(jobs.status, status));
+  }
+
+  if ((startDate && startDate !== null) || (endDate && endDate !== null)) {
+    if (startDate && startDate !== null) {
+      conditions.push(sql`${jobs.jobDate} >= ${startDate}`);
+    }
+    if (endDate && endDate !== null) {
+      conditions.push(sql`${jobs.jobDate} <= ${endDate}`);
+    }
+  }
+
+  // Build grouping columns from array
+  let groupByColumns: SQL[] = [];
+  if (groupBy && groupBy.length > 0) {
+    for (const field of groupBy) {
+      switch (field) {
+        case "customer":
+          groupByColumns.push(jobs.customerId);
+          break;
+        case "company":
+          groupByColumns.push(jobs.companyName);
+          break;
+        case "jobNumber":
+          groupByColumns.push(jobs.jobNumber);
+          break;
+        case "rego":
+          groupByColumns.push(jobs.rego);
+          break;
+        case "date":
+          groupByColumns.push(sql`DATE(${jobs.jobDate})`);
+          break;
+        case "material":
+          groupByColumns.push(jobs.materialType);
+          break;
+      }
+    }
+  }
+  
+  // Fallback to default if no valid grouping columns
+  if (groupByColumns.length === 0) {
+    groupByColumns = [jobs.rego, sql`DATE(${jobs.jobDate})`];
+  }
+
+
+  const cursorIndex = cursor ? parseInt(cursor, 10) : 0;
+
+  // First get all the base job fields we need
+  const query = db
+      .select({
+        // Core fields (using MIN/MAX to get single values from groups)
+        id: sql<string>`MIN(${jobs.id})`,
+        jobNumber: sql<string>`MIN(${jobs.jobNumber})`,
+        rego: sql<string>`MIN(${jobs.rego})`,
+        companyName: sql<string>`MIN(${jobs.companyName})`,
+        jobDate: sql<string>`MIN(${jobs.jobDate})`,
+        customerId: sql<string>`MIN(${jobs.customerId})`,
+        addressSite: sql<string>`MIN(${jobs.addressSite})`,
+        contactPerson: sql<string>`MIN(${jobs.contactPerson})`,
+        contactNumber: sql<string>`MIN(${jobs.contactNumber})`,
+        materialType: sql<string>`MIN(${jobs.materialType})`,
+        status: sql<string>`MIN(${jobs.status})`,
+        teamId: sql<string>`MIN(${jobs.teamId})`,
+        description: sql<string>`MIN(${jobs.description})`,
+        notes: sql<string>`MIN(${jobs.notes})`,
+        currency: sql<string>`MIN(${jobs.currency})`,
+        volume: sql<number>`COALESCE(SUM(${jobs.volume}), 0)`,
+        weight: sql<number>`COALESCE(SUM(${jobs.weight}), 0)`,
+        
+        // Aggregated fields
+        maxLoadNumber: sql<number>`MAX(${jobs.loadNumber})`,
+        totalVolume: sql<number>`COALESCE(SUM(${jobs.cubicMetreCapacity}), 0)`,
+        totalAmount: sql<number>`COALESCE(SUM(${jobs.pricePerUnit} * ${jobs.cubicMetreCapacity}) * 100, 0)`,
+        jobCount: sql<number>`COUNT(*)::int`,
+        pricePerUnit: sql<number>`MAX(${jobs.pricePerUnit})`,
+        createdAt: sql<Date>`MIN(${jobs.createdAt})`,
+        updatedAt: sql<Date>`MAX(${jobs.updatedAt})`,
+        
+        // Additional fields to maintain compatibility
+        cubicMetreCapacity: sql<number>`COALESCE(SUM(${jobs.cubicMetreCapacity}), 0)`,
+        loadNumber: sql<number>`MAX(${jobs.loadNumber})`,
+        
+        // Invoice related fields
+        invoiceId: sql<string>`MIN(${jobs.invoiceId})`,
+        invoiceNumber: sql<string>`MIN(${jobs.invoiceNumber})`,
+        // Note: invoiceStatus not included in grouped query - fetch separately if needed
+        
+        // Group indicator
+        isGrouped: sql<boolean>`true`,
+        
+        // Collect job IDs for reference
+        jobIds: sql<string[]>`ARRAY_AGG(${jobs.id})`,
+      })
+      .from(jobs)
+      .where(and(...conditions))
+      .groupBy(...groupByColumns)
+      .orderBy(desc(sql`MIN(${jobs.createdAt})`))
+      .limit(limit)
+      .offset(cursorIndex);
+
+  const results = await query;
+  
   const nextCursor = results.length === limit ? String(cursorIndex + limit) : undefined;
 
   return {

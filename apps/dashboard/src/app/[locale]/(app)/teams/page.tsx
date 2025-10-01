@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 export default async function Teams() {
   const queryClient = getQueryClient();
   const teams = await queryClient.fetchQuery(trpc.team.list.queryOptions());
+  
   const invites = await queryClient.fetchQuery(
     trpc.team.invitesByEmail.queryOptions(),
   );
@@ -58,7 +59,6 @@ export default async function Teams() {
               )}
             </div>
           </div>
-
           {/* If there are teams, show them */}
           {teams?.length && (
             <>

@@ -2,6 +2,8 @@
 
 import { useCustomerParams } from "@/hooks/use-customer-params";
 import { useTRPC } from "@/trpc/client";
+import { getInitials } from "@/utils/format";
+import { Avatar, AvatarFallback } from "@midday/ui/avatar";
 import { Button } from "@midday/ui/button";
 import {
   DropdownMenu,
@@ -107,6 +109,11 @@ export function CompanyCell({ job }: CompanyCellProps) {
 
   return (
     <div className="flex items-center gap-2 max-w-[200px]">
+      <Avatar className="h-8 w-8 rounded-none">
+        <AvatarFallback className="rounded-none text-xs font-medium bg-accent text-accent-foreground">
+          {getInitials(job.companyName)}
+        </AvatarFallback>
+      </Avatar>
       <span className="truncate">
         {job.companyName}
       </span>

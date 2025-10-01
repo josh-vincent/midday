@@ -76,9 +76,22 @@ export type UpdateUserParams = {
 export const updateUser = async (db: Database, data: UpdateUserParams) => {
   const { id, ...updateData } = data;
 
+  // Filter out undefined values but keep null values
+  const filteredData = Object.entries(updateData).reduce((acc, [key, value]) => {
+    if (value !== undefined) {
+      acc[key] = value;
+    }
+    return acc;
+  }, {} as any);
+
+  // If no fields to update, just return the current user
+  if (Object.keys(filteredData).length === 0) {
+    return getUserById(db, id);
+  }
+
   const [result] = await db
     .update(users)
-    .set(updateData)
+    .set(filteredData)
     .where(eq(users.id, id))
     .returning({
       id: users.id,

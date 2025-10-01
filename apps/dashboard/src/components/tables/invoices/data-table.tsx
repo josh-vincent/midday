@@ -56,6 +56,12 @@ export function DataTable({
     },
     {
       getNextPageParam: ({ meta }) => meta?.cursor,
+      // Refetch every 30 seconds to sync with other devices
+      refetchInterval: 30000,
+      // Refetch when window regains focus
+      refetchOnWindowFocus: true,
+      // Keep data fresh
+      staleTime: 10000,
     },
   );
 

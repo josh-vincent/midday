@@ -4,9 +4,12 @@ import {
   deleteJob,
   getJobsByTeamId,
   getJobsAdvanced,
+  getJobsGrouped,
   getUnlinkedJobsByCompanyName,
   updateJob,
 } from "@midday/db/queries";
+
+type Job = Awaited<ReturnType<typeof getJobsByTeamId>>[number];
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -48,7 +51,7 @@ export const jobsRouter = createTRPCRouter({
       if (params.search) {
         const searchLower = params.search.toLowerCase();
         jobs = jobs.filter(
-          (job) =>
+          (job: Job) =>
             job.jobNumber?.toLowerCase().includes(searchLower) ||
             job.companyName?.toLowerCase().includes(searchLower) ||
             job.addressSite?.toLowerCase().includes(searchLower) ||
@@ -59,16 +62,13 @@ export const jobsRouter = createTRPCRouter({
 
       // Filter by customer
       if (params.customerId) {
-        jobs = jobs.filter((job) => job.customerId === params.customerId);
+        jobs = jobs.filter((job: Job) => job.customerId === params.customerId);
       }
 
       // Filter by status
       if (params.status && params.status.length > 0) {
-        jobs = jobs.filter((job) => params.status?.includes(job.status as any));
+        jobs = jobs.filter((job: Job) => params.status?.includes(job.status as any));
       }
-
-      // Filter out invoiced jobs (those with invoiceId)
-      jobs = jobs.filter((job) => !job.invoiceId);
 
       // Paginate
       const total = jobs.length;
@@ -96,14 +96,19 @@ export const jobsRouter = createTRPCRouter({
         sort: z.array(z.string()).nullable().optional(),
         cursor: z.string().nullable().optional(),
         limit: z.number().default(50),
+        groupBy: z.array(z.string()).nullable().optional(),
+        direction: z.enum(['forward', 'backward']).optional(), // Added for infinite query
+        minCubicMeters: z.number().nullable().optional(),
+        maxCubicMeters: z.number().nullable().optional(),
+        invoiceStatus: z.string().nullable().optional(),
       }).optional(),
     )
     .query(async ({ ctx: { db, teamId }, input }) => {
       if (!teamId) {
         return { data: [], cursor: undefined };
       }
-      
-      return getJobsAdvanced(db, {
+
+      const queryParams = {
         teamId,
         search: input?.q,
         customerId: input?.customerId,
@@ -113,7 +118,35 @@ export const jobsRouter = createTRPCRouter({
         sort: input?.sort,
         cursor: input?.cursor,
         limit: input?.limit,
-      });
+        groupBy: input?.groupBy,
+        minCubicMeters: input?.minCubicMeters,
+        maxCubicMeters: input?.maxCubicMeters,
+        invoiceStatus: input?.invoiceStatus,
+      };
+
+      // Use grouped query if groupBy is specified
+      if (input?.groupBy && input.groupBy.length > 0) {
+        return getJobsGrouped(db, queryParams);
+      }
+
+      return getJobsAdvanced(db, queryParams);
+    }),
+
+  getByInvoiceId: protectedProcedure
+    .input(
+      z.object({
+        invoiceId: z.string().uuid(),
+      })
+    )
+    .query(async ({ ctx: { db, teamId }, input }) => {
+      if (!teamId) {
+        return [];
+      }
+
+      const jobs = await getJobsByTeamId(db, teamId);
+      
+      // Filter jobs by invoiceId
+      return jobs.filter((job: Job) => job.invoiceId === input.invoiceId);
     }),
 
   summary: protectedProcedure.query(async ({ ctx: { db, teamId } }) => {
@@ -132,9 +165,9 @@ export const jobsRouter = createTRPCRouter({
     const today = now.toISOString().split("T")[0];
 
     // Calculate today's jobs
-    const todaysJobs = jobs.filter((job) => job.jobDate === today);
+    const todaysJobs = jobs.filter((job: Job) => job.jobDate === today);
     const todaysCompleted = todaysJobs.filter(
-      (job) => job.status === "completed",
+      (job: Job) => job.status === "completed",
     );
 
     // Calculate this week's data
@@ -143,7 +176,7 @@ export const jobsRouter = createTRPCRouter({
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6); // Sunday
 
-    const weekJobs = jobs.filter((job) => {
+    const weekJobs = jobs.filter((job: Job) => {
       if (!job.jobDate) return false;
       const jobDate = new Date(job.jobDate);
       return (
@@ -151,7 +184,7 @@ export const jobsRouter = createTRPCRouter({
       );
     });
 
-    const weekRevenue = weekJobs.reduce((total, job) => {
+    const weekRevenue = weekJobs.reduce((total: number, job: Job) => {
       const amount =
         (Number(job.pricePerUnit) || 0) * (Number(job.cubicMetreCapacity) || 0);
       return total + amount;
@@ -159,10 +192,10 @@ export const jobsRouter = createTRPCRouter({
 
     // Calculate pending jobs
     const pendingJobs = jobs.filter(
-      (job) => job.status === "pending" || job.status === "in_progress",
+      (job: Job) => job.status === "pending" || job.status === "in_progress",
     );
 
-    const pendingValue = pendingJobs.reduce((total, job) => {
+    const pendingValue = pendingJobs.reduce((total: number, job: Job) => {
       const amount =
         (Number(job.pricePerUnit) || 0) * (Number(job.cubicMetreCapacity) || 0);
       return total + amount;
@@ -172,18 +205,18 @@ export const jobsRouter = createTRPCRouter({
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-    const monthJobs = jobs.filter((job) => {
+    const monthJobs = jobs.filter((job: Job) => {
       if (!job.jobDate) return false;
       const jobDate = new Date(job.jobDate);
       return jobDate >= monthStart && jobDate <= monthEnd;
     });
 
-    const totalVolume = monthJobs.reduce((total, job) => {
+    const totalVolume = monthJobs.reduce((total: number, job: Job) => {
       return total + (Number(job.cubicMetreCapacity) || 0);
     }, 0);
 
     const completedDeliveries = monthJobs.filter(
-      (job) => job.status === "completed",
+      (job: Job) => job.status === "completed",
     ).length;
 
     return {
@@ -212,7 +245,7 @@ export const jobsRouter = createTRPCRouter({
         startDate: z.string(),
         endDate: z.string(),
         status: z
-          .enum(["pending", "in_progress", "completed", "cancelled"])
+          .enum(["pending", "in_progress", "completed", "cancelled", "delivered"])
           .optional(),
       }),
     )
@@ -255,8 +288,8 @@ export const jobsRouter = createTRPCRouter({
 
         // Tracking
         status: z
-          .enum(["pending", "in_progress", "completed", "cancelled"])
-          .default("pending"),
+          .enum(["pending", "in_progress", "completed", "cancelled", "delivered"])
+          .default("delivered"),
 
         // Optional fields for backwards compatibility
         truckNumber: z.string().optional(),
@@ -344,7 +377,7 @@ export const jobsRouter = createTRPCRouter({
 
         // Tracking
         status: z
-          .enum(["pending", "in_progress", "completed", "cancelled"])
+          .enum(["pending", "in_progress", "completed", "cancelled", "delivered"])
           .optional(),
 
         // Optional fields
@@ -410,7 +443,7 @@ export const jobsRouter = createTRPCRouter({
     .input(
       z.object({
         ids: z.array(z.string()),
-        status: z.enum(["pending", "in_progress", "completed", "cancelled", "invoiced"]),
+        status: z.enum(["pending", "in_progress", "completed", "cancelled", "invoiced", "delivered"]),
       }),
     )
     .mutation(async ({ ctx: { db, teamId }, input }) => {
@@ -432,6 +465,38 @@ export const jobsRouter = createTRPCRouter({
       }
       
       return { count: results.length, ids: input.ids };
+    }),
+
+  // Link jobs to invoice - only stores invoiceId and invoiceNumber
+  // Invoice status is always derived from the invoice table via join
+  linkToInvoice: protectedProcedure
+    .input(
+      z.object({
+        jobIds: z.array(z.string()),
+        invoiceId: z.string().uuid(),
+        invoiceNumber: z.string().optional(),
+      }),
+    )
+    .mutation(async ({ ctx: { db, teamId }, input }) => {
+      if (!teamId) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "No team selected",
+        });
+      }
+
+      const results = [];
+      for (const id of input.jobIds) {
+        const result = await updateJob(db, {
+          id,
+          invoiceId: input.invoiceId,
+          invoiceNumber: input.invoiceNumber,
+          teamId,
+        });
+        results.push(result);
+      }
+
+      return { count: results.length, jobIds: input.jobIds };
     }),
 
   // Bulk delete
@@ -547,7 +612,7 @@ export const jobsRouter = createTRPCRouter({
       // This would need to be implemented in queries
       // For now, return all jobs and filter on client
       const allJobs = await getJobsByTeamId(db, teamId);
-      return allJobs.filter((job) => job.jobDate === input.date);
+      return allJobs.filter((job: Job) => job.jobDate === input.date);
     }),
 
   // Get unlinked jobs by company name
@@ -579,7 +644,7 @@ export const jobsRouter = createTRPCRouter({
       }
 
       const jobs = await getJobsByTeamId(db, teamId);
-      const job = jobs.find((j) => j.id === input.id);
+      const job = jobs.find((j: Job) => j.id === input.id);
       
       if (!job) {
         throw new TRPCError({
@@ -609,7 +674,7 @@ export const jobsRouter = createTRPCRouter({
 
       // Group by company name
       const summary = allJobs.reduce(
-        (acc, job) => {
+        (acc: Record<string, { company: string; totalJobs: number; totalAmount: number; totalCubicMeters: number }>, job: Job) => {
           const company = job.companyName || "Unknown";
           if (!acc[company]) {
             acc[company] = {
@@ -626,9 +691,193 @@ export const jobsRouter = createTRPCRouter({
 
           return acc;
         },
-        {} as Record<string, any>,
+        {} as Record<string, { company: string; totalJobs: number; totalAmount: number; totalCubicMeters: number }>,
       );
 
       return Object.values(summary);
+    }),
+
+  // Gatekeeper endpoints for member workflow
+  getJobsGroupedByTruckForDate: protectedProcedure
+    .input(
+      z.object({
+        date: z.string(), // Format: YYYY-MM-DD
+      }),
+    )
+    .query(async ({ ctx: { db, teamId }, input }) => {
+      if (!teamId) {
+        return [];
+      }
+
+      const allJobs = await getJobsByTeamId(db, teamId);
+      const dateJobs = allJobs.filter((job: Job) => job.jobDate === input.date);
+      
+      // Group by company and rego combination
+      type GroupedJob = {
+        companyName: string;
+        rego: string;
+        loads: Job[];
+        totalLoads: number;
+        latestJob: Job;
+      };
+
+      const grouped = dateJobs.reduce((acc: Record<string, GroupedJob>, job: Job) => {
+        if (!job.companyName || !job.rego) return acc;
+
+        const key = `${job.companyName}-${job.rego}`;
+        if (!acc[key]) {
+          acc[key] = {
+            companyName: job.companyName,
+            rego: job.rego,
+            loads: [],
+            totalLoads: 0,
+            latestJob: job,
+          };
+        }
+
+        acc[key].loads.push(job);
+        acc[key].totalLoads = acc[key].loads.length;
+
+        // Keep the latest job for reference
+        if (!acc[key].latestJob.createdAt ||
+            (job.createdAt && job.createdAt > acc[key].latestJob.createdAt)) {
+          acc[key].latestJob = job;
+        }
+
+        return acc;
+      }, {} as Record<string, GroupedJob>);
+
+      return Object.values(grouped);
+    }),
+
+  addLoadToExistingTruck: protectedProcedure
+    .input(
+      z.object({
+        originalJobId: z.string(),
+        date: z.string(), // Format: YYYY-MM-DD
+      }),
+    )
+    .mutation(async ({ ctx: { db, teamId, session }, input }) => {
+      if (!teamId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "No team selected",
+        });
+      }
+
+      // Get the original job to copy details from
+      const allJobs = await getJobsByTeamId(db, teamId);
+      const originalJob = allJobs.find((j: Job) => j.id === input.originalJobId);
+      
+      if (!originalJob) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Original job not found",
+        });
+      }
+
+      // Get the current highest load number for this truck on this date
+      const sameCompanyRegoJobs = allJobs.filter(
+        (job: Job) =>
+          job.jobDate === input.date &&
+          job.companyName === originalJob.companyName &&
+          job.rego === originalJob.rego
+      );
+      
+      const maxLoadNumber = Math.max(
+        ...sameCompanyRegoJobs.map((job: Job) => job.loadNumber || 1),
+        1
+      );
+
+      // Create new job entry with incremented load number
+      const newJobData = {
+        customerId: originalJob.customerId,
+        companyName: originalJob.companyName,
+        rego: originalJob.rego,
+        contactPerson: originalJob.contactPerson,
+        contactNumber: originalJob.contactNumber,
+        addressSite: originalJob.addressSite,
+        equipmentType: originalJob.equipmentType,
+        materialType: originalJob.materialType,
+        pricePerUnit: originalJob.pricePerUnit ? Number(originalJob.pricePerUnit) : undefined,
+        cubicMetreCapacity: originalJob.cubicMetreCapacity ? Number(originalJob.cubicMetreCapacity) : undefined,
+        jobDate: input.date,
+        loadNumber: maxLoadNumber + 1,
+        status: "pending" as const,
+        teamId: teamId,
+        createdBy: session.user.id,
+        totalAmount: originalJob.pricePerUnit && originalJob.cubicMetreCapacity 
+          ? Number(originalJob.pricePerUnit) * Number(originalJob.cubicMetreCapacity) * 100 // Convert to cents
+          : 0,
+      };
+
+      return createJob(db, newJobData);
+    }),
+
+  addLoadWithDirtType: protectedProcedure
+    .input(
+      z.object({
+        originalJobId: z.string(),
+        date: z.string(), // Format: YYYY-MM-DD
+        dirtType: z.string().optional(), // Changed from enum to string to accept any material type
+      }),
+    )
+    .mutation(async ({ ctx: { db, teamId, session }, input }) => {
+      if (!teamId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "No team selected",
+        });
+      }
+
+      // Get the original job to copy details from
+      const allJobs = await getJobsByTeamId(db, teamId);
+      const originalJob = allJobs.find((j: Job) => j.id === input.originalJobId);
+      
+      if (!originalJob) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Original job not found",
+        });
+      }
+
+      // Get the current highest load number for this truck on this date
+      const sameCompanyRegoJobs = allJobs.filter(
+        (job: Job) =>
+          job.jobDate === input.date &&
+          job.companyName === originalJob.companyName &&
+          job.rego === originalJob.rego
+      );
+      
+      const maxLoadNumber = Math.max(
+        ...sameCompanyRegoJobs.map((job: Job) => job.loadNumber || 1),
+        1
+      );
+
+      // Create new job entry with incremented load number and specified material type
+      const newJobData = {
+        customerId: originalJob.customerId,
+        companyName: originalJob.companyName,
+        rego: originalJob.rego,
+        contactPerson: originalJob.contactPerson,
+        contactNumber: originalJob.contactNumber,
+        addressSite: originalJob.addressSite,
+        equipmentType: originalJob.equipmentType,
+        materialType: input.dirtType || originalJob.materialType, // Use the specified material type or copy from original
+        pricePerUnit: originalJob.pricePerUnit ? Number(originalJob.pricePerUnit) : undefined,
+        cubicMetreCapacity: originalJob.cubicMetreCapacity ? Number(originalJob.cubicMetreCapacity) : undefined,
+        jobDate: input.date,
+        loadNumber: maxLoadNumber + 1,
+        status: "delivered" as const, // Set as delivered since it's being added at the gate
+        teamId: teamId,
+        createdBy: session.user.id,
+        totalAmount: originalJob.pricePerUnit && originalJob.cubicMetreCapacity 
+          ? Number(originalJob.pricePerUnit) * Number(originalJob.cubicMetreCapacity) 
+          : undefined,
+        // Add timestamp for when the load was delivered
+        completedTime: new Date().toISOString(),
+      };
+
+      return createJob(db, newJobData);
     }),
 });

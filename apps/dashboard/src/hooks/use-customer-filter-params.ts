@@ -1,23 +1,12 @@
-import { useQueryStates } from "nuqs";
-import { createLoader, parseAsArrayOf, parseAsString } from "nuqs/server";
+"use client";
 
-export const customerFilterParamsSchema = {
-  q: parseAsString,
-  sort: parseAsArrayOf(parseAsString),
-  start: parseAsString,
-  end: parseAsString,
-};
+import { createFilterParamsHook } from "@midday/ai-search";
+import { customerFilterSchema } from "@/config/customer-filters";
 
-export function useCustomerFilterParams() {
-  const [filter, setFilter] = useQueryStates(customerFilterParamsSchema);
-
-  return {
-    filter,
-    setFilter,
-    hasFilters: Object.values(filter).some((value) => value !== null),
-  };
-}
-
-export const loadCustomerFilterParams = createLoader(
-  customerFilterParamsSchema,
-);
+/**
+ * Type-safe hook for customer filter URL parameters
+ * Automatically syncs with URL using nuqs
+ */
+export const useCustomerFilterParams = createFilterParamsHook(customerFilterSchema, {
+  shallow: true,
+});

@@ -152,6 +152,41 @@ export async function leaveTeam(db: Database, params: LeaveTeamParams) {
   return deleted;
 }
 
+type SwitchTeamParams = {
+  userId: string;
+  teamId: string;
+};
+
+export async function switchTeam(db: Database, params: SwitchTeamParams) {
+  // Verify user is a member of the team before switching
+  const [membership] = await db
+    .select({ id: usersOnTeam.id })
+    .from(usersOnTeam)
+    .where(
+      and(
+        eq(usersOnTeam.userId, params.userId),
+        eq(usersOnTeam.teamId, params.teamId),
+      ),
+    )
+    .limit(1);
+
+  if (!membership) {
+    throw new Error("User is not a member of this team");
+  }
+
+  // Update user's current team
+  const [updated] = await db
+    .update(users)
+    .set({ teamId: params.teamId })
+    .where(eq(users.id, params.userId))
+    .returning({
+      id: users.id,
+      teamId: users.teamId,
+    });
+
+  return updated;
+}
+
 export async function deleteTeam(db: Database, id: string) {
   const [result] = await db.delete(teams).where(eq(teams.id, id)).returning({
     id: teams.id,

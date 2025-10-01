@@ -158,6 +158,9 @@ export async function PdfTemplate({
           locale={template.locale}
           includeDecimals={template.includeDecimals}
           includeUnits={template.includeUnits}
+          includeItemDetails={template.includeItemDetails}
+          groupConsolidatedItems={template.groupConsolidatedItems}
+          consolidatedItemLabel={template.consolidatedItemLabel}
         />
 
         <View

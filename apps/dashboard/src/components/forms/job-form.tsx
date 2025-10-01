@@ -48,6 +48,16 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { SelectCustomer } from "../select-customer";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@midday/ui/alert-dialog";
 
 const jobFormSchema = z.object({
   customerId: z.string().optional().nullable(),
@@ -64,30 +74,30 @@ const jobFormSchema = z.object({
   cubicMetreCapacity: z.number().optional(),
   jobDate: z.date().optional(),
   status: z
-    .enum(["pending", "in_progress", "completed", "cancelled"])
-    .default("pending"),
+    .enum(["pending", "in_progress", "completed", "cancelled", "delivered"])
+    .default("delivered"),
   notes: z.string().optional(),
 });
 
 type JobFormData = z.infer<typeof jobFormSchema>;
 
 const EQUIPMENT_OPTIONS = [
-  { value: "Truck & Trailer 22m3", label: "Truck & Trailer 22m3" },
-  { value: "Truck & Quad 26m3", label: "Truck & Quad 26m3" },
-  { value: "Tandem 10m3", label: "Tandem 10m3" },
-  { value: "Single Truck", label: "Single Truck" },
-  { value: "Other", label: "Other" },
+  { value: "Truck & Trailer 22m3", label: "Truck & Trailer 22m3", capacity: 22 },
+  { value: "Truck & Quad 26m3", label: "Truck & Quad 26m3", capacity: 26 },
+  { value: "Tandem 10m3", label: "Tandem 10m3", capacity: 10 },
+  { value: "Single Truck", label: "Single Truck", capacity: 8 },
+  { value: "Other", label: "Other", capacity: null },
 ];
 
 const MATERIAL_OPTIONS = [
-  { value: "Dry Clean Fill", label: "Dry Clean Fill" },
-  { value: "Wet Fill", label: "Wet Fill" },
-  { value: "Rock", label: "Rock" },
-  { value: "Sand", label: "Sand" },
-  { value: "Topsoil", label: "Topsoil" },
-  { value: "Clay", label: "Clay" },
-  { value: "Mixed Waste", label: "Mixed Waste" },
-  { value: "Other", label: "Other" },
+  { value: "Dry Clean Fill", label: "Dry Clean Fill", defaultPrice: 85.00 },
+  { value: "Wet Fill", label: "Wet Fill", defaultPrice: 75.00 },
+  { value: "Rock", label: "Rock", defaultPrice: 95.00 },
+  { value: "Sand", label: "Sand", defaultPrice: 80.00 },
+  { value: "Topsoil", label: "Topsoil", defaultPrice: 90.00 },
+  { value: "Clay", label: "Clay", defaultPrice: 70.00 },
+  { value: "Mixed Waste", label: "Mixed Waste", defaultPrice: 110.00 },
+  { value: "Other", label: "Other", defaultPrice: null },
 ];
 
 interface JobFormProps {
@@ -99,6 +109,8 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCustomerSearch, setShowCustomerSearch] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<JobFormData | null>(null);
   const { setParams, customerId: urlCustomerId } = useJobParams();
   const { setParams: setCustomerParams } = useCustomerParams();
   const { toast } = useToast();
@@ -197,74 +209,68 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
       contactPerson: job?.contactPerson || "",
       contactNumber: job?.contactNumber || "",
       rego: job?.rego || "",
-      loadNumber: job?.loadNumber ?? undefined,
+      loadNumber: job?.loadNumber ?? 1,
       companyName: job?.companyName || "",
       addressSite: job?.addressSite || "",
       equipmentType: job?.equipmentType || "",
       materialType: job?.materialType || "",
       pricePerUnit: job?.pricePerUnit ?? undefined,
       cubicMetreCapacity: job?.cubicMetreCapacity ?? undefined,
-      jobDate: job?.jobDate ? new Date(job.jobDate) : undefined,
-      status: job?.status || "pending",
+      jobDate: job?.jobDate ? new Date(job.jobDate) : new Date(),
+      status: job?.status || "delivered",
       notes: job?.notes || "",
     },
   });
 
   const onSubmit = async (data: JobFormData) => {
-    setIsSubmitting(true);
-
-    const submitData = {
-      ...data,
-      jobDate: data.jobDate ? format(data.jobDate, "yyyy-MM-dd") : undefined,
-    };
-
-    if (job?.id) {
+    // For new jobs, show confirmation dialog
+    if (!job?.id) {
+      setPendingFormData(data);
+      setShowConfirmDialog(true);
+    } else {
+      // For edits, submit directly without confirmation
+      setIsSubmitting(true);
+      const submitData = {
+        ...data,
+        jobDate: data.jobDate ? format(data.jobDate, "yyyy-MM-dd") : undefined,
+      };
       await updateJobMutation.mutateAsync({
         id: job.id,
         ...submitData,
       });
-    } else {
-      await createJobMutation.mutateAsync(submitData);
     }
+  };
+  
+  const handleConfirmCreate = async () => {
+    if (!pendingFormData) return;
+    
+    setShowConfirmDialog(false);
+    setIsSubmitting(true);
+    
+    const submitData = {
+      ...pendingFormData,
+      jobDate: pendingFormData.jobDate ? format(pendingFormData.jobDate, "yyyy-MM-dd") : undefined,
+      loadNumber: pendingFormData.loadNumber || 1, // Default to 1 if not specified
+    };
+    
+    await createJobMutation.mutateAsync(submitData);
   };
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col h-full"
-      >
-        <div className="flex-1 overflow-y-auto px-1 -mx-1">
-          <div className="grid grid-cols-2 gap-4 pb-4">
-            {/* We are using Company Name Instead to do this search 
-             <FormField
-              control={form.control}
-              name="customerId"
-              render={({ field }) => (
-                <FormItem className="col-span-2">
-                  <FormLabel>Customer</FormLabel>
-                  <FormControl>
-                    <SelectCustomer
-                      value={field.value}
-                      onChange={(customerId, customer) => {
-                        field.onChange(customerId);
-                        if (customer) {
-                          form.setValue("companyName", customer.name || "");
-                        }
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
-
-<FormField
+    <>
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col h-full"
+        >
+          <div className="flex-1 overflow-y-auto px-1 -mx-1">
+            <div className="grid grid-cols-2 gap-4 pb-4">
+            <FormField
               control={form.control}
               name="companyName"
               render={({ field }) => (
                 <FormItem className="col-span-2">
-                  <FormLabel>Company Name</FormLabel>
+                  <FormLabel>Customer</FormLabel>
                   <FormControl>
                     <div className="relative customer-search-container">
                       <Input
@@ -340,6 +346,25 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                         </div>
                       )}
                     </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="rego"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Rego</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="ABC-123"
+                      autoComplete="off"
+                      className="text-lg font-medium"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -442,24 +467,8 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="rego"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Rego</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="ABC-123"
-                      autoComplete="off"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
+            {/* Dont need this for Gatekeeper 
             <FormField
               control={form.control}
               name="loadNumber"
@@ -483,7 +492,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
 
             
 
@@ -528,7 +537,14 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Equipment Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={(value) => {
+                    field.onChange(value);
+                    // Auto-fill capacity based on equipment type
+                    const selectedEquipment = EQUIPMENT_OPTIONS.find(opt => opt.value === value);
+                    if (selectedEquipment?.capacity) {
+                      form.setValue("cubicMetreCapacity", selectedEquipment.capacity);
+                    }
+                  }} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select equipment" />
@@ -553,7 +569,14 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Material Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={(value) => {
+                    field.onChange(value);
+                    // Auto-fill price based on material type
+                    const selectedMaterial = MATERIAL_OPTIONS.find(opt => opt.value === value);
+                    if (selectedMaterial?.defaultPrice) {
+                      form.setValue("pricePerUnit", selectedMaterial.defaultPrice);
+                    }
+                  }} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select material" />
@@ -623,7 +646,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
               )}
             />
 
-            <FormField
+            {/* <FormField
               control={form.control}
               name="status"
               render={({ field }) => (
@@ -640,12 +663,13 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                       <SelectItem value="in_progress">In Progress</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
 
             <FormField
               control={form.control}
@@ -676,7 +700,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button className="bg-primary w-3/4 text-primary-foreground" disabled={isSubmitting} type="submit">
             {isSubmitting
               ? job?.id
                 ? "Updating..."
@@ -686,7 +710,42 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                 : "Create Job"}
           </Button>
         </div>
-      </form>
-    </Form>
+        </form>
+      </Form>
+      
+      {/* Confirmation Dialog */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Confirm Job Creation</AlertDialogTitle>
+          <AlertDialogDescription>
+            Please review the job details before confirming:
+            <div className="mt-4 space-y-2 text-sm">
+              <div><strong>Company:</strong> {pendingFormData?.companyName || "Not specified"}</div>
+              <div><strong>Rego:</strong> {pendingFormData?.rego || "Not specified"}</div>
+              <div><strong>Load Number:</strong> {pendingFormData?.loadNumber || 1}</div>
+              {pendingFormData?.materialType && <div><strong>Material Type:</strong> {pendingFormData.materialType}</div>}
+              {pendingFormData?.equipmentType && <div><strong>Equipment Type:</strong> {pendingFormData.equipmentType}</div>}
+              {pendingFormData?.cubicMetreCapacity && <div><strong>Cubic Metres:</strong> {pendingFormData.cubicMetreCapacity} m³</div>}
+              {pendingFormData?.pricePerUnit && <div><strong>Price per Unit:</strong> ${pendingFormData.pricePerUnit.toFixed(2)}</div>}
+              {pendingFormData?.jobDate && <div><strong>Date:</strong> {format(pendingFormData.jobDate, "PPP")}</div>}
+              {pendingFormData?.addressSite && <div><strong>Site:</strong> {pendingFormData.addressSite}</div>}
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => {
+            setShowConfirmDialog(false);
+            setPendingFormData(null);
+          }}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={handleConfirmCreate}>
+            Confirm & Create Job
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

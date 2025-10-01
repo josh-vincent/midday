@@ -136,6 +136,7 @@ export async function getTeamInvites(db: Database, teamId: string) {
 }
 
 export async function getInvitesByEmail(db: Database, email: string) {
+  console.log("getInvitesByEmail", email);
   const results = await db
     .select({
       id: userInvites.id,

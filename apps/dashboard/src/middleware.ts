@@ -10,17 +10,27 @@ const I18nMiddleware = createI18nMiddleware({
 });
 
 export async function middleware(request: NextRequest) {
+  const nextUrl = request.nextUrl;
+  
+  // For invoice preview paths (/i/), skip authentication and most middleware processing
+  // Check both with and without locale
+  if (nextUrl.pathname.includes("/i/") && nextUrl.pathname.split("/i/")[1]?.length > 100) {
+    return I18nMiddleware(request);
+  }
+
+  const pathnameLocale = nextUrl.pathname.split("/", 2)?.[1];
+  
+  // Check if the first segment is a locale (e.g., "en")
+  const hasLocale = pathnameLocale === "en";
+
+  // Remove the locale from the pathname if it exists
+  const pathnameWithoutLocale = hasLocale
+    ? nextUrl.pathname.slice(pathnameLocale.length + 1)
+    : nextUrl.pathname;
+
   const response = await updateSession(request, I18nMiddleware(request));
   const supabase = await createClient();
   const url = new URL("/", request.url);
-  const nextUrl = request.nextUrl;
-
-  const pathnameLocale = nextUrl.pathname.split("/", 2)?.[1];
-
-  // Remove the locale from the pathname
-  const pathnameWithoutLocale = pathnameLocale
-    ? nextUrl.pathname.slice(pathnameLocale.length + 1)
-    : nextUrl.pathname;
 
   // Create a new URL without the locale in the pathname
   const newUrl = new URL(pathnameWithoutLocale || "/", request.url);
@@ -54,6 +64,28 @@ export async function middleware(request: NextRequest) {
 
   // If authenticated, proceed with other checks
   if (session) {
+    // Skip redirect checks for login page if already authenticated
+    if (newUrl.pathname === "/login") {
+      // If user is already logged in and trying to access login, redirect to appropriate page
+      const { data: userData } = await supabase
+        .from("users")
+        .select("team_id, full_name")
+        .eq("id", session.user.id)
+        .single();
+
+      // Redirect based on user state
+      if (userData && !userData.full_name) {
+        const url = new URL("/setup", request.url);
+        return NextResponse.redirect(url);
+      } else if (userData && !userData.team_id) {
+        const url = new URL("/teams", request.url);
+        return NextResponse.redirect(url);
+      } else {
+        const url = new URL("/", request.url);
+        return NextResponse.redirect(url);
+      }
+    }
+    
     // 2. Check if user has a team (unless they're on team-related or setup pages)
     if (
       newUrl.pathname !== "/teams/create" &&
@@ -69,21 +101,21 @@ export async function middleware(request: NextRequest) {
         .single();
 
       // If user has no full name, redirect to setup
-      if (userData && !userData.full_name) {
+      if (userData && !userData.full_name && newUrl.pathname !== "/setup") {
         const url = new URL("/setup", request.url);
         return NextResponse.redirect(url);
       }
 
       // If user has no team, redirect to team creation
-      if (userData && !userData.team_id) {
+      if (userData && !userData.team_id && newUrl.pathname !== "/teams") {
         const url = new URL("/teams", request.url);
         return NextResponse.redirect(url);
       }
     }
 
-    // Allow invite pages
+    // Allow invite pages - no redirect needed, just proceed
     if (newUrl.pathname.startsWith("/teams/invite/")) {
-      return NextResponse.redirect(`${url.origin}${request.nextUrl.pathname}`);
+      return response;
     }
   }
 

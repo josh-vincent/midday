@@ -10,6 +10,7 @@ const icons = {
   "/": () => <Icons.Overview size={20} />,
   "/invoices": () => <Icons.Invoice size={20} />,
   "/jobs": () => <Icons.Apps size={20} />,
+  "/gatekeeper": () => <Icons.Tracker size={20} />,
   "/customers": () => <Icons.Customers size={20} />,
   "/reports": () => <Icons.Amount size={20} />,
   "/inbox": () => <Icons.Inbox2 size={20} />,
@@ -41,6 +42,10 @@ const items = [
       { path: "/jobs?status=completed", name: "Completed" },
       { path: "/jobs?createJob=true", name: "Create new" },
     ],
+  },
+  {
+    path: "/gatekeeper",
+    name: "Gatekeeper",
   },
   {
     path: "/customers",

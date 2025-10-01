@@ -1,6 +1,8 @@
 "use client";
 
 import { useJobsStore } from "@/store/jobs";
+import { getInitials } from "@/utils/format";
+import { Avatar, AvatarFallback } from "@midday/ui/avatar";
 import { Badge } from "@midday/ui/badge";
 import { Checkbox } from "@midday/ui/checkbox";
 import {
@@ -31,10 +33,12 @@ interface Job {
   weightKg?: number;
   notes?: string;
   jobDate?: string;
-  status: "pending" | "in_progress" | "completed" | "cancelled";
+  status: "pending" | "in_progress" | "completed" | "cancelled" | "invoiced";
   totalAmount?: number;
   customerId: string;
   customerName?: string;
+  invoiceNumber?: string | null;
+  invoiceStatus?: "draft" | "unpaid" | "paid" | "canceled" | "overdue" | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -107,6 +111,8 @@ export function JobsTable({ jobs }: JobsTableProps) {
         return "success";
       case "cancelled":
         return "destructive";
+      case "invoiced":
+        return "outline";
       default:
         return "secondary";
     }
@@ -124,7 +130,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-12 text-center">
+            <TableHead className="w-[50px] text-center px-3">
               <div className="flex items-center justify-center">
                 <Checkbox
                   checked={isAllSelected}
@@ -150,6 +156,8 @@ export function JobsTable({ jobs }: JobsTableProps) {
               <TableHead className="text-right">Amount</TableHead>
             )}
             {(columnVisibility.status ?? true) && <TableHead>Status</TableHead>}
+            {(columnVisibility.invoiceNumber ?? true) && <TableHead>Invoice #</TableHead>}
+            {(columnVisibility.invoiceStatus ?? true) && <TableHead>Invoice Status</TableHead>}
             {(columnVisibility.volume ?? true) && <TableHead>Volume</TableHead>}
             {(columnVisibility.weight ?? true) && <TableHead>Weight</TableHead>}
             {(columnVisibility.description ?? true) && <TableHead>Description</TableHead>}
@@ -159,7 +167,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
           {filteredJobs.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={11}
+                colSpan={13}
                 className="text-center py-8 text-muted-foreground"
               >
                 No jobs found
@@ -171,7 +179,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
                 key={job.id}
                 className={rowSelection[job.id] ? "bg-muted/50" : ""}
               >
-                <TableCell className="text-center">
+                <TableCell className="text-center px-3">
                   <div className="flex items-center justify-center">
                     <Checkbox
                       checked={rowSelection[job.id] || false}
@@ -196,7 +204,12 @@ export function JobsTable({ jobs }: JobsTableProps) {
                         {job.jobNumber}
                       </div>
                       {job.companyName && (
-                        <div className="text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Avatar className="h-6 w-6 rounded-none">
+                            <AvatarFallback className="rounded-none text-xs font-medium bg-accent text-accent-foreground">
+                              {getInitials(job.companyName)}
+                            </AvatarFallback>
+                          </Avatar>
                           {job.companyName}
                         </div>
                       )}
@@ -287,9 +300,29 @@ export function JobsTable({ jobs }: JobsTableProps) {
                 )}
                 {(columnVisibility.status ?? true) && (
                   <TableCell>
-                    <Badge variant={getStatusColor(job.status)}>
+                    <Badge variant={getStatusColor(job.status)} className="rounded-none">
                       {job.status.replace("_", " ")}
                     </Badge>
+                  </TableCell>
+                )}
+                {(columnVisibility.invoiceNumber ?? true) && (
+                  <TableCell>
+                    {job.invoiceNumber ? (
+                      <span className="font-mono text-sm">{job.invoiceNumber}</span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                )}
+                {(columnVisibility.invoiceStatus ?? true) && (
+                  <TableCell>
+                    {job.invoiceStatus ? (
+                      <Badge variant="outline" className="rounded-none">
+                        {job.invoiceStatus}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
                   </TableCell>
                 )}
                 {(columnVisibility.volume ?? true) && (

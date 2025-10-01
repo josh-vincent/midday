@@ -3,6 +3,7 @@ import { createTRPCRouter } from "../init";
 // import { apiKeysRouter } from "./api-keys"; // Not needed for invoicing MVP
 import { customersRouter } from "./customers";
 import { invoiceRouter } from "./invoice";
+import { invoiceProductsRouter } from "./invoice-products";
 import { invoiceTemplateRouter } from "./invoice-template";
 import { jobsRouter } from "./job";
 import { reportsRouter } from "./reports";
@@ -15,6 +16,7 @@ export const appRouter = createTRPCRouter({
   // apiKeys: apiKeysRouter, // Not needed for invoicing MVP
   customers: customersRouter,
   invoice: invoiceRouter,
+  invoiceProducts: invoiceProductsRouter,
   invoiceTemplate: invoiceTemplateRouter,
   shortLinks: shortLinksRouter,
   tags: tagsRouter,

@@ -20,6 +20,7 @@ import { useInView } from "react-intersection-observer";
 import { columns } from "./columns";
 import { EmptyState, NoResults } from "./empty-states";
 import { JobRow } from "./row";
+import { GroupedJobRow } from "./grouped-row";
 import { TableHeader } from "./table-header";
 
 export function DataTable() {
@@ -48,6 +49,12 @@ export function DataTable() {
         }
         return undefined;
       },
+      // Refetch every 30 seconds to sync with other devices
+      refetchInterval: 30000,
+      // Refetch when window regains focus
+      refetchOnWindowFocus: true,
+      // Keep data fresh
+      staleTime: 10000,
     },
   );
 
@@ -122,9 +129,14 @@ export function DataTable() {
           <TableHeader table={table} tableScroll={tableScroll} jobs={jobs} />
 
           <TableBody className="border-l-0 border-r-0">
-            {table.getRowModel().rows.map((row) => (
-              <JobRow key={row.id} row={row} />
-            ))}
+            {table.getRowModel().rows.map((row) => {
+              const isGrouped = row.original?.isGrouped;
+              return isGrouped ? (
+                <GroupedJobRow key={row.id} row={row} />
+              ) : (
+                <JobRow key={row.id} row={row} />
+              );
+            })}
           </TableBody>
         </Table>
       </div>

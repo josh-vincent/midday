@@ -72,8 +72,10 @@ export const columns: ColumnDef<Invoice>[] = [
             "line-through": row.original.status === "canceled",
           })}
         >
-          {title || "Invoice"}
-          <text className="flex items-center gap-1 text-xs text-muted-foreground font-mono">{invoiceNumber}</text>
+          <div className="flex flex-col gap-0.5">
+            <span>{title || "Invoice"}</span>
+            <span className="text-xs text-muted-foreground font-mono">{invoiceNumber}</span>
+          </div>
         </span>
       );
     },

@@ -27,13 +27,19 @@ export function JobRow({ row }: Props) {
 
   return (
     <TableRow
-      className="cursor-pointer hover:bg-muted/50"
+      className="group h-[57px] cursor-pointer hover:bg-[#F2F1EF] hover:dark:bg-secondary"
       onClick={handleRowClick}
     >
-      {row.getVisibleCells().map((cell) => (
+      {row.getVisibleCells().map((cell, index) => (
         <TableCell 
           key={cell.id}
-          className={cell.column.id === 'select' ? 'w-[40px]' : ''}
+          className={
+            cell.column.id === 'select' 
+              ? 'w-[40px] min-w-[40px] md:sticky md:left-0 bg-background z-10 border-r border-border' 
+              : cell.column.id === 'companyName'
+              ? 'w-[200px] min-w-[200px] md:sticky md:left-[40px] bg-background z-10 border-r border-border'
+              : ''
+          }
         >
           {cell.renderValue
             ? cell.column.columnDef.cell?.(cell.getContext())

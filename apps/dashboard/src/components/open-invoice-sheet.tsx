@@ -26,7 +26,7 @@ export function OpenInvoiceSheet() {
   const [showAlert, setShowAlert] = useState(false);
 
   const { data: templateConfig } = useQuery(
-    trpc.invoiceTemplate.isConfigured.queryOptions()
+    trpc.invoice.templateIsConfigured.queryOptions()
   );
 
   const handleCreateInvoice = () => {

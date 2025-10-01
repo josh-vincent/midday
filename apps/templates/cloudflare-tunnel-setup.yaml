@@ -1,0 +1,128 @@
+---
+# Namespace for Cloudflare tunnel resources
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloudflare
+
+---
+# ConfigMap with tunnel configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflare-tunnel-config
+  namespace: cloudflare
+data:
+  config.yaml: |
+    tunnel: workbooks-tunnel
+    credentials-file: /etc/cloudflared/creds/credentials.json
+    metrics: 0.0.0.0:2000
+    no-autoupdate: true
+    ingress:
+      # Production routes
+      - hostname: workbooks.tocld.com
+        service: http://workbooks-dashboard.default.svc.cluster.local:3001
+      - hostname: workbooks-api.tocld.com
+        service: http://workbooks-api.default.svc.cluster.local:3003
+      
+      # Alternative routes (if needed)
+      - hostname: dashboard.tocld.com
+        service: http://workbooks-dashboard.default.svc.cluster.local:3001
+      - hostname: api.tocld.com
+        service: http://workbooks-api.default.svc.cluster.local:3003
+      
+      # Catch-all
+      - service: http_status:404
+
+---
+# Placeholder for tunnel credentials
+# You need to replace this with actual tunnel credentials
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tunnel-credentials
+  namespace: cloudflare
+type: Opaque
+data:
+  # IMPORTANT: Replace this with your actual tunnel credentials JSON (base64 encoded)
+  # You can get this from: cloudflared tunnel create workbooks-tunnel
+  # Then base64 encode the credentials.json file
+  credentials.json: |
+    REPLACE_WITH_BASE64_ENCODED_CREDENTIALS
+
+---
+# Cloudflare tunnel deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared
+  namespace: cloudflare
+  labels:
+    app: cloudflared
+spec:
+  replicas: 2  # High availability with 2 replicas
+  selector:
+    matchLabels:
+      app: cloudflared
+  template:
+    metadata:
+      labels:
+        app: cloudflared
+    spec:
+      containers:
+      - name: cloudflared
+        image: cloudflare/cloudflared:latest
+        args:
+        - tunnel
+        - --config
+        - /etc/cloudflared/config/config.yaml
+        - run
+        livenessProbe:
+          httpGet:
+            path: /ready
+            port: 2000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 2000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: config
+          mountPath: /etc/cloudflared/config
+          readOnly: true
+        - name: creds
+          mountPath: /etc/cloudflared/creds
+          readOnly: true
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: config
+        configMap:
+          name: cloudflare-tunnel-config
+          items:
+          - key: config.yaml
+            path: config.yaml
+      - name: creds
+        secret:
+          secretName: tunnel-credentials
+          items:
+          - key: credentials.json
+            path: credentials.json
+      restartPolicy: Always

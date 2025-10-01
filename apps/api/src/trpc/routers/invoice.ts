@@ -46,11 +46,7 @@ import {
   updateInvoice,
 } from "@midday/db/queries";
 import { verify } from "@midday/invoice/token";
-import { transformCustomerToContent } from "@midday/invoice/utils";
-import type {
-  GenerateInvoicePayload,
-  SendInvoiceReminderPayload,
-} from "@midday/jobs/schema";
+import { transformCustomerToContent } from "@midday/invoice-core/utils";
 // Disabled - trigger.dev
 // import { runs, tasks } from "@trigger.dev/sdk";
 import { TRPCError } from "@trpc/server";
@@ -104,10 +100,13 @@ export const invoiceRouter = createTRPCRouter({
       if (!teamId) {
         return { data: [], totalCount: 0 };
       }
-      return getInvoices(db, {
+
+      const result = await getInvoices(db, {
         teamId: teamId,
         ...input,
       });
+
+      return result;
     }),
 
   getById: protectedProcedure
@@ -295,6 +294,7 @@ export const invoiceRouter = createTRPCRouter({
   update: protectedProcedure
     .input(updateInvoiceSchema)
     .mutation(async ({ input, ctx: { db, teamId, session } }) => {
+      // No need to update jobs - invoice status is derived via join
       return updateInvoice(db, {
         ...input,
         teamId: teamId!,
@@ -359,7 +359,7 @@ export const invoiceRouter = createTRPCRouter({
           template: { ...defaultTemplate, ...input.template },
           dueDate: input.dueDate || thirtyDaysFromNow.toISOString().split('T')[0],
           issueDate: input.issueDate || now.toISOString().split('T')[0],
-          invoiceNumber: input.invoiceNumber || `INV-${Date.now()}`,
+          invoiceNumber: input.invoiceNumber || await getNextInvoiceNumber(db, effectiveTeamId),
           status: "draft",
           currency: (input.template?.currency || defaultTemplate.currency).toUpperCase(),
           customerName: input.customerName || null,
@@ -669,4 +669,67 @@ export const invoiceRouter = createTRPCRouter({
       return getNewCustomersCount(db, { teamId: teamId! });
     },
   ),
+
+  // Temporary workaround: Add template configuration check here
+  templateIsConfigured: protectedProcedure.query(async ({ ctx: { db, teamId } }) => {
+    try {
+      const { ensureDefaultTemplate } = await import("@midday/db/queries");
+      const template = await ensureDefaultTemplate(db, teamId!);
+
+      if (!template) {
+        return { isConfigured: false, needsSetup: ['template'] };
+      }
+
+      // Helper function to check if a JSON field has meaningful content
+      const hasValidJsonContent = (field: any): boolean => {
+        if (!field) return false;
+
+        let data: any;
+
+        // Handle both string (JSON) and object (JSONB) formats
+        if (typeof field === 'string') {
+          if (field === '' || field === '{}' || field === 'null') return false;
+          try {
+            data = JSON.parse(field);
+          } catch {
+            return false;
+          }
+        } else if (typeof field === 'object') {
+          data = field;
+        } else {
+          return false;
+        }
+
+        // Check if it's a TipTap document with actual content
+        if (data.type === 'doc' && data.content && Array.isArray(data.content)) {
+          // Check if there's any actual text content (not just empty paragraphs)
+          const hasText = data.content.some((node: any) =>
+            node.content && node.content.some((child: any) =>
+              child.text && child.text.trim().length > 0
+            )
+          );
+          return hasText;
+        }
+
+        return false;
+      };
+
+      const hasFromDetails = hasValidJsonContent(template.fromDetails);
+      const hasPaymentDetails = hasValidJsonContent(template.paymentDetails);
+
+      // Template is configured if it has both from details and payment details
+      const isConfigured = hasFromDetails && hasPaymentDetails;
+
+      const result = {
+        isConfigured,
+        needsSetup: isConfigured ? [] : ['company_details', 'payment_details'],
+        template
+      };
+
+      return result;
+    } catch (error) {
+      console.error("Error checking template configuration:", error);
+      return { isConfigured: false, needsSetup: ['error'], error: error.message };
+    }
+  }),
 });

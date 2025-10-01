@@ -1,5 +1,28 @@
 import type { RowSelectionState, Updater } from "@tanstack/react-table";
+import { z } from "zod";
 import { create } from "zustand";
+
+const jobSchema = z.object({
+  customerId: z.string().optional().nullable(),
+  jobNumber: z.string().optional(),
+  contactPerson: z.string().optional(),
+  contactNumber: z.string().optional(),
+  rego: z.string().optional(),
+  loadNumber: z.number().optional(),
+  companyName: z.string().optional(),
+  addressSite: z.string().optional(),
+  equipmentType: z.string().optional(),
+  materialType: z.string().optional(),
+  pricePerUnit: z.number().optional(),
+  cubicMetreCapacity: z.number().optional(),
+  jobDate: z.date().optional(),
+  status: z
+    .enum(["pending", "in_progress", "completed", "cancelled", "delivered"])
+    .default("delivered"),
+  notes: z.string().optional(),
+});
+
+type JobData = z.infer<typeof jobSchema>;
 
 // Use the same Job type from columns
 export type Job = {
@@ -9,16 +32,25 @@ export type Job = {
   companyName: string | null;
   customerName?: string | null;
   description: string | null;
-  status: "pending" | "in_progress" | "completed" | "cancelled" | "invoiced";
+  status: "pending" | "in_progress" | "completed" | "cancelled" | "delivered";
   totalAmount: number | null;
   currency: string;
   teamId: string;
+  rego: string | null;
+  pricePerUnit: number | null;
+  cubicMetreCapacity: number | null;
+  loadNumber: number | null;
+  contactPerson: string | null;
+  contactNumber: string | null;
+  notes: string | null;
   customerId: string | null;
   volume: number | null;
   weight: number | null;
   createdAt: string;
   updatedAt: string;
 };
+
+
 
 interface JobsState {
   rowSelection: Record<string, boolean>;
@@ -32,8 +64,8 @@ interface JobsState {
     dateRange?: { from: Date | null; to: Date | null };
   };
   setFilters: (filters: JobsState["filters"]) => void;
-  jobs: Job[];
-  setJobs: (jobs: Job[]) => void;
+  jobs: JobData[];
+  setJobs: (jobs: JobData[]) => void;
   openJobSheet: boolean;
   setOpenJobSheet: (open: boolean) => void;
 }
@@ -54,11 +86,18 @@ export const useJobsStore = create<JobsState>((set) => ({
     companyName: true,
     addressSite: true,
     status: true,
-    cubicMeterCapacity: true,
-    weight: true,
     rego: true,
     pricePerUnit: true,
-    totalAmount: true,
+    cubicMetreCapacity: true,
+    loadNumber: true,
+    contactPerson: true,
+    contactNumber: true,
+    notes: true,
+    cubicMeterCapacity: false,
+    weight: false,
+    description: false,
+    volume: false,
+    totalAmount: true
   },
   setColumnVisibility: (visibility) => set({ columnVisibility: visibility }),
   filters: {

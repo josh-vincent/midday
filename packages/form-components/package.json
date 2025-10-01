@@ -1,0 +1,68 @@
+{
+  "name": "@midday/form-components",
+  "version": "1.0.0",
+  "private": true,
+  "sideEffects": false,
+  "files": ["src"],
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    "./text-field": "./src/components/text-field.tsx",
+    "./number-field": "./src/components/number-field.tsx",
+    "./select-field": "./src/components/select-field.tsx",
+    "./multi-select-field": "./src/components/multi-select-field.tsx",
+    "./date-field": "./src/components/date-field.tsx",
+    "./date-range-field": "./src/components/date-range-field.tsx",
+    "./textarea-field": "./src/components/textarea-field.tsx",
+    "./checkbox-field": "./src/components/checkbox-field.tsx",
+    "./radio-group-field": "./src/components/radio-group-field.tsx",
+    "./switch-field": "./src/components/switch-field.tsx",
+    "./file-upload-field": "./src/components/file-upload-field.tsx",
+    "./currency-field": "./src/components/currency-field.tsx",
+    "./percentage-field": "./src/components/percentage-field.tsx",
+    "./color-picker-field": "./src/components/color-picker-field.tsx",
+    "./combobox-field": "./src/components/combobox-field.tsx",
+    "./form-section": "./src/components/form-section.tsx",
+    "./form-array": "./src/components/form-array.tsx",
+    "./conditional-field": "./src/components/conditional-field.tsx",
+    "./dependent-field": "./src/components/dependent-field.tsx",
+    "./form-wizard": "./src/components/form-wizard.tsx",
+    "./form-builder": "./src/components/form-builder.tsx",
+    "./use-form": "./src/hooks/use-form.tsx",
+    "./use-field-array": "./src/hooks/use-field-array.tsx",
+    "./use-form-validation": "./src/hooks/use-form-validation.tsx",
+    "./use-field-dependencies": "./src/hooks/use-field-dependencies.tsx",
+    "./use-form-persistence": "./src/hooks/use-form-persistence.tsx",
+    "./validation": "./src/utils/validation.ts",
+    "./submission": "./src/utils/submission.ts",
+    "./types": "./src/types/index.ts"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.9.1",
+    "@midday/ui": "workspace:*",
+    "@radix-ui/react-icons": "^1.3.2",
+    "@uidotdev/usehooks": "^2.4.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.511.0",
+    "react-dropzone": "^14.3.5",
+    "react-hook-form": "^7.54.2",
+    "react-number-format": "^5.4.4",
+    "tailwind-merge": "2.5.3",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "typescript": "^5.9.2"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  }
+}

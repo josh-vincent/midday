@@ -17,18 +17,13 @@ import Link from "next/link";
 export function ConnectionStatus() {
   const trpc = useTRPC();
 
-  const { data, isLoading } = useQuery(
-    trpc.bankConnections.get.queryOptions({
-      enabled: true,
-    }),
-  );
+  // const { data, isLoading } = useQuery(
+  //   trpc.bankConnections.get.queryOptions({
+  //     enabled: true,
+  //   }),
+  // );
 
-  if (isLoading || !data) {
-    return null;
-  }
-
-  const connectionIssue = data?.some((bank) => bank.status === "disconnected");
-
+  return null // TODO: Uncomment when bankConnections table exists!
   if (connectionIssue) {
     return (
       <TooltipProvider delayDuration={70}>
@@ -56,12 +51,6 @@ export function ConnectionStatus() {
     );
   }
 
-  // NOTE: No connections with expire_at (Only GoCardLess and Enable Banking)
-  if (data?.find((bank) => bank.expiresAt === null)) {
-    return null;
-  }
-
-  const { warning, error, show } = getConnectionsStatus(data);
 
   if (!show) {
     return null;

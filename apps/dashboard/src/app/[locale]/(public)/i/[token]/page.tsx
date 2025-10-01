@@ -1,7 +1,8 @@
 import CustomerHeader from "@/components/customer-header";
+import { InvoiceAttachedJobs } from "@/components/invoice-attached-jobs";
 import InvoiceToolbar from "@/components/invoice-toolbar";
-import { getQueryClient, trpc } from "@/trpc/server";
-import { decrypt } from "@midday/encryption";
+import { getQueryClient, publicTrpc } from "@/trpc/public-server";
+// import { decrypt } from "@midday/encryption"; // Temporarily disabled
 import { HtmlTemplate } from "@midday/invoice/templates/html";
 import { createClient } from "@midday/supabase/server";
 import { waitUntil } from "@vercel/functions";
@@ -17,7 +18,7 @@ export async function generateMetadata(props: {
 
   try {
     const invoice = await queryClient.fetchQuery(
-      trpc.invoice.getInvoiceByToken.queryOptions({
+      publicTrpc.invoice.getInvoiceByToken.queryOptions({
         token: params.token,
       }),
     );
@@ -92,7 +93,7 @@ export default async function Page(props: Props) {
   const queryClient = getQueryClient();
 
   const invoice = await queryClient.fetchQuery(
-    trpc.invoice.getInvoiceByToken.queryOptions({
+    publicTrpc.invoice.getInvoiceByToken.queryOptions({
       token: params.token,
     }),
   );
@@ -101,18 +102,20 @@ export default async function Page(props: Props) {
     notFound();
   }
 
-  if (viewer) {
-    try {
-      const decryptedEmail = decrypt(viewer);
+  // Temporarily disable viewer tracking due to encryption key mismatch
+  // TODO: Re-enable once all invoices are regenerated with new encryption key
+  // if (viewer) {
+  //   try {
+  //     const decryptedEmail = decrypt(viewer);
 
-      if (decryptedEmail === invoice?.customer?.email) {
-        // Only update the invoice viewed_at if the user is a viewer
-        waitUntil(updateInvoiceViewedAt(invoice.id!));
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }
+  //     if (decryptedEmail === invoice?.customer?.email) {
+  //       // Only update the invoice viewed_at if the user is a viewer
+  //       waitUntil(updateInvoiceViewedAt(invoice.id!));
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }
 
   // If the invoice is draft and the user is not logged in, return 404 or if the invoice is not found
   if (!invoice || (invoice.status === "draft" && !session)) {
@@ -133,6 +136,14 @@ export default async function Page(props: Props) {
           website={invoice.customer?.website}
           status={invoice.status}
         />
+        {invoice.lineItems && invoice.lineItems.length > 0 && (
+          <div className="flex justify-end mb-4">
+            <InvoiceAttachedJobs 
+              lineItems={invoice.lineItems} 
+              currency={invoice.currency}
+            />
+          </div>
+        )}
         <div className="pb-24 md:pb-0">
           <div className="shadow-[0_24px_48px_-12px_rgba(0,0,0,0.3)] dark:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.6)]">
             <HtmlTemplate data={invoice} width={width} height={height} />
