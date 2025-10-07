@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "apps/dashboard/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "apps/dashboard/$1"
+    }
+  ],
+  "installCommand": "bun install",
+  "buildCommand": "cd apps/dashboard && bun run build",
+  "outputDirectory": "apps/dashboard/.next"
+}

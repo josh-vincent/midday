@@ -1,7 +1,12 @@
 {
-  "version": 2,
-  "public": false,
-  "github": {
-    "enabled": false
+  "buildCommand": "bun run build",
+  "devCommand": "bun run dev",
+  "installCommand": "echo 'Skipping install, using root install'",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "git": {
+    "deploymentEnabled": {
+      "main": true
+    }
   }
 }
