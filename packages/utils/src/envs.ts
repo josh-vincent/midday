@@ -3,14 +3,14 @@ export function getAppUrl() {
     process.env.VERCEL_ENV === "production" ||
     process.env.NODE_ENV === "production"
   ) {
-    return "https://app.midday.ai";
+    return process.env.NEXT_PUBLIC_URL || "https://dirt-jobs-web-dashboard.vercel.app";
   }
 
   if (process.env.VERCEL_ENV === "preview") {
     return `https://${process.env.VERCEL_URL}`;
   }
 
-  return "http://localhost:3001";
+  return "http://localhost:3333";
 }
 
 export function getEmailUrl() {
