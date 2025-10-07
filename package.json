@@ -1,7 +1,7 @@
 {
   "name": "invoicing-platform",
   "private": true,
-  "workspaces": ["packages/*", "apps/*", "packages/email/*"],
+  "workspaces": ["packages/*", "apps/*", "packages/email/*", "packages/oauth-sync/*"],
   "scripts": {
     "build": "turbo build",
     "clean": "git clean -xdf node_modules",
@@ -12,6 +12,12 @@
     "dev:api": "turbo dev --filter=@midday/api",
     "dev:dashboard": "turbo dev --filter=@midday/dashboard",
     "build:dashboard": "turbo build --filter=@midday/dashboard",
+    "dev:pivot-api": "turbo dev --filter=@midday/pivot-api",
+    "dev:pivot-dashboard": "turbo dev --filter=@midday/pivot-dashboard",
+    "dev:pivot": "turbo dev --filter=@midday/pivot-api --filter=@midday/pivot-dashboard --parallel",
+    "build:pivot-api": "turbo build --filter=@midday/pivot-api",
+    "build:pivot-dashboard": "turbo build --filter=@midday/pivot-dashboard",
+    "build:pivot": "turbo build --filter=@midday/pivot-api --filter=@midday/pivot-dashboard",
     "format": "biome format --write .",
     "lint": "turbo lint && manypkg check",
     "typecheck": "turbo typecheck"

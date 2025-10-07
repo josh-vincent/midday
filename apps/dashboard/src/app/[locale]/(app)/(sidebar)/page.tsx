@@ -114,6 +114,18 @@ export default function Overview() {
           </div>
         </div>
       </div>
+      <div className="mt-8">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Link href="/gatekeeper" className="group p-6 border rounded-lg hover:border-primary transition-colors">
+          <h3 className="font-semibold mb-2 group-hover:text-primary">
+            Gatekeeper
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Create and manage daily entries 
+          </p>
+        </Link>
+      </div>
+      </div>
 
       {!customersLoading && !templateLoading && (!hasCustomers || !hasInvoiceTemplate) && (
         <div className="flex items-center justify-center min-h-[calc(100vh-300px)]">
