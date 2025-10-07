@@ -1,12 +1,7 @@
 {
-  "buildCommand": "bun run build",
+  "buildCommand": "cd ../.. && bun install && cd apps/dashboard && bun run build",
   "devCommand": "bun run dev",
-  "installCommand": "echo 'Skipping install, using root install'",
+  "installCommand": "cd ../.. && bun install",
   "framework": "nextjs",
-  "regions": ["iad1"],
-  "git": {
-    "deploymentEnabled": {
-      "main": true
-    }
-  }
+  "regions": ["iad1"]
 }
