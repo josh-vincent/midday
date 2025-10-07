@@ -330,14 +330,23 @@ export async function createTeamInvites(
 
   const results = await Promise.all(
     validInvites.map(async (invite) => {
+      // Calculate expiration (24 hours from now)
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+
+      // Generate random 10-character invite code
+      const code = Math.random().toString(36).substring(2, 12).toUpperCase();
+
       // Insert new invite with conflict handling to prevent race conditions
       const [row] = await db
         .insert(userInvites)
         .values({
           email: invite.email,
+          code: code,
           role: invite.role,
           invitedBy: invite.invitedBy,
           teamId: teamId,
+          expiresAt: expiresAt.toISOString(),
         })
         .onConflictDoNothing({
           target: [userInvites.teamId, userInvites.email],

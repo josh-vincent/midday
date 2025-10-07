@@ -1,6 +1,29 @@
 import { type CookieOptions, createServerClient } from "@supabase/ssr";
 import type { NextRequest, NextResponse } from "next/server";
 
+// Helper to decode JWT and check expiration locally (no API call)
+function isTokenExpired(token: string): boolean {
+  try {
+    // JWT format: header.payload.signature
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+
+    // Decode the payload (base64url)
+    const payload = JSON.parse(
+      Buffer.from(parts[1]!, 'base64url').toString('utf-8')
+    );
+
+    // Check expiration (exp is in seconds, Date.now() is in milliseconds)
+    const expirationTime = payload.exp * 1000;
+    const now = Date.now();
+
+    // Add 60 second buffer to refresh before actual expiration
+    return now >= (expirationTime - 60000);
+  } catch {
+    return true; // If we can't decode, assume expired
+  }
+}
+
 export async function updateSession(
   request: NextRequest,
   response: NextResponse,
@@ -29,8 +52,35 @@ export async function updateSession(
     },
   });
 
-  // This is important to refresh the auth session from cookies
-  await supabase.auth.getUser();
+  // Get session from cookies (fast, no API call)
+  const { data: { session } } = await supabase.auth.getSession();
+
+  // If we have a session, check if the token is expired locally
+  if (session?.access_token) {
+    const expired = isTokenExpired(session.access_token);
+
+    if (expired) {
+      // Try to refresh the session (one API call only when needed)
+      const { data: { session: newSession }, error } = await supabase.auth.refreshSession();
+
+      // If refresh fails, clear cookies
+      if (error || !newSession) {
+        const cookiesToClear = [
+          'sb-ulncfblvuijlgniydjju-auth-token',
+          'sb-ulncfblvuijlgniydjju-auth-token.0',
+          'sb-ulncfblvuijlgniydjju-auth-token.1',
+        ];
+
+        for (const name of cookiesToClear) {
+          response.cookies.set({
+            name,
+            value: '',
+            maxAge: 0,
+          });
+        }
+      }
+    }
+  }
 
   return response;
 }

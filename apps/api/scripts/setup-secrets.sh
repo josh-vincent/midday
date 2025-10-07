@@ -40,7 +40,6 @@ SECRETS=(
   "DIRTWORKS_ENCRYPTION_KEY"
   "ALLOWED_API_ORIGINS"
   "INVOICE_JWT_SECRET"
-  "REDIS_URL"
   "NEXT_PUBLIC_URL"
   "SUPABASE_ANON_KEY"
   "SUPABASE_SERVICE_KEY"
@@ -49,6 +48,7 @@ SECRETS=(
 
 # Optional secrets (will skip if not found)
 OPTIONAL_SECRETS=(
+  "REDIS_URL"
   "OPENAI_API_KEY"
   "ENGINE_API_URL"
   "ENGINE_API_KEY"
@@ -87,7 +87,9 @@ set_secret() {
 }
 
 # Load .env.local
-export $(grep -v '^#' .env.local | xargs)
+set -a
+source .env.local
+set +a
 
 echo -e "${GREEN}Setting required secrets...${NC}\n"
 

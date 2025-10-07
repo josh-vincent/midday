@@ -19,7 +19,7 @@ export default async function GatekeeperPage(props: Props) {
 
   return (
     <HydrateClient>
-      <div className="h-[calc(100vh-4rem)] flex flex-col">
+      <div className="h-[calc(100vh-70px)] md:h-[calc(100vh-4rem)] flex flex-col overflow-hidden mx-auto">
         <GatekeeperForm />
         <JobCreateSheet />
       </div>

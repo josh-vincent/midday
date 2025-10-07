@@ -2,6 +2,7 @@ import "@/styles/globals.css";
 import { cn } from "@midday/ui/cn";
 import "@midday/ui/globals.css";
 import { DesktopHeader } from "@/components/desktop-header";
+import { ReactScan } from "@/components/react-scan";
 import { isDesktopApp } from "@/utils/desktop";
 import { Provider as Analytics } from "@midday/events/client";
 import { Toaster } from "@midday/ui/toaster";
@@ -104,6 +105,7 @@ export default async function Layout({
           <Providers locale={locale}>{children}</Providers>
           <Toaster />
           <Analytics />
+          <ReactScan />
         </NuqsAdapter>
       </body>
     </html>

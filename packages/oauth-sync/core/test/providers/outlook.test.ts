@@ -1,0 +1,203 @@
+import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { OutlookProvider } from "../../src/providers/outlook";
+import type { TokenConfig, ProviderConfig } from "../../src/core/types";
+import { mockGlobalFetch } from "../mocks";
+
+describe("OutlookProvider", () => {
+  let provider: OutlookProvider;
+  let mockFetch: ReturnType<typeof mockGlobalFetch>;
+
+  beforeEach(() => {
+    provider = new OutlookProvider();
+  });
+
+  afterEach(() => {
+    if (mockFetch) {
+      mockFetch.restore();
+    }
+  });
+
+  describe("isTokenExpiring", () => {
+    it("should detect expiring token (less than threshold)", () => {
+      const tokens: TokenConfig = {
+        accessToken: "test_token",
+        refreshToken: "test_refresh",
+        expiresIn: 3600, // 1 hour
+        connectedAt: new Date(Date.now() - 50 * 60 * 1000).toISOString(), // 50 minutes ago
+      };
+
+      // Token expires in 10 minutes, threshold is 60 minutes
+      const isExpiring = provider.isTokenExpiring(tokens, 60);
+      expect(isExpiring).toBe(true);
+    });
+
+    it("should not detect expiring token (more than threshold)", () => {
+      const tokens: TokenConfig = {
+        accessToken: "test_token",
+        refreshToken: "test_refresh",
+        expiresIn: 3600, // 1 hour
+        connectedAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(), // 10 minutes ago
+      };
+
+      // Token expires in 50 minutes, threshold is 30 minutes
+      const isExpiring = provider.isTokenExpiring(tokens, 30);
+      expect(isExpiring).toBe(false);
+    });
+
+    it("should detect expired token", () => {
+      const tokens: TokenConfig = {
+        accessToken: "test_token",
+        refreshToken: "test_refresh",
+        expiresIn: 3600,
+        connectedAt: new Date(Date.now() - 70 * 60 * 1000).toISOString(), // 70 minutes ago
+      };
+
+      const isExpiring = provider.isTokenExpiring(tokens, 60);
+      expect(isExpiring).toBe(true);
+    });
+
+    it("should use expiresAt if provided", () => {
+      const tokens: TokenConfig = {
+        accessToken: "test_token",
+        refreshToken: "test_refresh",
+        expiresIn: 3600,
+        connectedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes from now
+      };
+
+      // Threshold is 60 minutes, expires in 10 minutes
+      const isExpiring = provider.isTokenExpiring(tokens, 60);
+      expect(isExpiring).toBe(true);
+    });
+  });
+
+  describe("calculateExpiresAt", () => {
+    it("should calculate correct expiration timestamp", () => {
+      const expiresIn = 3600; // 1 hour
+      const before = Date.now();
+      const expiresAt = provider.calculateExpiresAt(expiresIn);
+      const after = Date.now();
+
+      const expiresAtTime = new Date(expiresAt).getTime();
+      const expectedMin = before + expiresIn * 1000;
+      const expectedMax = after + expiresIn * 1000;
+
+      expect(expiresAtTime).toBeGreaterThanOrEqual(expectedMin);
+      expect(expiresAtTime).toBeLessThanOrEqual(expectedMax);
+    });
+  });
+
+  describe("refreshToken", () => {
+    it("should successfully refresh token", async () => {
+      mockFetch = mockGlobalFetch();
+
+      const tokens: TokenConfig = {
+        accessToken: "old_access_token",
+        refreshToken: "old_refresh_token",
+        expiresIn: 3600,
+        connectedAt: new Date().toISOString(),
+        scope: "https://graph.microsoft.com/.default",
+      };
+
+      const config: ProviderConfig = {
+        clientId: "test_client_id",
+        clientSecret: "test_client_secret",
+      };
+
+      const newTokens = await provider.refreshToken(tokens, config);
+
+      expect(newTokens.accessToken).toContain("new_access_token");
+      expect(newTokens.refreshToken).toContain("new_refresh_token");
+      expect(newTokens.expiresIn).toBe(3600);
+      expect(newTokens.tokenType).toBe("bearer");
+    });
+
+    it("should handle refresh failure", async () => {
+      mockFetch = mockGlobalFetch({ shouldFail: true });
+
+      const tokens: TokenConfig = {
+        accessToken: "old_access_token",
+        refreshToken: "old_refresh_token",
+        expiresIn: 3600,
+        connectedAt: new Date().toISOString(),
+      };
+
+      const config: ProviderConfig = {
+        clientId: "test_client_id",
+        clientSecret: "test_client_secret",
+      };
+
+      await expect(provider.refreshToken(tokens, config)).rejects.toThrow(
+        "Outlook token refresh failed"
+      );
+    });
+
+    it("should use correct Microsoft token endpoint", async () => {
+      let requestUrl = "";
+      let requestBody: Record<string, string> = {};
+
+      mockFetch = mockGlobalFetch();
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = async (url: any, init?: any) => {
+        requestUrl = url;
+        const body = init?.body?.toString() || "";
+        const params = new URLSearchParams(body);
+        params.forEach((value, key) => {
+          requestBody[key] = value;
+        });
+        return originalFetch(url, init);
+      };
+
+      const tokens: TokenConfig = {
+        accessToken: "test",
+        refreshToken: "test",
+        expiresIn: 3600,
+        connectedAt: new Date().toISOString(),
+      };
+
+      const config: ProviderConfig = {
+        clientId: "test_client_id",
+        clientSecret: "test_client_secret",
+      };
+
+      await provider.refreshToken(tokens, config);
+
+      expect(requestUrl).toContain("login.microsoftonline.com");
+      expect(requestBody.client_id).toBe("test_client_id");
+      expect(requestBody.client_secret).toBe("test_client_secret");
+    });
+
+    it("should preserve refresh token if not returned", async () => {
+      mockFetch = mockGlobalFetch({
+        customResponse: {
+          access_token: "new_access_token",
+          expires_in: 3600,
+          token_type: "bearer",
+          // No refresh_token in response
+        },
+      });
+
+      const tokens: TokenConfig = {
+        accessToken: "old_access_token",
+        refreshToken: "old_refresh_token",
+        expiresIn: 3600,
+        connectedAt: new Date().toISOString(),
+      };
+
+      const config: ProviderConfig = {
+        clientId: "test_client_id",
+        clientSecret: "test_client_secret",
+      };
+
+      const newTokens = await provider.refreshToken(tokens, config);
+
+      expect(newTokens.refreshToken).toBe("old_refresh_token");
+    });
+  });
+
+  describe("provider name", () => {
+    it("should have correct provider name", () => {
+      expect(provider.provider).toBe("outlook");
+    });
+  });
+});

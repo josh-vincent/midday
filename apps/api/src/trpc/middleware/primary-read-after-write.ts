@@ -26,7 +26,13 @@ export const withPrimaryReadAfterWrite = async <TReturn>(opts: {
   if (teamId) {
     // For mutations, always use primary DB and update the team's timestamp
     if (type === "mutation") {
-      await replicationCache.set(teamId);
+      // Skip replication cache in serverless environments without Redis
+      try {
+        await replicationCache.set(teamId);
+      } catch (error) {
+        // Silently fail if Redis is not available (e.g., Cloudflare Workers)
+        console.warn("Replication cache unavailable, skipping");
+      }
 
       // Use primary-only mode to maintain interface consistency
       const dbWithPrimary = ctx.db as DatabaseWithPrimary;
@@ -37,17 +43,22 @@ export const withPrimaryReadAfterWrite = async <TReturn>(opts: {
     }
     // For queries, check if the team recently performed a mutation
     else {
-      const timestamp = await replicationCache.get(teamId);
-      const now = Date.now();
+      try {
+        const timestamp = await replicationCache.get(teamId);
+        const now = Date.now();
 
-      // If the timestamp exists and hasn't expired, use primary DB
-      if (timestamp && now < timestamp) {
-        // Use primary-only mode to maintain interface consistency
-        const dbWithPrimary = ctx.db as DatabaseWithPrimary;
-        if (dbWithPrimary.usePrimaryOnly) {
-          ctx.db = dbWithPrimary.usePrimaryOnly();
+        // If the timestamp exists and hasn't expired, use primary DB
+        if (timestamp && now < timestamp) {
+          // Use primary-only mode to maintain interface consistency
+          const dbWithPrimary = ctx.db as DatabaseWithPrimary;
+          if (dbWithPrimary.usePrimaryOnly) {
+            ctx.db = dbWithPrimary.usePrimaryOnly();
+          }
+          // If usePrimaryOnly doesn't exist, we're already using the primary DB
         }
-        // If usePrimaryOnly doesn't exist, we're already using the primary DB
+      } catch (error) {
+        // Silently fail if Redis is not available
+        console.warn("Replication cache unavailable for read, skipping");
       }
     }
   } else {

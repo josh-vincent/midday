@@ -1,6 +1,7 @@
 "use client";
 
 import { FormatAmount } from "@/components/format-amount";
+import { Badge } from "@midday/ui/badge";
 import { Checkbox } from "@midday/ui/checkbox";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
@@ -67,9 +68,22 @@ export const columns: ColumnDef<Job>[] = [
       </div>
     ),
     cell: ({ row }) => {
+      const status = row.original.status;
+      const invoiceStatus = row.original.invoiceStatus;
+
+      // Determine dot color based on status
+      let dotColor = "bg-yellow-500"; // pending
+      if (status === "in_progress") dotColor = "bg-blue-500";
+      if (status === "completed") dotColor = "bg-green-500";
+      if (status === "cancelled") dotColor = "bg-gray-500";
+      if (status === "delivered") dotColor = "bg-green-500";
+      if (status === "invoiced" || invoiceStatus === "paid") dotColor = "bg-purple-500";
+      if (invoiceStatus === "unpaid") dotColor = "bg-red-500";
+      if (invoiceStatus === "overdue") dotColor = "bg-orange-500";
+
       return (
-        <div 
-          className="flex items-center justify-center px-3"
+        <div
+          className="flex items-center justify-center px-3 relative"
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -82,6 +96,10 @@ export const columns: ColumnDef<Job>[] = [
             }}
             aria-label="Select row"
           />
+          <span
+            className={`absolute top-2 right-2 w-2 h-2 rounded-full ${dotColor}`}
+            title={invoiceStatus ? `${status} - ${invoiceStatus}` : status}
+          />
         </div>
       );
     },
@@ -89,27 +107,34 @@ export const columns: ColumnDef<Job>[] = [
     enableHiding: false,
   },
   {
-    id: "jobNumber", 
+    id: "jobNumber",
     accessorKey: "jobNumber",
     header: "Job #",
     enableSorting: true,
     enableHiding: false, // Keep job number always visible
-    cell: ({ row }) => (
-      <span className="font-medium">{row.getValue("jobNumber") || "-"}</span>
-    ),
+    cell: ({ row }) => {
+      const jobNumber = row.getValue("jobNumber") as string;
+
+      if (!jobNumber || jobNumber === "-") {
+        return <Badge variant="outline">N/A</Badge>;
+      }
+
+      return <span className="font-medium">{jobNumber}</span>;
+    },
   },
   {
     id: "jobDate",
-    accessorKey: "jobDate", 
+    accessorKey: "jobDate",
     header: "Date",
     enableSorting: true,
     enableHiding: true,
+    meta: { hideOnMobile: true },
     cell: ({ row, table }) => {
       const date = row.getValue("jobDate") as string | null;
       const dateFormat = (table.options.meta as any)?.dateFormat || "MMM d, yyyy";
-      
+
       if (!date) return "-";
-      
+
       return format(new Date(date), dateFormat);
     },
   },
@@ -128,6 +153,7 @@ export const columns: ColumnDef<Job>[] = [
     accessorKey: "description",
     header: "Description",
     enableHiding: true,
+    meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const description = row.getValue("description") as string | null;
       return (
@@ -138,30 +164,12 @@ export const columns: ColumnDef<Job>[] = [
     },
   },
   {
-    id: "status",
-    accessorKey: "status",
-    header: "Status",
-    enableSorting: true,
-    enableHiding: true,
-    cell: ({ row }) => {
-      const status = row.getValue("status") as Job["status"];
-      return (
-        <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-none text-xs font-medium capitalize ${
-              statusColors[status] || statusColors.delivered
-          }`}
-        >
-          {status.replace("_", " ")}
-        </span>
-      );
-    },
-  },
-  {
     id: "rego",
     accessorKey: "rego",
     header: "Rego",
     enableSorting: true,
     enableHiding: true,
+    meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const rego = row.getValue("rego") as string | null;
       return rego ? rego : "-";
@@ -173,6 +181,7 @@ export const columns: ColumnDef<Job>[] = [
     header: "Price Per Unit",
     enableSorting: true,
     enableHiding: true,
+    meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const pricePerUnit = row.getValue("pricePerUnit") as number | null;
       return pricePerUnit ? `$${pricePerUnit}` : "-";
@@ -184,6 +193,7 @@ export const columns: ColumnDef<Job>[] = [
     header: "Cubic Metre Capacity",
     enableSorting: true,
     enableHiding: true,
+    meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const cubicMetreCapacity = row.getValue("cubicMetreCapacity") as number | null;
       return cubicMetreCapacity ? `${cubicMetreCapacity} m³` : "-";
@@ -195,6 +205,7 @@ export const columns: ColumnDef<Job>[] = [
     header: "Load Number",
     enableSorting: true,
     enableHiding: true,
+    meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const loadNumber = row.getValue("loadNumber") as number | null;
       return loadNumber ? `${loadNumber}` : "-";
@@ -206,6 +217,7 @@ export const columns: ColumnDef<Job>[] = [
     header: "Contact Person",
     enableSorting: true,
     enableHiding: true,
+    meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const contactPerson = row.getValue("contactPerson") as string | null;
       return contactPerson ? contactPerson : "-";
@@ -217,6 +229,7 @@ export const columns: ColumnDef<Job>[] = [
     header: "Volume",
     enableSorting: true,
     enableHiding: true,
+    meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const volume = row.getValue("volume") as number | null;
       return volume ? `${volume} m³` : "-";
@@ -228,6 +241,7 @@ export const columns: ColumnDef<Job>[] = [
     header: "Weight",
     enableSorting: true,
     enableHiding: true,
+    meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const weight = row.getValue("weight") as number | null;
       return weight ? `${weight} kg` : "-";
@@ -261,6 +275,7 @@ export const columns: ColumnDef<Job>[] = [
     header: "Invoice #",
     enableSorting: true,
     enableHiding: true,
+    meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const invoiceNumber = row.getValue("invoiceNumber") as string | null;
       const invoiceId = row.original.invoiceId;
@@ -290,10 +305,11 @@ export const columns: ColumnDef<Job>[] = [
     header: "Invoice Status",
     enableSorting: true,
     enableHiding: true,
+    meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const invoiceStatus = row.getValue("invoiceStatus") as Job["invoiceStatus"];
       if (!invoiceStatus) return <span className="text-muted-foreground">-</span>;
-      
+
       return (
         <span
           className={`inline-flex items-center px-2.5 py-0.5 rounded-none text-xs font-medium capitalize ${

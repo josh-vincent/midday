@@ -1,0 +1,34 @@
+{
+  "name": "@midday/pivot-core",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./types": {
+      "types": "./src/types/index.ts",
+      "default": "./src/types/index.ts"
+    },
+    "./utils": {
+      "types": "./src/utils/index.ts",
+      "default": "./src/utils/index.ts"
+    }
+  },
+  "dependencies": {
+    "@midday/db": "workspace:*",
+    "@midday/utils": "workspace:*",
+    "date-fns": "^4.1.0",
+    "zod": "3.25.64"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}

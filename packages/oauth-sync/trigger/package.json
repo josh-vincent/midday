@@ -1,0 +1,36 @@
+{
+  "name": "@midday/oauth-sync-trigger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Trigger.dev integration for OAuth token synchronization",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@midday/oauth-sync-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@trigger.dev/sdk": ">=4.0.0"
+  },
+  "devDependencies": {
+    "@midday/tsconfig": "workspace:*",
+    "@trigger.dev/sdk": "4.0.1",
+    "@types/node": "^22.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.6.2"
+  }
+}

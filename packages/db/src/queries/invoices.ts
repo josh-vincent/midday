@@ -101,10 +101,21 @@ export async function getInvoices(db: Database, params: GetInvoicesParams) {
       }
     }
 
-    // Apply date range filter
+    // Apply date range filter - check both issue_date and due_date
     if (start && end) {
-      whereConditions.push(gte(invoices.dueDate, start));
-      whereConditions.push(lte(invoices.dueDate, end));
+      // Invoice matches if EITHER issue_date OR due_date falls within the range
+      whereConditions.push(
+        or(
+          and(
+            gte(invoices.issueDate, start),
+            lte(invoices.issueDate, end)
+          ),
+          and(
+            gte(invoices.dueDate, start),
+            lte(invoices.dueDate, end)
+          )
+        )!
+      );
     }
 
     // Apply customer filter

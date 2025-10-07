@@ -54,7 +54,12 @@ Instructions:
 - Parse the user's query to extract filter criteria
 - Map status keywords to exact status values from the available statuses
 - Extract customer names if mentioned
-- Parse date references (e.g., "last month", "this week", "overdue")
+- Parse date references (e.g., "last month", "this week", "overdue", "past week", "created in the last 7 days")
+- Date filtering: The 'start' and 'end' fields will match invoices where EITHER the issue_date OR due_date falls within the range
+- Examples:
+  * "invoices created in the past week" → set start/end to last 7 days (will match by issue_date)
+  * "invoices due this month" → set start/end to this month (will match by due_date)
+  * "invoices from last month" → set start/end to last month (will match either date)
 - IMPORTANT: Only use the 'q' field for search terms that couldn't be mapped to structured filters (statuses, customers, dates)
 - If all parts of the query are successfully mapped to structured filters, set 'q' to null
 - Return null for fields that aren't specified in the query

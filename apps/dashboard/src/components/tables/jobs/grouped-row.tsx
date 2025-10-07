@@ -47,13 +47,16 @@ export function GroupedJobRow({ row }: Props) {
       onClick={handleRowClick}
     >
       {row.getVisibleCells().map((cell) => {
+        const hideOnMobile = (cell.column.columnDef.meta as any)?.hideOnMobile;
+        const mobileClass = hideOnMobile ? 'hidden lg:table-cell' : '';
+
         // Add special rendering for grouped indicator
         if (cell.column.id === 'jobNumber' && job.isGrouped) {
           return (
-            <TableCell 
+            <TableCell
               key={cell.id}
               style={{ width: undefined }}
-              className=""
+              className={mobileClass}
             >
               <div className="flex items-center gap-2">
                 <Layers className="h-4 w-4 text-muted-foreground" />
@@ -67,14 +70,14 @@ export function GroupedJobRow({ row }: Props) {
             </TableCell>
           );
         }
-        
+
         // Show aggregated volume for cubic meters
         if (cell.column.id === 'cubicMetreCapacity' && job.isGrouped) {
           return (
-            <TableCell 
+            <TableCell
               key={cell.id}
               style={{ width: undefined }}
-              className=""
+              className={mobileClass}
             >
               <span className="font-medium">
                 {job.totalVolume?.toFixed(2) || '0.00'} m³
@@ -82,14 +85,14 @@ export function GroupedJobRow({ row }: Props) {
             </TableCell>
           );
         }
-        
+
         // Show aggregated amount for price
         if (cell.column.id === 'totalAmount' && job.isGrouped) {
           return (
-            <TableCell 
+            <TableCell
               key={cell.id}
               style={{ width: undefined }}
-              className=""
+              className={mobileClass}
             >
               <span className="font-medium">
                 ${job.totalAmount?.toFixed(2) || '0.00'}
@@ -98,17 +101,15 @@ export function GroupedJobRow({ row }: Props) {
           );
         }
 
+        let className = mobileClass;
+        if (cell.column.id === 'select') {
+          className = `w-[40px] min-w-[40px] md:sticky md:left-0 bg-muted/20 z-10 border-r border-border ${mobileClass}`.trim();
+        } else if (cell.column.id === 'companyName') {
+          className = `w-[200px] min-w-[200px] md:sticky md:left-[40px] bg-muted/20 z-10 border-r border-border ${mobileClass}`.trim();
+        }
+
         return (
-          <TableCell 
-            key={cell.id}
-            className={
-              cell.column.id === 'select' 
-                ? 'w-[40px] min-w-[40px] md:sticky md:left-0 bg-muted/20 z-10 border-r border-border' 
-                : cell.column.id === 'companyName'
-                ? 'w-[200px] min-w-[200px] md:sticky md:left-[40px] bg-muted/20 z-10 border-r border-border'
-                : ''
-            }
-          >
+          <TableCell key={cell.id} className={className}>
             {cell.renderValue
               ? cell.column.columnDef.cell?.(cell.getContext())
               : null}

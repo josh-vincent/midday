@@ -19,11 +19,9 @@ export class RedisCache {
     const redisUrl = process.env.REDIS_URL;
 
     if (!redisUrl) {
-      // In development without Redis, just return null
-      if (process.env.NODE_ENV !== "production") {
-        return null;
-      }
-      throw new Error("REDIS_URL environment variable is required");
+      // No Redis configured - return null for graceful degradation
+      // This is expected in Cloudflare Workers without Redis
+      return null;
     }
 
     const isProduction =

@@ -153,4 +153,184 @@ export const billingRouter = createTRPCRouter({
         );
       }
     }),
+
+  getProducts: protectedProcedure.query(async () => {
+    try {
+      const products = await api.products.list({
+        isArchived: false,
+        limit: 100,
+      });
+
+      // Filter for products with metered (usage-based) pricing
+      const meteredProducts = products.result.items.filter((product) =>
+        product.prices.some((price) => price.type === "recurring")
+      );
+
+      // Log all products for debugging
+      console.log("All products:", products.result.items.map(p => ({
+        id: p.id,
+        name: p.name,
+        prices: p.prices.map(pr => ({ type: pr.type, id: pr.id }))
+      })));
+
+      return meteredProducts.map((product) => ({
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        prices: product.prices.map((price) => ({
+          id: price.id,
+          amount: price.priceAmount,
+          currency: price.priceCurrency,
+          recurringInterval: price.recurringInterval,
+          type: price.type,
+        })),
+      }));
+    } catch (error) {
+      console.error("Failed to fetch products:", error);
+      return [];
+    }
+  }),
+
+  createCheckout: protectedProcedure
+    .input(
+      z.object({
+        productId: z.string(),
+        successUrl: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx: { teamId, user } }) => {
+      try {
+        if (!teamId) {
+          throw new Error("No team ID found");
+        }
+
+        console.log("Creating checkout with params:", {
+          productId: input.productId,
+          teamId,
+          userId: user?.id,
+        });
+
+        // Build metadata object, only including userId if it exists
+        const metadata: Record<string, string | number | boolean> = {
+          teamId: teamId,
+        };
+        if (user?.id) {
+          metadata.userId = user.id;
+        }
+
+        // Create a checkout session with the customer's external ID
+        const dashboardUrl = process.env.NEXT_PUBLIC_DASHBOARD_URL || 'http://localhost:3333';
+        const checkout = await api.checkouts.create({
+          products: [input.productId],
+          successUrl: input.successUrl || `${dashboardUrl}/settings/billing`,
+          externalCustomerId: teamId,
+          customerEmail: user?.email || undefined,
+          metadata,
+          customerMetadata: {
+            externalId: teamId,
+          },
+        });
+
+        console.log("Checkout created successfully:", checkout.id);
+
+        return {
+          url: checkout.url,
+        };
+      } catch (error) {
+        console.error("Failed to create checkout - Full error:", error);
+        console.error("Error details:", {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+        throw new Error(
+          error instanceof Error
+            ? error.message
+            : "Failed to create checkout session",
+        );
+      }
+    }),
+
+  getSubscriptions: protectedProcedure.query(async ({ ctx: { teamId } }) => {
+    try {
+      if (!teamId) {
+        console.log("No teamId provided for subscriptions");
+        return [];
+      }
+
+      console.log("Fetching customer with externalId:", teamId);
+      const customer = await api.customers.getExternal({
+        externalId: teamId,
+      });
+
+      console.log("Customer found:", customer.id);
+
+      const subscriptions = await api.subscriptions.list({
+        customerId: customer.id,
+        limit: 100,
+      });
+
+      console.log("Subscriptions found:", subscriptions.result.items.length);
+
+      return subscriptions.result.items.map((subscription) => ({
+        id: subscription.id,
+        status: subscription.status,
+        currentPeriodStart: subscription.currentPeriodStart,
+        currentPeriodEnd: subscription.currentPeriodEnd,
+        cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+        product: {
+          name: subscription.product.name,
+        },
+        price: {
+          amount: subscription.price.priceAmount,
+          currency: subscription.price.priceCurrency,
+          recurringInterval: subscription.price.recurringInterval,
+        },
+      }));
+    } catch (error) {
+      console.error("Failed to fetch subscriptions for teamId", teamId, ":", error.message || error);
+      return [];
+    }
+  }),
+
+  getCustomerPortalUrl: protectedProcedure
+    .input(z.void().optional())
+    .mutation(async ({ ctx: { teamId } }) => {
+      try {
+        if (!teamId) {
+          throw new Error("No team ID found");
+        }
+
+        const customer = await api.customers.getExternal({
+          externalId: teamId,
+        });
+
+        const session = await api.customerSessions.create({
+          customerId: customer.id,
+        });
+
+        return {
+          url: session.customerPortalUrl,
+        };
+      } catch (error) {
+        console.error("Failed to create customer portal session:", error);
+
+        // Check if it's a customer not found error
+        const errorMessage = error instanceof Error ? error.message : "";
+        if (
+          errorMessage.includes("404") ||
+          errorMessage.includes("ResourceNotFound") ||
+          errorMessage.includes("Not found")
+        ) {
+          throw new Error(
+            "No billing account found. Please make a purchase first to access the customer portal.",
+          );
+        }
+
+        throw new Error(
+          error instanceof Error
+            ? error.message
+            : "Failed to create customer portal session",
+        );
+      }
+    }),
 });

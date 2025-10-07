@@ -3,32 +3,38 @@ import postgres from "postgres";
 // import { withReplicas } from "./replicas";
 import * as schema from "./schema";
 
-// Optimized connection configuration for stateful Fly VMs (3 instances)
+// Optimized connection configuration for Cloudflare Workers and serverless
 const connectionConfig = {
-  prepare: false,
-  max: 10, // Increased connections for development
-  idle_timeout: 90, // fewer disconnects
-  max_lifetime: 0, // disable forced recycling
-  connect_timeout: 30, // Longer timeout for development
+  prepare: false, // IMPORTANT: Must be false for Cloudflare Workers
+  max: 1, // Cloudflare Workers should use minimal connections
+  idle_timeout: 0, // Don't keep idle connections
+  max_lifetime: 0, // Don't reuse connections
+  connect_timeout: 5, // 5 second connection timeout
+  fetch_types: false, // Skip fetching types for performance
+  connection: {
+    application_name: 'dirtworks_api',
+    statement_timeout: 10000, // 10 second query timeout
+  },
+  onnotice: () => {}, // Disable notices for performance
+  debug: false,
 };
 
-// Use DATABASE_URL or fallback to Supabase URL (using session pooler for correct schema handling)
-const databaseUrl =
-  process.env.DATABASE_PRIMARY_URL ||
-  process.env.DATABASE_URL ||
-  "postgresql://postgres.ulncfblvuijlgniydjju:MikeTheDogSupabase!@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres";
+const getPrimaryDb = (databaseUrl?: string) => {
+  // Determine the URL to use
+  const urlToUse =
+    databaseUrl ||
+    process.env.DATABASE_PRIMARY_URL ||
+    process.env.DATABASE_URL ||
+    "postgresql://postgres.ulncfblvuijlgniydjju:MikeTheDogSupabase!@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres";
 
-const primaryPool = postgres(databaseUrl, connectionConfig);
+  // Create a fresh connection for each request (serverless best practice)
+  const primaryPool = postgres(urlToUse, connectionConfig);
 
-// For now, use the same URL for all replicas
-const fraPool = postgres(databaseUrl, connectionConfig);
-const sjcPool = postgres(databaseUrl, connectionConfig);
-const iadPool = postgres(databaseUrl, connectionConfig);
-
-export const primaryDb = drizzle(primaryPool, {
-  schema,
-  casing: "snake_case",
-});
+  return drizzle(primaryPool, {
+    schema,
+    casing: "snake_case",
+  });
+};
 
 const getReplicaIndexForRegion = () => {
   switch (process.env.FLY_REGION) {
@@ -43,9 +49,9 @@ const getReplicaIndexForRegion = () => {
   }
 };
 
-export const connectDb = async () => {
-  // Temporarily disable replicas - use primary only
-  return primaryDb as any;
+export const connectDb = async (databaseUrl?: string) => {
+  // Use the cached connection with the provided URL
+  return getPrimaryDb(databaseUrl) as any;
 };
 
 export type Database = Awaited<ReturnType<typeof connectDb>>;

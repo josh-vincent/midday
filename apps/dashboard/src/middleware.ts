@@ -47,6 +47,7 @@ export async function middleware(request: NextRequest) {
   if (
     !session &&
     newUrl.pathname !== "/login" &&
+    newUrl.pathname !== "/logout" &&
     !newUrl.pathname.includes("/i/") &&
     !newUrl.pathname.includes("/s/") &&
     !newUrl.pathname.includes("/verify") &&
@@ -64,7 +65,7 @@ export async function middleware(request: NextRequest) {
 
   // If authenticated, proceed with other checks
   if (session) {
-    // Skip redirect checks for login page if already authenticated
+    // Skip redirect checks for login/logout pages if already authenticated
     if (newUrl.pathname === "/login") {
       // If user is already logged in and trying to access login, redirect to appropriate page
       const { data: userData } = await supabase
@@ -86,11 +87,12 @@ export async function middleware(request: NextRequest) {
       }
     }
     
-    // 2. Check if user has a team (unless they're on team-related or setup pages)
+    // 2. Check if user has a team (unless they're on team-related, setup, or logout pages)
     if (
       newUrl.pathname !== "/teams/create" &&
       newUrl.pathname !== "/teams" &&
       newUrl.pathname !== "/setup" &&
+      newUrl.pathname !== "/logout" &&
       !newUrl.pathname.startsWith("/teams/invite/")
     ) {
       // Get user data to check team membership

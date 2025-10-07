@@ -35,27 +35,34 @@ export function useNotifications() {
   const queryClient = useQueryClient();
   const { data: user } = useUserQuery();
 
-  const {
-    data: activitiesData,
-    isLoading,
-    error,
-  } = useQuery(
-    trpc.notifications.list.queryOptions({
-      maxPriority: 3, // Only fetch notifications (priority <= 3)
-      pageSize: 20,
-      status: ["unread", "read"], // Exclude archived notifications from query
-    }),
-  );
+  // TEMP: Notifications backend not yet implemented - return empty data
+  const activitiesData = { data: [], meta: { cursor: null, hasPreviousPage: false, hasNextPage: false } };
+  const archivedActivitiesData = { data: [], meta: { cursor: null, hasPreviousPage: false, hasNextPage: false } };
+  const isLoading = false;
+  const archivedIsLoading = false;
+  const error = null;
 
-  // Separate query for archived notifications
-  const { data: archivedActivitiesData, isLoading: archivedIsLoading } =
-    useQuery(
-      trpc.notifications.list.queryOptions({
-        maxPriority: 3,
-        pageSize: 20,
-        status: "archived", // Only archived notifications
-      }),
-    );
+  // const {
+  //   data: activitiesData,
+  //   isLoading,
+  //   error,
+  // } = useQuery(
+  //   trpc.notifications.list.queryOptions({
+  //     maxPriority: 3, // Only fetch notifications (priority <= 3)
+  //     pageSize: 20,
+  //     status: ["unread", "read"], // Exclude archived notifications from query
+  //   }),
+  // );
+
+  // // Separate query for archived notifications
+  // const { data: archivedActivitiesData, isLoading: archivedIsLoading } =
+  //   useQuery(
+  //     trpc.notifications.list.queryOptions({
+  //       maxPriority: 3,
+  //       pageSize: 20,
+  //       status: "archived", // Only archived notifications
+  //     }),
+  //   );
 
   // Real-time subscription for activities filtered by user_id
   useRealtime({

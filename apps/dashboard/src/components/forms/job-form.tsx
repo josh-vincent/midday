@@ -3,6 +3,7 @@
 import { useCustomerParams } from "@/hooks/use-customer-params";
 import { useJobParams } from "@/hooks/use-job-params";
 import { useTRPC } from "@/trpc/client";
+import { getLocalDateString } from "@/utils/date";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@midday/ui/button";
 import { Calendar } from "@midday/ui/calendar";
@@ -141,13 +142,23 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
 
   const createJobMutation = useMutation(
     trpc.job.create.mutationOptions({
-      onSuccess: (data) => {
-        // Invalidate job queries to refresh table
+      onSuccess: async (data) => {
+        // Immediately refetch the gatekeeper query for today to show the new entry
+        const today = getLocalDateString();
+        await queryClient.refetchQueries({
+          queryKey: [
+            ['job', 'getJobsGroupedByTruckForDate'],
+            { input: { date: today }, type: 'query' }
+          ],
+          exact: false,
+        });
+
+        // Invalidate all other job queries to ensure they refresh when accessed
         queryClient.invalidateQueries({
           predicate: (query) => {
             const queryKey = query.queryKey;
-            return queryKey[0] === 'trpc' && 
-                   queryKey[1] && 
+            return queryKey[0] === 'trpc' &&
+                   queryKey[1] &&
                    queryKey[1].toString().startsWith('job.');
           },
         });
@@ -156,6 +167,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
           title: "Job created",
           description: "The job has been created successfully.",
         });
+
         setParams(null);
         onSuccess?.();
       },
@@ -172,13 +184,23 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
 
   const updateJobMutation = useMutation(
     trpc.job.update.mutationOptions({
-      onSuccess: (data) => {
-        // Invalidate job queries to refresh table and remove warning icons
+      onSuccess: async (data) => {
+        // Immediately refetch the gatekeeper query for today
+        const today = getLocalDateString();
+        await queryClient.refetchQueries({
+          queryKey: [
+            ['job', 'getJobsGroupedByTruckForDate'],
+            { input: { date: today }, type: 'query' }
+          ],
+          exact: false,
+        });
+
+        // Invalidate all job queries to refresh table and remove warning icons
         queryClient.invalidateQueries({
           predicate: (query) => {
             const queryKey = query.queryKey;
-            return queryKey[0] === 'trpc' && 
-                   queryKey[1] && 
+            return queryKey[0] === 'trpc' &&
+                   queryKey[1] &&
                    queryKey[1].toString().startsWith('job.');
           },
         });
@@ -187,6 +209,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
           title: "Job updated",
           description: "The job has been updated successfully.",
         });
+
         setParams(null);
         onSuccess?.();
       },

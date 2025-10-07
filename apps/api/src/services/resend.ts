@@ -3,9 +3,23 @@ import { Resend } from "resend";
 // Lazy initialization to avoid errors during build/deploy
 let _resend: Resend | null = null;
 
-export const getResend = () => {
+// Helper to get env var that works in both Node.js and Cloudflare Workers
+function getEnv(key: string): string | undefined {
+  // @ts-ignore - Cloudflare Workers env
+  if (typeof process === 'undefined' || !process.env) {
+    return undefined;
+  }
+  return process.env[key];
+}
+
+export const getResend = (apiKey?: string) => {
+  const key = apiKey || getEnv('RESEND_API_KEY');
+  if (!key) {
+    throw new Error('RESEND_API_KEY is not set');
+  }
+
   if (!_resend) {
-    _resend = new Resend(process.env.RESEND_API_KEY!);
+    _resend = new Resend(key);
   }
   return _resend;
 };

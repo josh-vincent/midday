@@ -81,11 +81,11 @@ export class OutlookProvider {
           saveToSentItems: true,
         });
 
-      logger.info("Email sent via Outlook");
-      
+      console.log("[Outlook Provider] Email sent");
+
       return { messageId: response.id || "sent" };
     } catch (error: any) {
-      logger.error("Failed to send email via Outlook:", error);
+      console.error("[Outlook Provider] Failed to send email:", error);
       throw new Error(`Failed to send email: ${error.message}`);
     }
   }
@@ -99,6 +99,7 @@ export class OutlookProvider {
         folders: 0,
       },
       errors: [],
+      emails: [], // Initialize emails array
     };
 
     try {
@@ -119,7 +120,7 @@ export class OutlookProvider {
 
       const queryParams: any = {
         $top: Math.min(options.maxResults || 100, 999),
-        $select: "id,subject,from,to,receivedDateTime,bodyPreview,hasAttachments,conversationId",
+        $select: "id,subject,from,toRecipients,receivedDateTime,bodyPreview,hasAttachments,conversationId,isRead",
         $orderby: "receivedDateTime desc",
       };
 
@@ -127,17 +128,24 @@ export class OutlookProvider {
         queryParams.$filter = filters.join(" and ");
       }
 
+      console.log("[Outlook Provider] Query params:", queryParams);
+
       let messages: PageCollection = await this.client
         .api(endpoint)
         .query(queryParams)
         .get();
+
+      console.log("[Outlook Provider] API response:", {
+        messageCount: messages.value?.length || 0,
+        hasNextLink: !!messages["@odata.nextLink"],
+      });
 
       while (messages.value.length > 0) {
         for (const message of messages.value) {
           await this.syncMessage(message, options, result);
         }
 
-        if (!messages["@odata.nextLink"] || 
+        if (!messages["@odata.nextLink"] ||
             (options.maxResults && result.synced.messages >= options.maxResults)) {
           break;
         }
@@ -153,7 +161,7 @@ export class OutlookProvider {
 
       result.nextSyncToken = messages["@odata.deltaLink"];
     } catch (error: any) {
-      logger.error("Outlook sync failed:", error);
+      console.error("[Outlook Provider] Sync failed:", error);
       result.success = false;
       result.errors.push({ error: error.message });
     }
@@ -171,7 +179,7 @@ export class OutlookProvider {
 
       return this.parseOutlookMessage(message);
     } catch (error: any) {
-      logger.error(`Failed to get email ${messageId}:`, error);
+      console.error(`[Outlook Provider] Failed to get email ${messageId}:`, error);
       return null;
     }
   }
@@ -239,7 +247,7 @@ export class OutlookProvider {
         }
       }
     } catch (error: any) {
-      logger.error("Failed to search emails:", error);
+      console.error("Failed to search emails:", error);
       throw new Error(`Failed to search emails: ${error.message}`);
     }
 
@@ -268,7 +276,7 @@ export class OutlookProvider {
 
       return folders;
     } catch (error: any) {
-      logger.error("Failed to get Outlook folders:", error);
+      console.error("Failed to get Outlook folders:", error);
       throw new Error(`Failed to get folders: ${error.message}`);
     }
   }
@@ -312,7 +320,7 @@ export class OutlookProvider {
 
       return Array.from(threadsMap.values());
     } catch (error: any) {
-      logger.error("Failed to get Outlook threads:", error);
+      console.error("Failed to get Outlook threads:", error);
       throw new Error(`Failed to get threads: ${error.message}`);
     }
   }
@@ -372,7 +380,7 @@ export class OutlookProvider {
 
           case "addLabel":
           case "removeLabel":
-            logger.warn("Labels are not supported in Outlook, using categories instead");
+            console.warn("Labels are not supported in Outlook, using categories instead");
             break;
         }
       }
@@ -383,9 +391,9 @@ export class OutlookProvider {
           .post({ requests: batchRequests });
       }
 
-      logger.info(`Batch operation ${operation.operation} completed for ${operation.messageIds.length} messages`);
+      console.log(`Batch operation ${operation.operation} completed for ${operation.messageIds.length} messages`);
     } catch (error: any) {
-      logger.error(`Batch operation ${operation.operation} failed:`, error);
+      console.error(`Batch operation ${operation.operation} failed:`, error);
       throw new Error(`Batch operation failed: ${error.message}`);
     }
   }
@@ -407,7 +415,7 @@ export class OutlookProvider {
         unit: "bytes",
       };
     } catch (error: any) {
-      logger.error("Failed to get Outlook quota:", error);
+      console.error("Failed to get Outlook quota:", error);
       throw new Error(`Failed to get quota: ${error.message}`);
     }
   }
@@ -426,14 +434,14 @@ export class OutlookProvider {
           clientState: `team_${options.teamId}_user_${options.userId}`,
         });
 
-      logger.info(`Outlook subscription created: ${subscription.id}`);
+      console.log(`Outlook subscription created: ${subscription.id}`);
 
       return {
         subscriptionId: subscription.id,
         expiration: new Date(subscription.expirationDateTime).getTime(),
       };
     } catch (error: any) {
-      logger.error("Failed to set up Outlook watch:", error);
+      console.error("Failed to set up Outlook watch:", error);
       throw new Error(`Failed to watch emails: ${error.message}`);
     }
   }
@@ -444,9 +452,9 @@ export class OutlookProvider {
         .api(`/subscriptions/${subscriptionId}`)
         .delete();
       
-      logger.info(`Outlook subscription deleted: ${subscriptionId}`);
+      console.log(`Outlook subscription deleted: ${subscriptionId}`);
     } catch (error: any) {
-      logger.error("Failed to stop Outlook watch:", error);
+      console.error("Failed to stop Outlook watch:", error);
       throw new Error(`Failed to stop watch: ${error.message}`);
     }
   }
@@ -457,20 +465,28 @@ export class OutlookProvider {
     result: EmailSyncResult
   ): Promise<void> {
     try {
+      // Parse the message into our EmailMessage format
+      const parsedMessage = this.parseOutlookMessage(message);
+
       result.synced.messages++;
-      
+
+      // Add the email to the result array
+      if (result.emails) {
+        result.emails.push(parsedMessage);
+      }
+
       if (message.hasAttachments && options.syncAttachments) {
         const fullMessage = await this.client
           .api(`/me/messages/${message.id}`)
           .expand("attachments")
           .get();
-        
+
         if (fullMessage.attachments) {
           result.synced.attachments += fullMessage.attachments.length;
         }
       }
     } catch (error: any) {
-      logger.error(`Failed to sync message ${message.id}:`, error);
+      console.error(`[Outlook Provider] Failed to sync message ${message.id}:`, error);
       result.errors.push({
         messageId: message.id,
         error: error.message,
@@ -486,7 +502,7 @@ export class OutlookProvider {
           .get();
         result.synced.folders++;
       } catch (error: any) {
-        logger.error(`Failed to sync folder ${folderId}:`, error);
+        console.error(`Failed to sync folder ${folderId}:`, error);
         result.errors.push({
           error: `Failed to sync folder ${folderId}: ${error.message}`,
         });
@@ -559,13 +575,30 @@ export class OutlookProvider {
   }
 
   private parseOutlookMessage(message: any): EmailMessage {
+    const attachments = message.attachments
+      ? message.attachments.map((att: any) => ({
+          filename: att.name,
+          contentType: att.contentType,
+          size: att.size,
+          contentId: att.id,
+        }))
+      : [];
+
     const email: EmailMessage = {
       id: message.id,
+      threadId: message.conversationId,
       from: message.from?.emailAddress?.address || "",
       to: message.toRecipients?.map((r: any) => r.emailAddress.address).join(", ") || "",
       subject: message.subject || "",
       text: message.body?.contentType === "Text" ? message.body.content : undefined,
       html: message.body?.contentType === "HTML" ? message.body.content : undefined,
+      attachments,
+      receivedAt: message.receivedDateTime ? new Date(message.receivedDateTime) : undefined,
+      isRead: message.isRead ?? false,
+      hasAttachments: message.hasAttachments || false,
+      bodyPreview: message.bodyPreview,
+      labels: [], // Outlook uses categories instead of labels
+      folder: message.parentFolderId,
       metadata: {
         conversationId: message.conversationId,
         importance: message.importance,
@@ -580,15 +613,6 @@ export class OutlookProvider {
 
     if (message.bccRecipients?.length > 0) {
       email.bcc = message.bccRecipients.map((r: any) => r.emailAddress.address).join(", ");
-    }
-
-    if (message.attachments) {
-      email.attachments = message.attachments.map((att: any) => ({
-        filename: att.name,
-        contentType: att.contentType,
-        size: att.size,
-        contentId: att.id,
-      }));
     }
 
     return email;

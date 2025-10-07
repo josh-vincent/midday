@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { Job, JobsOptions, Queue, Worker, QueueEvents } from "bullmq";
 
 // Job Types
-export type JobType = 
+export type JobType =
   | "webhook.process"
   | "webhook.retry"
   | "email.send"
@@ -14,7 +14,9 @@ export type JobType =
   | "subscription.cancel"
   | "payment.process"
   | "data.sync"
-  | "report.generate";
+  | "report.generate"
+  | "accounting.sync"
+  | "accounting.token.refresh";
 
 // Base job data interface
 export interface BaseJobData {
@@ -86,13 +88,36 @@ export interface PaymentJobData extends BaseJobData {
   metadata?: Record<string, any>;
 }
 
+// Accounting job data
+export interface AccountingJobData extends BaseJobData {
+  type: "accounting.sync" | "accounting.token.refresh";
+  teamId: string;
+  userId: string;
+  provider: "quickbooks" | "xero" | "sage" | "wave" | "freshbooks";
+  connectionId?: string;
+  entities?: Array<"customers" | "invoices" | "payments" | "accounts" | "items" | "vendors" | "bills">;
+  modifiedSince?: Date;
+  maxResults?: number;
+  credentials?: {
+    clientId: string;
+    clientSecret: string;
+    accessToken?: string;
+    refreshToken?: string;
+    realmId?: string; // QuickBooks
+    tenantId?: string; // Xero
+    expiresAt?: number;
+    environment?: string;
+  };
+}
+
 // Union type for all job data
-export type JobData = 
+export type JobData =
   | WebhookJobData
   | EmailJobData
   | StripeJobData
   | SubscriptionJobData
-  | PaymentJobData;
+  | PaymentJobData
+  | AccountingJobData;
 
 // Queue configuration
 export interface QueueConfig {

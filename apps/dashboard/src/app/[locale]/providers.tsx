@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthProvider } from "@/components/auth-provider";
 import { DesktopProvider } from "@/components/desktop-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProviderClient } from "@/locales/client";
@@ -13,20 +14,22 @@ type ProviderProps = {
 
 export function Providers({ locale, children }: ProviderProps) {
   return (
-    <TRPCReactProvider>
-      <I18nProviderClient locale={locale}>
-        {/* Disabled - desktop 
-        // <DesktopProvider /> */}
+    <AuthProvider>
+      <TRPCReactProvider>
+        <I18nProviderClient locale={locale}>
+          {/* Disabled - desktop
+          // <DesktopProvider /> */}
 
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
-      </I18nProviderClient>
-    </TRPCReactProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+        </I18nProviderClient>
+      </TRPCReactProvider>
+    </AuthProvider>
   );
 }

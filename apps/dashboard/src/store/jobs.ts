@@ -85,7 +85,6 @@ export const useJobsStore = create<JobsState>((set) => ({
     jobDate: true,
     companyName: true,
     addressSite: true,
-    status: true,
     rego: true,
     pricePerUnit: true,
     cubicMetreCapacity: true,

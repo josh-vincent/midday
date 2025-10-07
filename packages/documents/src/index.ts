@@ -10,6 +10,9 @@ export { DocumentProcessor } from "./processors/document-processor";
 // Export document manager
 export { DocumentManager } from "./document-manager";
 
+// Export utils
+export * from "./utils";
+
 // Legacy export for compatibility
 export function getAllowedAttachments() {
   return ["pdf", "jpg", "jpeg", "png", "gif"];

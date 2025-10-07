@@ -45,26 +45,53 @@ export function InviteForm({ onSuccess, skippable = true }: InviteFormProps) {
           queryKey: trpc.team.teamInvites.queryKey(),
         });
 
+        // Also invalidate team members list since we may have added users directly
+        queryClient.invalidateQueries({
+          predicate: (query) => {
+            const queryKey = query.queryKey;
+            return queryKey[0] === 'trpc' &&
+                   queryKey[1] &&
+                   queryKey[1].toString().startsWith('team.');
+          },
+        });
+
         // Show appropriate feedback based on results
-        if (data.sent > 0 && data.skipped === 0) {
+        const totalProcessed = (data.sent || 0) + (data.addedDirectly || 0);
+        const addedDirectly = data.addedDirectly || 0;
+        const sent = data.sent || 0;
+        const skipped = data.skipped || 0;
+
+        if (totalProcessed > 0 && skipped === 0) {
+          const parts = [];
+          if (addedDirectly > 0) parts.push(`${addedDirectly} added directly`);
+          if (sent > 0) parts.push(`${sent} invite${sent > 1 ? "s" : ""} sent`);
+
           toast({
-            title: "Invites sent",
-            description: `${data.sent} invite${data.sent > 1 ? "s" : ""} sent successfully`,
+            title: "Team members invited",
+            description: parts.join(", "),
             variant: "success",
           });
-        } else if (data.sent > 0 && data.skipped > 0) {
+        } else if (totalProcessed > 0 && skipped > 0) {
           toast({
-            title: "Invites partially sent",
-            description: `${data.sent} invite${data.sent > 1 ? "s" : ""} sent, ${data.skipped} skipped (already members or invited)`,
+            title: "Invites partially processed",
+            description: `${totalProcessed} processed, ${skipped} skipped (already members or invited)`,
           });
-        } else if (data.sent === 0 && data.skipped > 0) {
+        } else if (totalProcessed === 0 && skipped > 0) {
           toast({
             title: "No invites sent",
-            description: `All ${data.skipped} invite${data.skipped > 1 ? "s" : ""} were skipped (already members or invited)`,
+            description: `All ${skipped} invite${skipped > 1 ? "s" : ""} were skipped (already members or invited)`,
           });
         }
 
         onSuccess?.();
+      },
+      onError: (error) => {
+        console.error("Invite error:", error);
+        toast({
+          title: "Failed to send invites",
+          description: error.message,
+          variant: "destructive",
+        });
       },
     }),
   );

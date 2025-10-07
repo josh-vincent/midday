@@ -16,6 +16,7 @@ export * from "./customers";
 export * from "./activities";
 export * from "./notification-settings";
 export * from "./tags";
+export * from "./accounting";
 
 // Use minimal stubs for complex features that require schema changes
 // Keep real implementations only for core business features that have schema support
@@ -103,6 +104,192 @@ export async function bulkDeleteTransactions(db: any, params: any) {
   return null;
 }
 
+export async function getTransactionsAmountFullRangeData(db: any, teamId: string) {
+  return { min: 0, max: 0 };
+}
+
+export async function getSimilarTransactions(db: any, params: any) {
+  return [];
+}
+
+export async function searchTransactionMatch(db: any, params: any) {
+  return [];
+}
+
+// Bank account stubs (bank_accounts table missing from schema)
+export async function getBankAccounts(db: any, params: any) {
+  return [];
+}
+
+export async function createBankAccount(db: any, params: any) {
+  return null;
+}
+
+export async function updateBankAccount(db: any, params: any) {
+  return null;
+}
+
+export async function deleteBankAccount(db: any, params: any) {
+  return null;
+}
+
+export async function getBankAccountsBalances(db: any, teamId: string) {
+  return [];
+}
+
+export async function getBankAccountsCurrencies(db: any, teamId: string) {
+  return [];
+}
+
+// Inbox stubs (inbox table missing from schema)
+export async function getInbox(db: any, params: any) {
+  return [];
+}
+
+export async function getInboxById(db: any, params: any) {
+  return null;
+}
+
+export async function createInbox(db: any, params: any) {
+  return null;
+}
+
+export async function updateInbox(db: any, params: any) {
+  return null;
+}
+
+export async function deleteInbox(db: any, params: any) {
+  return null;
+}
+
+export async function deleteInboxEmbedding(db: any, params: any) {
+  return null;
+}
+
+export async function getInboxSearch(db: any, params: any) {
+  return [];
+}
+
+export async function getInboxByStatus(db: any, params: any) {
+  return [];
+}
+
+export async function matchTransaction(db: any, params: any) {
+  return null;
+}
+
+export async function unmatchTransaction(db: any, params: any) {
+  return null;
+}
+
+export async function confirmSuggestedMatch(db: any, params: any) {
+  return null;
+}
+
+export async function declineSuggestedMatch(db: any, params: any) {
+  return null;
+}
+
+// Transaction attachments stubs
+export async function createAttachments(db: any, params: any) {
+  return [];
+}
+
+export async function deleteAttachment(db: any, params: any) {
+  return null;
+}
+
+// Transaction categories stubs
+export async function getCategories(db: any, params: any) {
+  return [];
+}
+
+export async function getCategoryById(db: any, params: any) {
+  return null;
+}
+
+export async function createTransactionCategory(db: any, params: any) {
+  return null;
+}
+
+export async function updateTransactionCategory(db: any, params: any) {
+  return null;
+}
+
+export async function deleteTransactionCategory(db: any, params: any) {
+  return null;
+}
+
+// Transaction tags stubs
+export async function createTransactionTag(db: any, params: any) {
+  return null;
+}
+
+export async function deleteTransactionTag(db: any, params: any) {
+  return null;
+}
+
+// Tracker stubs
+export async function getTrackerProjects(db: any, params: any) {
+  return [];
+}
+
+export async function getTrackerProjectById(db: any, params: any) {
+  return null;
+}
+
+export async function upsertTrackerProject(db: any, params: any) {
+  return null;
+}
+
+export async function deleteTrackerProject(db: any, params: any) {
+  return null;
+}
+
+export async function getTrackerEntries(db: any, params: any) {
+  return [];
+}
+
+export async function createTrackerEntry(db: any, params: any) {
+  return null;
+}
+
+export async function updateTrackerEntry(db: any, params: any) {
+  return null;
+}
+
+export async function deleteTrackerEntry(db: any, params: any) {
+  return null;
+}
+
+export async function getCurrentTimer(db: any, params: any) {
+  return null;
+}
+
+export async function getTimerStatus(db: any, params: any) {
+  return null;
+}
+
+export async function getTrackerRecordsByDate(db: any, params: any) {
+  return [];
+}
+
+export async function getTrackerRecordsByRange(db: any, params: any) {
+  return [];
+}
+
+export async function startTimer(db: any, params: any) {
+  return null;
+}
+
+export async function stopTimer(db: any, params: any) {
+  return null;
+}
+
+export async function upsertTrackerEntries(db: any, params: any) {
+  return [];
+}
+
 // Reports/metrics stubs
 export async function getReports(db: any, params: any) {
   return [];
@@ -137,6 +324,10 @@ export async function getProfitAndLoss(db: any, params: any) {
 }
 
 export async function getSpending(db: any, params: any) {
+  return {};
+}
+
+export async function getTaxSummary(db: any, params: any) {
   return {};
 }
 
@@ -356,6 +547,13 @@ export async function globalSearchQuery(
   );
 
   return result;
+}
+
+export async function globalSemanticSearchQuery(
+  db: any,
+  params: GlobalSemanticSearchParams,
+) {
+  return [];
 }
 
 // API key stubs (api_keys table missing from schema)

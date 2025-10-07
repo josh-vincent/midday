@@ -24,3 +24,16 @@ export async function createClient(accessToken?: string, supabaseUrl?: string, s
     },
   );
 }
+
+// Create admin client without accessToken for admin operations
+export async function createAdminClient(supabaseUrl?: string, supabaseServiceKey?: string) {
+  const url = supabaseUrl || getEnv('SUPABASE_URL');
+  const serviceKey = supabaseServiceKey || getEnv('SUPABASE_SERVICE_KEY');
+
+  return createSupabaseClient<Database>(url, serviceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}

@@ -53,23 +53,29 @@ export function TableHeader({ table, tableScroll, jobs }: Props) {
             const isSorted = currentColumn === columnId;
             const sortDirection = isSorted ? currentDirection : false;
             
+            const hideOnMobile = (header.column.columnDef.meta as any)?.hideOnMobile;
+            const mobileClass = hideOnMobile ? 'hidden lg:table-cell' : '';
+
+            let headerClassName = '';
+            if (header.column.id === 'select') {
+              headerClassName = `w-[40px] min-w-[40px] md:sticky md:left-0 bg-background z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background after:z-[-1] ${mobileClass}`.trim();
+            } else if (header.column.id === 'companyName') {
+              headerClassName = `w-[200px] min-w-[200px] md:sticky md:left-[40px] bg-background z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background after:z-[-1] ${mobileClass}`.trim();
+            } else {
+              headerClassName = mobileClass;
+            }
+
             return (
-              <TableHead 
+              <TableHead
                 key={header.id}
                 style={{
-                  width: header.column.id === 'select' 
-                    ? '40px' 
+                  width: header.column.id === 'select'
+                    ? '40px'
                     : header.column.id === 'companyName'
                     ? '200px'
                     : tableScroll?.columnWidths?.[header?.column?.id],
                 }}
-                className={
-                  header.column.id === 'select' 
-                    ? 'w-[40px] min-w-[40px] md:sticky md:left-0 bg-background z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background after:z-[-1]' 
-                    : header.column.id === 'companyName'
-                    ? 'w-[200px] min-w-[200px] md:sticky md:left-[40px] bg-background z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background after:z-[-1]'
-                    : ''
-                }
+                className={headerClassName}
               >
                 {header.isPlaceholder ? null : (
                   header.column.id === 'select' ? (

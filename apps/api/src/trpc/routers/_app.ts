@@ -1,6 +1,7 @@
 import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 import { createTRPCRouter } from "../init";
 // import { apiKeysRouter } from "./api-keys"; // Not needed for invoicing MVP
+import { billingRouter } from "./billing";
 import { customersRouter } from "./customers";
 import { invoiceRouter } from "./invoice";
 import { invoiceProductsRouter } from "./invoice-products";
@@ -14,6 +15,7 @@ import { userRouter } from "./user";
 
 export const appRouter = createTRPCRouter({
   // apiKeys: apiKeysRouter, // Not needed for invoicing MVP
+  billing: billingRouter,
   customers: customersRouter,
   invoice: invoiceRouter,
   invoiceProducts: invoiceProductsRouter,

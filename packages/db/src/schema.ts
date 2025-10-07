@@ -761,6 +761,13 @@ export const notificationSettings = pgTable(
   ]
 );
 
+// Activity status enum for notifications
+export const activityStatusEnum = pgEnum("activity_status", [
+  "unread",
+  "read",
+  "archived"
+]);
+
 export const activities = pgTable(
   "activities",
   {
@@ -775,12 +782,17 @@ export const activities = pgTable(
     metadata: jsonb().default({}),
     ipAddress: varchar("ip_address", { length: 45 }),
     userAgent: text("user_agent"),
+    // Notification fields
+    status: activityStatusEnum().default("unread").notNull(),
+    priority: integer().default(5).notNull(), // 1-3 are notifications, 4-5 are activity logs
     createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
   },
   (table) => [
     index("activities_team_idx").on(table.teamId),
     index("activities_entity_idx").on(table.entity, table.entityId),
     index("activities_created_idx").on(table.createdAt),
+    index("activities_status_priority_idx").on(table.status, table.priority),
+    index("activities_user_status_idx").on(table.userId, table.status),
   ]
 );
 
@@ -1527,4 +1539,150 @@ export const stripeInvoicesRelations = relations(stripeInvoices, ({ one }) => ({
   }),
 }));
 
+// ============================================
+// OAuth Integration Tables (Email + Accounting)
+// ============================================
+
+export const oauthProviderEnum = pgEnum("oauth_provider", [
+  "gmail",
+  "outlook",
+  "quickbooks",
+  "xero",
+  "sage",
+  "wave",
+  "freshbooks",
+]);
+
+export const oauthConnections = pgTable(
+  "oauth_connections",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    teamId: uuid("team_id")
+      .references(() => teams.id, { onDelete: "cascade" })
+      .notNull(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    provider: oauthProviderEnum().notNull(),
+    // Email-specific fields (nullable)
+    emailAddress: varchar("email_address", { length: 255 }),
+    // Accounting-specific fields (nullable)
+    companyName: varchar("company_name", { length: 255 }),
+    realmId: varchar("realm_id", { length: 255 }), // QuickBooks company ID
+    tenantId: varchar("tenant_id", { length: 255 }), // Xero organization ID
+    webhookId: varchar("webhook_id", { length: 255 }), // Provider webhook subscription ID
+    webhookVerifier: varchar("webhook_verifier", { length: 255 }), // For webhook verification
+    environment: varchar({ length: 50 }).default("production"), // sandbox or production
+    metadata: jsonb().default({}), // Additional provider-specific data
+    // Common OAuth fields
+    credentials: jsonb().notNull(), // Encrypted OAuth tokens (accessToken, refreshToken, etc)
+    expiresAt: timestamp("expires_at", { mode: "string" }), // Token expiration time
+    syncEnabled: boolean("sync_enabled").default(false).notNull(),
+    lastSyncAt: timestamp("last_sync_at", { mode: "string" }),
+    syncToken: varchar("sync_token", { length: 255 }), // For incremental sync
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("oauth_connections_team_idx").on(table.teamId),
+    index("oauth_connections_user_idx").on(table.userId),
+    index("oauth_connections_provider_idx").on(table.provider),
+    index("oauth_connections_expires_idx").on(table.expiresAt),
+    unique("oauth_connections_team_provider").on(table.teamId, table.provider),
+  ]
+);
+
+export const syncedEmails = pgTable(
+  "synced_emails",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    connectionId: uuid("connection_id")
+      .references(() => oauthConnections.id, { onDelete: "cascade" })
+      .notNull(),
+    messageId: varchar("message_id", { length: 255 }).notNull(),
+    threadId: varchar("thread_id", { length: 255 }),
+    subject: text(),
+    fromEmail: varchar("from_email", { length: 255 }),
+    toEmails: jsonb("to_emails").default([]).notNull(),
+    receivedAt: timestamp("received_at", { mode: "string" }),
+    hasAttachments: boolean("has_attachments").default(false).notNull(),
+    bodyPreview: text("body_preview"),
+    labels: jsonb().default([]).notNull(),
+    folder: varchar({ length: 100 }),
+    isRead: boolean("is_read").default(false).notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("synced_emails_connection_idx").on(table.connectionId),
+    index("synced_emails_message_idx").on(table.messageId),
+    index("synced_emails_received_idx").on(table.receivedAt),
+    index("synced_emails_has_attachments_idx").on(table.hasAttachments),
+    unique("synced_emails_connection_message").on(table.connectionId, table.messageId),
+  ]
+);
+
+// OAuth Connections Relations
+export const oauthConnectionsRelations = relations(oauthConnections, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [oauthConnections.teamId],
+    references: [teams.id],
+  }),
+  user: one(users, {
+    fields: [oauthConnections.userId],
+    references: [users.id],
+  }),
+  syncedEmails: many(syncedEmails),
+  syncedAccountingEntities: many(syncedAccountingEntities),
+}));
+
+export const syncedEmailsRelations = relations(syncedEmails, ({ one }) => ({
+  connection: one(oauthConnections, {
+    fields: [syncedEmails.connectionId],
+    references: [oauthConnections.id],
+  }),
+}));
+
+
+// Track synced accounting entities
+export const syncedAccountingEntities = pgTable(
+  "synced_accounting_entities",
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    connectionId: uuid("connection_id")
+      .references(() => oauthConnections.id, { onDelete: "cascade" })
+      .notNull(),
+    entityType: varchar("entity_type", { length: 50 }).notNull(), // customer, invoice, payment, etc
+    externalId: varchar("external_id", { length: 255 }).notNull(), // Provider's ID
+    internalId: uuid("internal_id"), // Our database ID
+    data: jsonb().notNull(), // Cached entity data
+    lastSyncedAt: timestamp("last_synced_at", { mode: "string" }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("synced_accounting_entities_connection_idx").on(table.connectionId),
+    index("synced_accounting_entities_type_idx").on(table.entityType),
+    index("synced_accounting_entities_external_idx").on(table.externalId),
+    index("synced_accounting_entities_internal_idx").on(table.internalId),
+    unique("synced_accounting_entities_connection_external").on(
+      table.connectionId,
+      table.entityType,
+      table.externalId
+    ),
+  ]
+);
+
+export const syncedAccountingEntitiesRelations = relations(syncedAccountingEntities, ({ one }) => ({
+  connection: one(oauthConnections, {
+    fields: [syncedAccountingEntities.connectionId],
+    references: [oauthConnections.id],
+  }),
+}));
+
 export * from "./schema/pricing";
+
+// Inbox Schema
+export * from "./inbox-schema";
+
+// Transactions Schema
+export * from "./transactions-schema";

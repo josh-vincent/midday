@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@midday/ui/card";
 import { Input } from "@midday/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@midday/ui/select";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState, useMemo, useDeferredValue } from "react";
+import { useState, useMemo, useDeferredValue, useCallback, memo } from "react";
 import { useToast } from "@midday/ui/use-toast";
 import { useTRPC } from "@/trpc/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -41,6 +41,58 @@ const MATERIAL_OPTIONS = [
   { value: "Other", label: "Other" },
 ];
 
+// Memoized entry component to prevent unnecessary re-renders
+const JobEntry = memo(({
+  entry,
+  quickAddMaterialType,
+  isPending,
+  onAddLoadClick
+}: {
+  entry: any;
+  quickAddMaterialType: string;
+  isPending: boolean;
+  onAddLoadClick: (entry: any, materialType: string) => void;
+}) => {
+  const materialType = quickAddMaterialType || entry.latestJob.materialType || "";
+  const isDisabled = isPending || !materialType;
+
+  return (
+    <div className="p-4 border rounded-lg bg-card hover:bg-accent/5 transition-colors">
+      <div className="flex-1 ">
+        <div className="grid min-h-[100px]">
+          <div className="flex items-baseline gap-2 mb-2">
+            <div className="text-3xl font-bold">{entry.rego}</div>
+            <div className="text-3xl font-bold text-muted-foreground">-</div>
+            <div className="text-3xl font-bold text-primary">#{entry.totalLoads}</div>
+          </div>
+          <div className="text-lg text-muted-foreground mb-2">
+            {entry.companyName}
+          </div>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            {entry.latestJob.materialType && (
+              <span>
+                Last: {entry.latestJob.materialType}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <Button
+          onClick={() => onAddLoadClick(entry, materialType)}
+          disabled={isDisabled}
+          size="sm"
+          variant="default"
+          className="flex items-center gap-2 w-full"
+        >
+          <Plus className="h-4 w-4" />
+          Add Load
+        </Button>
+      </div>
+    </div>
+  );
+});
+
+JobEntry.displayName = "JobEntry";
 
 export function GatekeeperForm() {
   const { toast } = useToast();
@@ -73,22 +125,32 @@ export function GatekeeperForm() {
 
   const addLoadMutation = useMutation(
     trpc.job.addLoadWithDirtType.mutationOptions({
-      onSuccess: () => {
-        toast({
-          title: "Success",
-          description: "Additional load added successfully",
-        });
-        
+      onSuccess: async () => {
         setQuickAddMaterialType(""); // Clear material type selection
-        
-        // Invalidate queries
+
+        // Refetch the specific query for today's grouped jobs
+        await queryClient.refetchQueries({
+          queryKey: [
+            ['job', 'getJobsGroupedByTruckForDate'],
+            { input: { date: today }, type: 'query' }
+          ],
+          exact: false,
+        });
+
+        // Also invalidate all other job queries
         queryClient.invalidateQueries({
           predicate: (query) => {
             const queryKey = query.queryKey;
-            return queryKey[0] === 'trpc' && 
-                   queryKey[1] && 
+            return queryKey[0] === 'trpc' &&
+                   queryKey[1] &&
                    queryKey[1].toString().startsWith('job.');
           },
+        });
+
+        // Show success toast after refetch completes
+        toast({
+          title: "Success",
+          description: "Additional load added successfully",
         });
       },
       onError: (error) => {
@@ -101,7 +163,7 @@ export function GatekeeperForm() {
     })
   );
 
-  const handleAddLoadClick = (entry: any, materialType: string) => {
+  const handleAddLoadClick = useCallback((entry: any, materialType: string) => {
     if (!materialType) {
       toast({
         title: "Error",
@@ -118,21 +180,21 @@ export function GatekeeperForm() {
       newLoadNumber: entry.maxLoadNumber + 1,
     });
     setShowAddLoadConfirm(true);
-  };
+  }, [toast]);
 
-  const handleConfirmAddLoad = async () => {
+  const handleConfirmAddLoad = useCallback(async () => {
     if (!pendingLoadEntry) return;
 
     setShowAddLoadConfirm(false);
-    
+
     await addLoadMutation.mutateAsync({
       originalJobId: pendingLoadEntry.entry.latestJob.id,
       date: today,
       dirtType: pendingLoadEntry.materialType as any, // API still uses dirtType param
     });
-    
+
     setPendingLoadEntry(null);
-  };
+  }, [pendingLoadEntry, addLoadMutation, today]);
 
   // Apply simple search filtering (like customers page)
   const filteredJobs = useMemo(() => {
@@ -151,7 +213,7 @@ export function GatekeeperForm() {
   }, [todaysGroupedJobs, deferredSearch]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Header with Search - Fixed at top */}
       <div className="flex-shrink-0 pb-4">
         <Card>
@@ -161,8 +223,8 @@ export function GatekeeperForm() {
         </Card>
       </div>
 
-      {/* Today's Entries Section - Takes up 3/4 of remaining space with scroll */}
-      <div className="flex-1 min-h-0 h-[75%] overflow-hidden">
+      {/* Today's Entries Section - Scrollable list only */}
+      <div className="flex-1 min-h-0 overflow-hidden pb-[180px] md:pb-0">
         <Card className="h-full flex flex-col">
           <CardHeader className="flex-shrink-0 border-b">
             <CardTitle className="flex items-center gap-2">
@@ -186,45 +248,15 @@ export function GatekeeperForm() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
-                {filteredJobs.map((entry, index) => (
-                  <div
-                    key={`${entry.companyName}-${entry.rego}`}
-                    className="p-4 border rounded-lg bg-card hover:bg-accent/5 transition-colors"
-                  >
-                    <div className="flex-1 ">
-                      <div className="grid min-h-[100px]">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="text-3xl align-middle justify-center font-bold">{entry.rego}</div>
-                          <div className="text-lg text-muted-foreground">
-                            {entry.companyName}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>
-                            {entry.totalLoads} load{entry.totalLoads > 1 ? 's' : ''}
-                          </span>
-                          {entry.latestJob.materialType && (
-                            <span>
-                              Last: {entry.latestJob.materialType}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Quick Add Load Button */}
-                      <Button
-                        onClick={() => handleAddLoadClick(entry, quickAddMaterialType || entry.latestJob.materialType || "")}
-                        disabled={addLoadMutation.isPending || (!quickAddMaterialType && !entry.latestJob.materialType)}
-                        size="sm"
-                        variant="default"
-                        className="flex items-center gap-2 w-full"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Load
-                      </Button>
-                    </div>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filteredJobs.map((entry) => (
+                  <JobEntry
+                    key={`${entry.companyName}-${entry.rego}-${entry.totalLoads}`}
+                    entry={entry}
+                    quickAddMaterialType={quickAddMaterialType}
+                    isPending={addLoadMutation.isPending}
+                    onAddLoadClick={handleAddLoadClick}
+                  />
                 ))}
               </div>
             )}
@@ -232,13 +264,10 @@ export function GatekeeperForm() {
         </Card>
       </div>
 
-      {/* Bottom - Fixed New Entry Section (1/4 of height) */}
-      <div className="flex-shrink-0 h-[25%] min-h-[150px] max-h-[200px] border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <Card className="h-full border-0 shadow-lg">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">New Entry</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-6">
+      {/* Bottom - Fixed New Entry Section - Fixed to bottom on mobile */}
+      <div className="fixed bottom-0 left-0 right-0 md:relative md:flex-shrink-0 border-t bg-background z-40">
+        <Card className="rounded-none md:rounded-lg border-0 md:border shadow-lg">
+          <CardContent className="py-4">
             <OpenJobSheet className="w-full h-14 text-lg" />
           </CardContent>
         </Card>
@@ -250,27 +279,27 @@ export function GatekeeperForm() {
           <AlertDialogTitle>Confirm Additional Load</AlertDialogTitle>
           <AlertDialogDescription>
             Please review the details for this additional load:
-            <div className="mt-4 space-y-2 text-sm text-left mx-auto px-4">
-              <div><strong>Company:</strong> {pendingLoadEntry?.entry.companyName}</div>
-              <div><strong>Rego:</strong> {pendingLoadEntry?.entry.rego}</div>
-              <div><strong>Load Number:</strong> {pendingLoadEntry?.newLoadNumber}</div>
-              <div><strong>Material Type:</strong> {pendingLoadEntry?.materialType}</div>
-              {pendingLoadEntry?.entry.latestJob.equipmentType && (
-                <div><strong>Equipment Type:</strong> {pendingLoadEntry.entry.latestJob.equipmentType}</div>
-              )}
-              {pendingLoadEntry?.entry.latestJob.cubicMetreCapacity && (
-                <div><strong>Cubic Metres:</strong> {pendingLoadEntry.entry.latestJob.cubicMetreCapacity} m³</div>
-              )}
-              {pendingLoadEntry?.entry.latestJob.pricePerUnit && (
-                <div><strong>Price per Unit:</strong> ${pendingLoadEntry.entry.latestJob.pricePerUnit}</div>
-              )}
-              <div><strong>Date:</strong> {today}</div>
-              {pendingLoadEntry?.entry.latestJob.addressSite && (
-                <div><strong>Site:</strong> {pendingLoadEntry.entry.latestJob.addressSite}</div>
-              )}
-            </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
+        <div className="mt-4 space-y-2 text-sm">
+          <div><strong>Company:</strong> {pendingLoadEntry?.entry.companyName}</div>
+          <div><strong>Rego:</strong> {pendingLoadEntry?.entry.rego}</div>
+          <div><strong>Load Number:</strong> {pendingLoadEntry?.newLoadNumber}</div>
+          <div><strong>Material Type:</strong> {pendingLoadEntry?.materialType}</div>
+          {pendingLoadEntry?.entry.latestJob.equipmentType && (
+            <div><strong>Equipment Type:</strong> {pendingLoadEntry.entry.latestJob.equipmentType}</div>
+          )}
+          {pendingLoadEntry?.entry.latestJob.cubicMetreCapacity && (
+            <div><strong>Cubic Metres:</strong> {pendingLoadEntry.entry.latestJob.cubicMetreCapacity} m³</div>
+          )}
+          {pendingLoadEntry?.entry.latestJob.pricePerUnit && (
+            <div><strong>Price per Unit:</strong> ${pendingLoadEntry.entry.latestJob.pricePerUnit}</div>
+          )}
+          <div><strong>Date:</strong> {today}</div>
+          {pendingLoadEntry?.entry.latestJob.addressSite && (
+            <div><strong>Site:</strong> {pendingLoadEntry.entry.latestJob.addressSite}</div>
+          )}
+        </div>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={() => {
             setShowAddLoadConfirm(false);

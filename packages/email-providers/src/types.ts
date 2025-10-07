@@ -11,6 +11,7 @@ export type EmailConfig = z.infer<typeof emailConfigSchema>;
 
 export interface EmailMessage {
   id?: string;
+  threadId?: string;
   from: string | EmailAddress;
   to: string | string[] | EmailAddress | EmailAddress[];
   cc?: string | string[] | EmailAddress | EmailAddress[];
@@ -23,6 +24,12 @@ export interface EmailMessage {
   inReplyTo?: string;
   references?: string | string[];
   priority?: "high" | "normal" | "low";
+  receivedAt?: Date;
+  isRead?: boolean;
+  hasAttachments?: boolean;
+  bodyPreview?: string;
+  labels?: string[];
+  folder?: string;
   metadata?: Record<string, any>;
 }
 
@@ -68,6 +75,7 @@ export interface EmailSyncResult {
     error: string;
   }>;
   nextSyncToken?: string;
+  emails?: EmailMessage[]; // Store the actual emails
 }
 
 export interface EmailWebhookPayload {

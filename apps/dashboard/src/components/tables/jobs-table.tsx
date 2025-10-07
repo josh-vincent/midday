@@ -155,7 +155,6 @@ export function JobsTable({ jobs }: JobsTableProps) {
             {(columnVisibility.amount ?? true) && (
               <TableHead className="text-right">Amount</TableHead>
             )}
-            {(columnVisibility.status ?? true) && <TableHead>Status</TableHead>}
             {(columnVisibility.invoiceNumber ?? true) && <TableHead>Invoice #</TableHead>}
             {(columnVisibility.invoiceStatus ?? true) && <TableHead>Invoice Status</TableHead>}
             {(columnVisibility.volume ?? true) && <TableHead>Volume</TableHead>}
@@ -180,12 +179,30 @@ export function JobsTable({ jobs }: JobsTableProps) {
                 className={rowSelection[job.id] ? "bg-muted/50" : ""}
               >
                 <TableCell className="text-center px-3">
-                  <div className="flex items-center justify-center">
+                  <div className="flex items-center justify-center relative">
                     <Checkbox
                       checked={rowSelection[job.id] || false}
                       onCheckedChange={(checked) =>
                         handleSelectRow(job.id, checked as boolean)
                       }
+                    />
+                    <span
+                      className={`absolute top-0 right-1 w-2 h-2 rounded-full ${
+                        job.invoiceStatus === "paid" || job.status === "invoiced"
+                          ? "bg-purple-500"
+                          : job.invoiceStatus === "overdue"
+                          ? "bg-orange-500"
+                          : job.invoiceStatus === "unpaid"
+                          ? "bg-red-500"
+                          : job.status === "in_progress"
+                          ? "bg-blue-500"
+                          : job.status === "completed" || job.status === "delivered"
+                          ? "bg-green-500"
+                          : job.status === "cancelled"
+                          ? "bg-gray-500"
+                          : "bg-yellow-500"
+                      }`}
+                      title={job.invoiceStatus ? `${job.status} - ${job.invoiceStatus}` : job.status}
                     />
                   </div>
                 </TableCell>
@@ -296,13 +313,6 @@ export function JobsTable({ jobs }: JobsTableProps) {
                     ) : (
                       "-"
                     )}
-                  </TableCell>
-                )}
-                {(columnVisibility.status ?? true) && (
-                  <TableCell>
-                    <Badge variant={getStatusColor(job.status)} className="rounded-none">
-                      {job.status.replace("_", " ")}
-                    </Badge>
                   </TableCell>
                 )}
                 {(columnVisibility.invoiceNumber ?? true) && (

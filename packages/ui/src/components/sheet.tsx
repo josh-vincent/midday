@@ -36,9 +36,9 @@ const sheetVariants = cva(
         top: "inset-x-0 top-0 data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
         bottom:
           "inset-x-0 bottom-0 data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
-        left: "inset-y-0 left-0 h-full w-3/4 data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
+        left: "inset-y-0 left-0 h-full w-full data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:w-3/4 sm:max-w-sm",
         right:
-          "inset-y-0 right-0 h-full w-3/4 data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-[520px]",
+          "inset-y-0 right-0 h-full w-full data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:w-3/4 sm:max-w-[520px]",
       },
     },
     defaultVariants: {
@@ -66,7 +66,7 @@ const SheetContent = React.forwardRef<
       <SheetPrimitive.Content
         onOpenAutoFocus={(e) => e.preventDefault()}
         ref={ref}
-        className={cn("md:p-4", sheetVariants({ side }))}
+        className={cn("sm:p-4", sheetVariants({ side }))}
         aria-describedby={props["aria-describedby"] || undefined}
         {...props}
       >

@@ -59,11 +59,11 @@ export class GmailProvider {
         },
       });
 
-      logger.info(`Email sent via Gmail: ${response.data.id}`);
+      console.log(`Email sent via Gmail: ${response.data.id}`);
       
       return { messageId: response.data.id! };
     } catch (error: any) {
-      logger.error("Failed to send email via Gmail:", error);
+      console.error("Failed to send email via Gmail:", error);
       throw new Error(`Failed to send email: ${error.message}`);
     }
   }
@@ -77,11 +77,13 @@ export class GmailProvider {
         folders: 0,
       },
       errors: [],
+      emails: [], // Initialize emails array
     };
 
     try {
       const query = this.buildSearchQuery(options);
-      
+      console.log("[Gmail Provider] Search query:", query, "maxResults:", options.maxResults);
+
       let pageToken: string | undefined;
       do {
         const response = await this.gmail.users.messages.list({
@@ -89,6 +91,12 @@ export class GmailProvider {
           q: query,
           maxResults: Math.min(options.maxResults || 100, 500),
           pageToken,
+        });
+
+        console.log("[Gmail Provider] API response:", {
+          messageCount: response.data.messages?.length || 0,
+          resultSizeEstimate: response.data.resultSizeEstimate,
+          hasNextPageToken: !!response.data.nextPageToken,
         });
 
         if (response.data.messages) {
@@ -110,7 +118,7 @@ export class GmailProvider {
 
       result.nextSyncToken = pageToken;
     } catch (error: any) {
-      logger.error("Gmail sync failed:", error);
+      console.error("Gmail sync failed:", error);
       result.success = false;
       result.errors.push({ error: error.message });
     }
@@ -128,7 +136,7 @@ export class GmailProvider {
 
       return this.parseGmailMessage(response.data);
     } catch (error: any) {
-      logger.error(`Failed to get email ${messageId}:`, error);
+      console.error(`Failed to get email ${messageId}:`, error);
       return null;
     }
   }
@@ -155,7 +163,7 @@ export class GmailProvider {
         }
       }
     } catch (error: any) {
-      logger.error("Failed to search emails:", error);
+      console.error("Failed to search emails:", error);
       throw new Error(`Failed to search emails: ${error.message}`);
     }
 
@@ -184,7 +192,7 @@ export class GmailProvider {
 
       return folders;
     } catch (error: any) {
-      logger.error("Failed to get Gmail folders:", error);
+      console.error("Failed to get Gmail folders:", error);
       throw new Error(`Failed to get folders: ${error.message}`);
     }
   }
@@ -213,7 +221,7 @@ export class GmailProvider {
 
       return threads;
     } catch (error: any) {
-      logger.error("Failed to get Gmail threads:", error);
+      console.error("Failed to get Gmail threads:", error);
       throw new Error(`Failed to get threads: ${error.message}`);
     }
   }
@@ -300,9 +308,9 @@ export class GmailProvider {
           break;
       }
 
-      logger.info(`Batch operation ${operation.operation} completed for ${operation.messageIds.length} messages`);
+      console.log(`Batch operation ${operation.operation} completed for ${operation.messageIds.length} messages`);
     } catch (error: any) {
-      logger.error(`Batch operation ${operation.operation} failed:`, error);
+      console.error(`Batch operation ${operation.operation} failed:`, error);
       throw new Error(`Batch operation failed: ${error.message}`);
     }
   }
@@ -319,7 +327,7 @@ export class GmailProvider {
         unit: "bytes",
       };
     } catch (error: any) {
-      logger.error("Failed to get Gmail quota:", error);
+      console.error("Failed to get Gmail quota:", error);
       throw new Error(`Failed to get quota: ${error.message}`);
     }
   }
@@ -340,14 +348,14 @@ export class GmailProvider {
         requestBody,
       });
 
-      logger.info(`Gmail watch created with history ID: ${response.data.historyId}`);
+      console.log(`Gmail watch created with history ID: ${response.data.historyId}`);
 
       return {
         historyId: response.data.historyId!,
         expiration: response.data.expiration!,
       };
     } catch (error: any) {
-      logger.error("Failed to set up Gmail watch:", error);
+      console.error("Failed to set up Gmail watch:", error);
       throw new Error(`Failed to watch emails: ${error.message}`);
     }
   }
@@ -358,9 +366,9 @@ export class GmailProvider {
         userId: "me",
       });
       
-      logger.info("Gmail watch stopped");
+      console.log("Gmail watch stopped");
     } catch (error: any) {
-      logger.error("Failed to stop Gmail watch:", error);
+      console.error("Failed to stop Gmail watch:", error);
       throw new Error(`Failed to stop watch: ${error.message}`);
     }
   }
@@ -372,16 +380,21 @@ export class GmailProvider {
   ): Promise<void> {
     try {
       const message = await this.getEmail(messageId);
-      
+
       if (message) {
         result.synced.messages++;
-        
+
+        // Add the email to the result array
+        if (result.emails) {
+          result.emails.push(message);
+        }
+
         if (message.attachments && options.syncAttachments) {
           result.synced.attachments += message.attachments.length;
         }
       }
     } catch (error: any) {
-      logger.error(`Failed to sync message ${messageId}:`, error);
+      console.error(`Failed to sync message ${messageId}:`, error);
       result.errors.push({
         messageId,
         error: error.message,
@@ -398,7 +411,7 @@ export class GmailProvider {
         });
         result.synced.folders++;
       } catch (error: any) {
-        logger.error(`Failed to sync label ${labelId}:`, error);
+        console.error(`Failed to sync label ${labelId}:`, error);
         result.errors.push({
           error: `Failed to sync label ${labelId}: ${error.message}`,
         });
@@ -481,14 +494,34 @@ export class GmailProvider {
 
   private parseGmailMessage(message: gmail_v1.Schema$Message): EmailMessage {
     const headers = message.payload?.headers || [];
-    const getHeader = (name: string) => 
+    const getHeader = (name: string) =>
       headers.find(h => h.name?.toLowerCase() === name.toLowerCase())?.value || "";
+
+    let text: string | undefined;
+    let html: string | undefined;
+    let attachments: EmailAttachment[] = [];
+
+    if (message.payload) {
+      const content = this.extractMessageContent(message.payload);
+      text = content.text;
+      html = content.html;
+      attachments = content.attachments;
+    }
 
     const email: EmailMessage = {
       id: message.id!,
+      threadId: message.threadId,
       from: getHeader("from"),
       to: getHeader("to"),
       subject: getHeader("subject"),
+      text,
+      html,
+      attachments,
+      receivedAt: message.internalDate ? new Date(parseInt(message.internalDate, 10)) : undefined,
+      isRead: !message.labelIds?.includes("UNREAD"),
+      hasAttachments: attachments.length > 0,
+      bodyPreview: message.snippet,
+      labels: message.labelIds || [],
       metadata: {
         threadId: message.threadId,
         labelIds: message.labelIds,
@@ -501,13 +534,6 @@ export class GmailProvider {
 
     const bcc = getHeader("bcc");
     if (bcc) email.bcc = bcc;
-
-    if (message.payload) {
-      const { text, html, attachments } = this.extractMessageContent(message.payload);
-      email.text = text;
-      email.html = html;
-      email.attachments = attachments;
-    }
 
     return email;
   }

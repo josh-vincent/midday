@@ -32,10 +32,12 @@ export const createTRPCContext = async (
   const supabaseServiceKey = c.env?.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_KEY;
   // @ts-ignore - c.env exists in Cloudflare Workers
   const supabaseJwtSecret = c.env?.SUPABASE_JWT_SECRET || process.env.SUPABASE_JWT_SECRET;
+  // @ts-ignore - c.env exists in Cloudflare Workers
+  const databaseUrl = c.env?.DATABASE_URL || process.env.DATABASE_URL;
 
   const session = await verifyAccessToken(accessToken, supabaseJwtSecret);
   const supabase = await createClient(accessToken, supabaseUrl, supabaseServiceKey);
-  const db = await connectDb();
+  const db = await connectDb(databaseUrl);
   const geo = getGeoContext(c.req);
 
   return {

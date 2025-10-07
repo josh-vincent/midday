@@ -35,13 +35,8 @@ import {
   updateTeamById,
   updateTeamMember,
 } from "@midday/db/queries";
-// Temporarily disabled - trigger.dev jobs
-// import type {
-//   DeleteTeamPayload,
-//   InviteTeamMembersPayload,
-//   UpdateBaseCurrencyPayload,
-// } from "@midday/jobs/schema";
-// import { tasks } from "@trigger.dev/sdk";
+import { userInvites, usersOnTeam } from "@midday/db/schema";
+import { eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 export const teamRouter = createTRPCRouter({
@@ -176,11 +171,21 @@ export const teamRouter = createTRPCRouter({
 
   invite: protectedProcedure
     .input(inviteTeamMembersSchema)
-    .mutation(async ({ ctx: { db, session, teamId, geo }, input }) => {
-      const ip = geo.ip ?? "127.0.0.1";
+    .mutation(async ({ ctx: { db, session, teamId }, input }) => {
+      if (!teamId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "No team selected",
+        });
+      }
 
+      // Import the admin client creator
+      const { createAdminClient } = await import("@api/services/supabase");
+      const adminClient = await createAdminClient();
+
+      // Create invite records in database for tracking (this also validates and skips existing members/invites)
       const data = await createTeamInvites(db, {
-        teamId: teamId!,
+        teamId: teamId,
         invites: input.map((invite) => ({
           ...invite,
           invitedBy: session.user.id,
@@ -189,30 +194,76 @@ export const teamRouter = createTRPCRouter({
 
       const results = data?.results ?? [];
       const skippedInvites = data?.skippedInvites ?? [];
+      let addedDirectly = 0;
 
-      const invites = results.map((invite) => ({
-        email: invite?.email!,
-        invitedBy: session.user.id!,
-        invitedByName: session.user.full_name!,
-        invitedByEmail: session.user.email!,
-        teamName: invite?.team?.name!,
-        inviteCode: invite?.code!,
-      }));
+      // Process invites - check if user exists and add directly, or send invite email
+      if (results.length > 0) {
+        try {
+          await Promise.all(
+            results.map(async (invite) => {
+              if (!invite) return;
 
-      // Only trigger email sending if there are valid invites
-      if (invites.length > 0) {
-        // Disabled - trigger.dev
-        // await tasks.trigger("invite-team-members", {
-        //   teamId: teamId!,
-        //   invites,
-        //   ip,
-        //   locale: "en",
-        // } satisfies InviteTeamMembersPayload);
+              // Check if user already exists in Supabase by email using admin client
+              const { data: existingUsers, error: userError } = await adminClient.auth.admin.listUsers();
+
+              if (userError) {
+                console.error(`Error checking for existing user ${invite.email}:`, userError);
+                return;
+              }
+
+              const existingUser = existingUsers.users.find(
+                (u) => u.email?.toLowerCase() === invite.email!.toLowerCase()
+              );
+
+              if (existingUser) {
+                // User exists - add them directly to the team
+                try {
+                  await db.insert(usersOnTeam).values({
+                    userId: existingUser.id,
+                    role: invite.role!,
+                    teamId: teamId,
+                  });
+
+                  // Delete the pending invite since user was added directly
+                  await db.delete(userInvites).where(eq(userInvites.email, invite.email!));
+
+                  addedDirectly++;
+                  console.log(`User ${invite.email} already exists - added directly to team`);
+                } catch (error) {
+                  console.error(`Failed to add existing user ${invite.email} to team:`, error);
+                }
+              } else {
+                // User doesn't exist - send Supabase invitation email using admin client
+                const { data: inviteData, error } = await adminClient.auth.admin.inviteUserByEmail(
+                  invite.email!,
+                  {
+                    redirectTo: `${process.env.NEXT_PUBLIC_URL || "http://localhost:3333"}/teams`,
+                    data: {
+                      team_id: teamId,
+                      team_name: invite.team?.name,
+                      invited_by: session.user.full_name,
+                      role: invite.role,
+                    },
+                  }
+                );
+
+                if (error) {
+                  console.error(`Failed to send Supabase invite to ${invite.email}:`, error);
+                } else {
+                  console.log(`Supabase invite sent to ${invite.email}:`, inviteData);
+                }
+              }
+            })
+          );
+        } catch (error) {
+          console.error("Failed to process invites:", error);
+        }
       }
 
       // Return information about the invitation process
       return {
-        sent: invites.length,
+        sent: results.length - addedDirectly, // Invites sent via email
+        addedDirectly, // Users added directly
         skipped: skippedInvites.length,
         skippedInvites,
       };
