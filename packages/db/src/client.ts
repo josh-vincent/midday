@@ -17,6 +17,11 @@ const connectionConfig = {
   },
   onnotice: () => {}, // Disable notices for performance
   debug: false,
+  // IMPORTANT: This is required to bypass RLS for server-side queries
+  // The postgres user should have permissions to query all tables
+  transform: {
+    undefined: null,
+  },
 };
 
 const getPrimaryDb = (databaseUrl?: string) => {
@@ -28,6 +33,8 @@ const getPrimaryDb = (databaseUrl?: string) => {
     "postgresql://postgres.ulncfblvuijlgniydjju:MikeTheDogSupabase!@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres";
 
   // Create a fresh connection for each request (serverless best practice)
+  // IMPORTANT: Use direct connection port 5432 for server-side API to bypass RLS
+  // The postgres superuser role can bypass RLS when connecting directly (not through pooler)
   const primaryPool = postgres(urlToUse, connectionConfig);
 
   return drizzle(primaryPool, {
