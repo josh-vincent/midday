@@ -230,7 +230,7 @@ export function GatekeeperForm() {
   }, [todaysGroupedJobs, deferredSearch]);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col">
       {/* Header with Search - Fixed at top */}
       <div className="flex-shrink-0 pb-4">
         <Card>
@@ -240,8 +240,8 @@ export function GatekeeperForm() {
         </Card>
       </div>
 
-      {/* Today's Entries Section - Scrollable list only */}
-      <div className="flex-1 min-h-0 overflow-hidden pb-[180px] md:pb-0">
+      {/* Today's Entries Section - Fills remaining space with internal scroll */}
+      <div className="flex-1 min-h-0 flex flex-col pb-4">
         <Card className="h-full flex flex-col">
           <CardHeader className="flex-shrink-0 border-b">
             <CardTitle className="flex items-center gap-2">
@@ -249,7 +249,7 @@ export function GatekeeperForm() {
               Today's Entries ({filteredJobs.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 min-h-0 overflow-y-auto scrollbar-hide p-4">
+          <CardContent className="flex-1 min-h-0 overflow-y-auto p-4">
             {todaysGroupedJobs.length === 0 ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center py-8 text-muted-foreground">
@@ -281,9 +281,9 @@ export function GatekeeperForm() {
         </Card>
       </div>
 
-      {/* Bottom - Fixed New Entry Section - Fixed to bottom on mobile */}
-      <div className="fixed bottom-0 left-0 right-0 md:relative md:flex-shrink-0 border-t bg-background z-40">
-        <Card className="rounded-none md:rounded-lg border-0 md:border shadow-lg">
+      {/* Bottom - New Entry Button */}
+      <div className="flex-shrink-0 pt-4">
+        <Card>
           <CardContent className="py-4">
             <OpenJobSheet className="w-full h-14 text-lg" />
           </CardContent>

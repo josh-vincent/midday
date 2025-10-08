@@ -64,7 +64,9 @@ export function UserMenu({ onlySignOut }: Props) {
               <Link prefetch href="/account">
                 <DropdownMenuItem>Account</DropdownMenuItem>
               </Link>
-
+              <Link prefetch href="/settings">
+                <DropdownMenuItem>Settings</DropdownMenuItem>
+              </Link>
               <Link prefetch href="/account/support">
                 <DropdownMenuItem>Support</DropdownMenuItem>
               </Link>
