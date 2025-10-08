@@ -41,6 +41,10 @@ export const updateUserSchema = z.object({
         "ddDotMMDotyyyy",
       ],
     }),
+  teamId: z.string().uuid().optional().openapi({
+    description: "ID of the team to set as the user's active team",
+    example: "123e4567-e89b-12d3-a456-426614174000",
+  }),
 });
 
 export const userSchema = z.object({
