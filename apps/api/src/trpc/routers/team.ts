@@ -236,7 +236,7 @@ export const teamRouter = createTRPCRouter({
 
   invite: protectedProcedure
     .input(inviteTeamMembersSchema)
-    .mutation(async ({ ctx: { db, session, teamId }, input }) => {
+    .mutation(async ({ ctx: { db, session, teamId, supabaseUrl, supabaseServiceKey }, input }) => {
       if (!teamId) {
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -246,7 +246,7 @@ export const teamRouter = createTRPCRouter({
 
       // Import the admin client creator
       const { createAdminClient } = await import("@api/services/supabase");
-      const adminClient = await createAdminClient();
+      const adminClient = await createAdminClient(supabaseUrl, supabaseServiceKey);
 
       // Create invite records in database for tracking (this also validates and skips existing members/invites)
       const data = await createTeamInvites(db, {
@@ -356,7 +356,7 @@ export const teamRouter = createTRPCRouter({
 
   resendInvite: protectedProcedure
     .input(resendTeamInviteSchema)
-    .mutation(async ({ ctx: { db, session, teamId }, input }) => {
+    .mutation(async ({ ctx: { db, session, teamId, supabaseUrl, supabaseServiceKey }, input }) => {
       if (!teamId) {
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -388,7 +388,7 @@ export const teamRouter = createTRPCRouter({
 
       // Import the admin client creator
       const { createAdminClient } = await import("@api/services/supabase");
-      const adminClient = await createAdminClient();
+      const adminClient = await createAdminClient(supabaseUrl, supabaseServiceKey);
 
       // Check if user already exists
       const { data: existingUsers, error: userError } = await adminClient.auth.admin.listUsers();

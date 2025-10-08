@@ -17,6 +17,8 @@ type TRPCContext = {
   db: Database;
   geo: ReturnType<typeof getGeoContext>;
   teamId?: string;
+  supabaseUrl?: string;
+  supabaseServiceKey?: string;
 };
 
 export const createTRPCContext = async (
@@ -45,6 +47,8 @@ export const createTRPCContext = async (
     supabase,
     db,
     geo,
+    supabaseUrl,
+    supabaseServiceKey,
   };
 };
 
