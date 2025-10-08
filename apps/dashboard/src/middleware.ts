@@ -43,11 +43,19 @@ export async function middleware(request: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
+  // Log the session user for debugging
+  if (session) {
+    console.log(`[Middleware] Session user: ${session.user.id} (${session.user.email}) for path ${newUrl.pathname}`);
+  }
+
   // 1. Not authenticated
   if (
     !session &&
     newUrl.pathname !== "/login" &&
     newUrl.pathname !== "/logout" &&
+    newUrl.pathname !== "/forgot-password" &&
+    newUrl.pathname !== "/reset-password" &&
+    !newUrl.pathname.includes("/auth/callback") &&
     !newUrl.pathname.includes("/i/") &&
     !newUrl.pathname.includes("/s/") &&
     !newUrl.pathname.includes("/verify") &&
@@ -65,6 +73,12 @@ export async function middleware(request: NextRequest) {
 
   // If authenticated, proceed with other checks
   if (session) {
+    // Allow authenticated users to access reset-password page
+    // (they get a session from the reset password email link)
+    if (newUrl.pathname === "/reset-password") {
+      return response;
+    }
+
     // Skip redirect checks for login/logout pages if already authenticated
     if (newUrl.pathname === "/login") {
       // If user is already logged in and trying to access login, redirect to appropriate page
@@ -102,16 +116,42 @@ export async function middleware(request: NextRequest) {
         .eq("id", session.user.id)
         .single();
 
+      console.log(`[Middleware] Checking user ${session.user.id} for path ${newUrl.pathname}:`, {
+        hasFullName: !!userData?.full_name,
+        hasTeamId: !!userData?.team_id,
+        teamId: userData?.team_id,
+      });
+
       // If user has no full name, redirect to setup
       if (userData && !userData.full_name && newUrl.pathname !== "/setup") {
+        console.log(`[Middleware] Redirecting to /setup - no full_name`);
         const url = new URL("/setup", request.url);
         return NextResponse.redirect(url);
       }
 
-      // If user has no team, redirect to team creation
-      if (userData && !userData.team_id && newUrl.pathname !== "/teams") {
-        const url = new URL("/teams", request.url);
-        return NextResponse.redirect(url);
+      // If user has no team_id, check if they have any team memberships
+      if (userData && !userData.team_id) {
+        // Check if user has any team memberships
+        const { data: memberships } = await supabase
+          .from("users_on_team")
+          .select("team_id")
+          .eq("user_id", session.user.id)
+          .limit(1);
+
+        console.log(`[Middleware] User ${session.user.id} has ${memberships?.length || 0} team memberships`);
+
+        // If user has no team_id AND no memberships, redirect to teams page
+        if (!memberships || memberships.length === 0) {
+          console.log(`[Middleware] Redirecting to /teams - no team_id and no memberships`);
+          const url = new URL("/teams", request.url);
+          return NextResponse.redirect(url);
+        }
+        // If user has memberships but no team_id set, redirect to teams page to select one
+        else {
+          console.log(`[Middleware] Redirecting to /teams - has memberships but no active team_id`);
+          const url = new URL("/teams", request.url);
+          return NextResponse.redirect(url);
+        }
       }
     }
 
