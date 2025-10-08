@@ -44,6 +44,10 @@ export async function searchJobsEnhanced(
   const offset = (page - 1) * pageSize;
   const conditions: SQL[] = [eq(jobs.teamId, teamId)];
 
+  console.log(`[Jobs Query] Searching for jobs with teamId: ${teamId}, filters:`, {
+    search, customerId, status, dateFrom, dateTo, page, pageSize
+  });
+
   // Full-text search across multiple fields
   if (search && search.trim()) {
     const searchTerm = `%${search.trim()}%`;
@@ -172,6 +176,8 @@ export async function searchJobsEnhanced(
     })
     .from(jobs)
     .where(and(...conditions));
+
+  console.log(`[Jobs Query] Found ${count || 0} jobs for teamId: ${teamId}, returning ${results.length} results`);
 
   return {
     data: results,

@@ -89,23 +89,13 @@ export const updateUser = async (db: Database, data: UpdateUserParams) => {
     return getUserById(db, id);
   }
 
-  const [result] = await db
+  await db
     .update(users)
     .set(filteredData)
-    .where(eq(users.id, id))
-    .returning({
-      id: users.id,
-      fullName: users.fullName,
-      email: users.email,
-      avatarUrl: users.avatarUrl,
-      locale: users.locale,
-      timeFormat: users.timeFormat,
-      dateFormat: users.dateFormat,
-      timezone: users.timezone,
-      teamId: users.teamId,
-    });
+    .where(eq(users.id, id));
 
-  return result;
+  // Return the full user object with team data
+  return getUserById(db, id);
 };
 
 export const getUserTeamId = async (db: Database, userId: string) => {

@@ -94,10 +94,12 @@ export const getCustomerById = async (
 };
 
 export const getCustomersByTeamId = async (db: Database, teamId: string) => {
+  console.log(`[Customers Query] Fetching customers for teamId: ${teamId}`);
   const results = await db
     .select()
     .from(customers)
     .where(eq(customers.teamId, teamId));
+  console.log(`[Customers Query] Found ${results.length} customers for teamId: ${teamId}`);
   return results;
 };
 

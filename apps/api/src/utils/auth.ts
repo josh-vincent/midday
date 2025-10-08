@@ -10,8 +10,8 @@ export type Session = {
 };
 
 type SupabaseJWTPayload = JWTPayload & {
+  email?: string;
   user_metadata?: {
-    email?: string;
     full_name?: string;
     [key: string]: string | undefined;
   };
@@ -37,7 +37,7 @@ export async function verifyAccessToken(
     return {
       user: {
         id: supabasePayload.sub!,
-        email: supabasePayload.user_metadata?.email,
+        email: supabasePayload.email, // Email is at root level in Supabase JWT
         full_name: supabasePayload.user_metadata?.full_name,
       },
     };
