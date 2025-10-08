@@ -53,7 +53,7 @@ export default async function Layout({
         {!isMember && <Sidebar />}
 
         <div className={isMember ? "pb-8" : "md:ml-[70px] pb-8"}>
-          <Header />
+          <Header isMember={isMember} />
           <div className="px-6">{children}</div>
         </div>
       </div>
