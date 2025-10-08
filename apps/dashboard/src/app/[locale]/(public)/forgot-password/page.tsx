@@ -7,8 +7,7 @@ import { Input } from "@midday/ui/input";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import backgroundDark from "public/assets/bg-login-dark.jpg";
-import backgroundLight from "public/assets/bg-login.jpg";
+import dirtbg from "public/assets/dirt-bg.png";
 import { useState } from "react";
 
 export default function ForgotPasswordPage() {
@@ -26,7 +25,7 @@ export default function ForgotPasswordPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+        redirectTo: `${window.location.origin}/api/auth/callback?next=/reset-password`,
       });
 
       if (error) {
@@ -57,14 +56,14 @@ export default function ForgotPasswordPage() {
         {/* Background Image Section - Hidden on mobile, visible on desktop */}
         <div className="hidden lg:flex lg:w-1/2 relative">
           <Image
-            src={backgroundLight}
+            src={dirtbg}
             alt="Background"
             className="object-cover dark:hidden"
             priority
             fill
           />
           <Image
-            src={backgroundDark}
+            src={dirtbg}
             alt="Background"
             className="object-cover hidden dark:block"
             priority

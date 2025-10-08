@@ -40,18 +40,24 @@ export function PasswordSignUp({ className }: Props) {
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { error, data } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/teams`,
         },
       });
 
       if (error) {
         setError(error.message);
       } else {
-        setSuccess(true);
+        // If email confirmation is disabled or user is auto-confirmed, redirect to teams
+        if (data?.session) {
+          router.push("/teams");
+        } else {
+          // Email confirmation required
+          setSuccess(true);
+        }
       }
     } catch (err) {
       setError("An unexpected error occurred");

@@ -7,8 +7,6 @@ import { Input } from "@midday/ui/input";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import backgroundDark from "public/assets/bg-login-dark.jpg";
-import backgroundLight from "public/assets/bg-login.jpg";
 import dirtbg from "public/assets/dirt-bg.png";
 import { useState } from "react";
 
