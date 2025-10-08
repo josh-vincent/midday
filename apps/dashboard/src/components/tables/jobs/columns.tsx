@@ -174,11 +174,9 @@ export const columns: ColumnDef<Job>[] = [
     cell: ({ row }) => {
       const rego = row.getValue("rego") as string | null;
       return rego ? (
-        <RegoInput
-          value={rego}
-          disabled={true}
-          className="pointer-events-none scale-75 origin-left"
-        />
+        <Badge variant="outline" className="mx-auto justify-self-start text-2xl font-bold border-2 border-primary">
+            {rego}
+            </Badge>
       ) : (
         "-"
       );

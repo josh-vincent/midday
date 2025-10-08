@@ -9,9 +9,18 @@ import {
   TableHead,
   TableRow,
 } from "@midday/ui/table";
-import { ArrowDown, ArrowUp } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@midday/ui/dropdown-menu";
+import { ArrowDown, ArrowUp, Settings2 } from "lucide-react";
+import type { Table } from "@tanstack/react-table";
+import type { Customer } from "./columns";
 
 interface Props {
+  table: Table<Customer>;
   tableScroll?: {
     canScrollLeft: boolean;
     canScrollRight: boolean;
@@ -21,7 +30,7 @@ interface Props {
   };
 }
 
-export function TableHeader({ tableScroll }: Props) {
+export function TableHeader({ table, tableScroll }: Props) {
   const { params, setParams } = useSortParams();
 
   const [column, value] = params.sort || [];
@@ -135,7 +144,39 @@ export function TableHeader({ tableScroll }: Props) {
             "after:absolute after:left-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-r after:from-transparent after:to-background after:z-[-1]",
           )}
         >
-          Actions
+          <div className="flex items-center justify-between">
+            <span>Actions</span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                >
+                  <Settings2 className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </TableHead>
       </TableRow>
     </BaseTableHeader>

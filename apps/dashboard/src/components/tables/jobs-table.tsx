@@ -262,13 +262,9 @@ export function JobsTable({ jobs }: JobsTableProps) {
                   <TableCell>
                     <div className="space-y-1">
                       {job.rego && (
-                        <div className="flex items-center gap-1">
-                          <RegoInput
-                            value={job.rego}
-                            disabled={true}
-                            className="pointer-events-none scale-50 origin-left"
-                          />
-                        </div>
+                        <Badge variant="outline" className="justify-self-start text-2xl font-bold border-2 border-primary">
+                        {job.rego}
+                        </Badge>
                       )}
                       {job.equipmentType && (
                         <div className="text-xs text-muted-foreground">

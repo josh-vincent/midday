@@ -58,16 +58,19 @@ export const columns: ColumnDef<Customer>[] = [
   {
     header: "Contact person",
     accessorKey: "contact",
+    enableHiding: true,
     cell: ({ row }) => row.getValue("contact") ?? "-",
   },
   {
     header: "Email",
     accessorKey: "email",
+    enableHiding: true,
     cell: ({ row }) => row.getValue("email") ?? "-",
   },
   {
     header: "Invoices",
     accessorKey: "invoices",
+    enableHiding: true,
     cell: ({ row }) => {
       if (row.original.invoiceCount > 0) {
         return (
@@ -83,6 +86,7 @@ export const columns: ColumnDef<Customer>[] = [
   {
     header: "Projects",
     accessorKey: "projects",
+    enableHiding: true,
     cell: ({ row }) => {
       if (row.original.projectCount > 0) {
         return (
@@ -98,6 +102,7 @@ export const columns: ColumnDef<Customer>[] = [
   {
     header: "Tags",
     accessorKey: "tags",
+    enableHiding: true,
     meta: {
       className: "w-[280px] max-w-[280px]",
     },

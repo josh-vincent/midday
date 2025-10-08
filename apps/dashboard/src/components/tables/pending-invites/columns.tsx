@@ -2,6 +2,7 @@ import { useI18n } from "@/locales/client";
 import { useTRPC } from "@/trpc/client";
 import type { RouterOutputs } from "@api/trpc/routers/_app";
 import { Avatar, AvatarFallback } from "@midday/ui/avatar";
+import { Badge } from "@midday/ui/badge";
 import { Button } from "@midday/ui/button";
 import {
   DropdownMenu,
@@ -9,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@midday/ui/dropdown-menu";
+import { useToast } from "@midday/ui/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef, FilterFn, Row } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
@@ -42,6 +44,11 @@ export const columns: ColumnDef<TeamInvite>[] = [
           <div className="flex flex-col">
             <span className="font-medium text-sm">Pending Invitation</span>
             <span className="text-sm text-[#606060]">{row.original.email}</span>
+            {row.original.code && (
+              <Badge variant="outline" className="mt-1 w-fit">
+                Code: {row.original.code}
+              </Badge>
+            )}
           </div>
         </div>
       );
@@ -53,12 +60,35 @@ export const columns: ColumnDef<TeamInvite>[] = [
       const t = useI18n();
       const trpc = useTRPC();
       const queryClient = useQueryClient();
+      const { toast } = useToast();
 
       const deleteInvite = useMutation(
         trpc.team.deleteInvite.mutationOptions({
           onSuccess: () => {
             queryClient.invalidateQueries({
               queryKey: trpc.team.teamInvites.queryKey(),
+            });
+          },
+        }),
+      );
+
+      const resendInvite = useMutation(
+        trpc.team.resendInvite.mutationOptions({
+          onSuccess: (data) => {
+            queryClient.invalidateQueries({
+              queryKey: trpc.team.teamInvites.queryKey(),
+            });
+
+            toast({
+              title: "Invitation sent",
+              description: data.message || "The invitation has been resent successfully.",
+            });
+          },
+          onError: (error) => {
+            toast({
+              title: "Error",
+              description: error.message,
+              variant: "destructive",
             });
           },
         }),
@@ -79,6 +109,15 @@ export const columns: ColumnDef<TeamInvite>[] = [
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() =>
+                    resendInvite.mutate({
+                      id: row.original.id,
+                    })
+                  }
+                >
+                  Resend Invitation
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   className="text-destructive"
                   onClick={() =>

@@ -99,7 +99,10 @@ export function DataTable() {
     getRowId: (row) => row.id,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      columnVisibility,
+    },
+    onColumnVisibilityChange: setColumnVisibility,
     meta: {
       deleteCustomer: handleDeleteCustomer,
       showBulkLinkDialog: handleShowBulkLinkDialog,
@@ -121,7 +124,7 @@ export function DataTable() {
         className="overflow-x-auto overscroll-x-none md:border-l md:border-r border-border scrollbar-hide"
       >
         <Table>
-          <TableHeader tableScroll={tableScroll} />
+          <TableHeader table={table} tableScroll={tableScroll} />
 
           <TableBody className="border-l-0 border-r-0">
             {table.getRowModel().rows.map((row) => (
