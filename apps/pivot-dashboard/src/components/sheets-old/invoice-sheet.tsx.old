@@ -1,0 +1,21 @@
+"use client";
+
+import { InvoiceContent as InvoiceContentComponent } from "@/components/invoice-content";
+import { FormContext } from "@/components/invoice/form-context";
+import { useTRPC } from "@/trpc/client";
+import { InvoiceSheet as BaseInvoiceSheet } from "@midday/invoice-components/sheet";
+import { useRouter } from "next/navigation";
+
+export function InvoiceSheet() {
+  const trpc = useTRPC();
+  const router = useRouter();
+
+  return (
+    <BaseInvoiceSheet
+      trpc={trpc}
+      router={router}
+      InvoiceContent={InvoiceContentComponent}
+      FormContext={FormContext}
+    />
+  );
+}

@@ -6,12 +6,12 @@ import { getLocalDateString, toLocalDateString } from "@/utils/date";
 import { Button } from "@midday/ui/button";
 import { Input } from "@midday/ui/input";
 import { Label } from "@midday/ui/label";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@midday/ui/select";
 import {
   Sheet,
@@ -37,15 +37,15 @@ import { useToast } from "@midday/ui/use-toast";
 const MATERIAL_OPTIONS = [
   { value: "Dry Clean Fill", label: "Dry Clean Fill" },
   { value: "Wet Fill", label: "Wet Fill" },
-  { value: "Rock", label: "Rock" },
-  { value: "Sand", label: "Sand" },
-  { value: "Topsoil", label: "Topsoil" },
-  { value: "Clay", label: "Clay" },
-  { value: "Gravel", label: "Gravel" },
-  { value: "Concrete", label: "Concrete" },
-  { value: "Asphalt", label: "Asphalt" },
-  { value: "Mixed", label: "Mixed" },
-  { value: "Other", label: "Other" },
+  // { value: "Rock", label: "Rock" },
+  // { value: "Sand", label: "Sand" },
+  // { value: "Topsoil", label: "Topsoil" },
+  // { value: "Clay", label: "Clay" },
+  // { value: "Gravel", label: "Gravel" },
+  // { value: "Concrete", label: "Concrete" },
+  // { value: "Asphalt", label: "Asphalt" },
+  // { value: "Mixed", label: "Mixed" },
+  // { value: "Other", label: "Other" },
 ];
 
 export function JobSheet() {
@@ -204,7 +204,7 @@ export function JobSheet() {
                 id="rego"
                 value={formData.rego}
                 onChange={(e) => setFormData({ ...formData, rego: e.target.value.toUpperCase() })}
-                placeholder="ABC123"
+                placeholder="ABC-123"
                 className="font-bold text-lg"
                 required
               />

@@ -15,6 +15,8 @@ import { OpenJobSheet } from "../open-job-sheet";
 import { useGatekeeperFilterParams } from "@/hooks/use-gatekeeper-filter-params";
 import { GatekeeperHeader } from "./gatekeeper-header";
 import { getLocalDateString } from "@/utils/date";
+import { RegoInput } from "../rego-input";
+import { Badge } from "@midday/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,22 +62,37 @@ const JobEntry = memo(({
     <div className="p-4 border rounded-lg bg-card hover:bg-accent/5 transition-colors">
       <div className="flex-1 ">
         <div className="grid min-h-[100px]">
-          <div className="flex items-baseline gap-2 mb-2">
-            <div className="text-3xl font-bold">{entry.rego}</div>
-            <div className="text-3xl font-bold text-muted-foreground">-</div>
-            <div className="text-3xl font-bold text-primary">#{entry.totalLoads}</div>
+          <div className="grid grid-cols-2 justify-evenly items-stretch gap-3 mb-3">
+
+          <Badge variant="outline" className="justify-self-start text-3xl font-bold border-4 border-primary">
+            {entry.rego}
+            </Badge>
+           
+            <div className="justify-self-end text-2xl text-primary">Load #{entry.totalLoads}
+            <div className="text-sm text-primary text-right">{entry.latestJob.materialType && (
+              <span>
+                {entry.latestJob.cubicMetreCapacity} m³
+              </span>
+            )}  
+            </div>
+            </div>
           </div>
-          <div className="text-lg text-muted-foreground mb-2">
+          
+          <div className="flex flex-colitems-center justify-between gap-3 mb-3">
+          <div className="text-lg text-muted-foreground break-after-left mb-2">
             {entry.companyName}
-          </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
             {entry.latestJob.materialType && (
               <span>
-                Last: {entry.latestJob.materialType}
+                Soil Type: {entry.latestJob.materialType}
               </span>
             )}
+  
           </div>
+          </div>        
         </div>
+      </div>
+          
 
         <Button
           onClick={() => onAddLoadClick(entry, materialType)}
@@ -248,7 +265,7 @@ export function GatekeeperForm() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
                 {filteredJobs.map((entry) => (
                   <JobEntry
                     key={`${entry.companyName}-${entry.rego}-${entry.totalLoads}`}

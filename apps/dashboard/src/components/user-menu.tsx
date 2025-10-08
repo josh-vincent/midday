@@ -69,7 +69,7 @@ export function UserMenu({ onlySignOut }: Props) {
                 <DropdownMenuItem>Support</DropdownMenuItem>
               </Link>
 
-              <Link prefetch href="/account/teams">
+              <Link prefetch href="/teams">
                 <DropdownMenuItem>Teams</DropdownMenuItem>
               </Link>
             </DropdownMenuGroup>

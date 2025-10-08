@@ -17,7 +17,7 @@ export function OpenJobSheet({ className }: OpenJobSheetProps) {
       className={className}
     >
       <Plus className="h-4 w-4 mr-2" />
-      Create New Job
+       New Job
     </Button>
   );
 }

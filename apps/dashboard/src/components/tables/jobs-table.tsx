@@ -16,6 +16,7 @@ import {
 import { format } from "date-fns";
 import { Hash, MapPin, Package, Phone, Truck, User } from "lucide-react";
 import { useEffect } from "react";
+import { RegoInput } from "../rego-input";
 
 interface Job {
   id: string;
@@ -261,9 +262,12 @@ export function JobsTable({ jobs }: JobsTableProps) {
                   <TableCell>
                     <div className="space-y-1">
                       {job.rego && (
-                        <div className="flex items-center gap-1 text-sm">
-                          <Truck className="h-3 w-3" />
-                          {job.rego}
+                        <div className="flex items-center gap-1">
+                          <RegoInput
+                            value={job.rego}
+                            disabled={true}
+                            className="pointer-events-none scale-50 origin-left"
+                          />
                         </div>
                       )}
                       {job.equipmentType && (

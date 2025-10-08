@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { ActionsMenu } from "./actions-menu";
 import { CompanyCell } from "./company-cell";
+import { RegoInput } from "../../rego-input";
 
 export type Job = {
   id: string;
@@ -172,7 +173,15 @@ export const columns: ColumnDef<Job>[] = [
     meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const rego = row.getValue("rego") as string | null;
-      return rego ? rego : "-";
+      return rego ? (
+        <RegoInput
+          value={rego}
+          disabled={true}
+          className="pointer-events-none scale-75 origin-left"
+        />
+      ) : (
+        "-"
+      );
     },
   },
   {

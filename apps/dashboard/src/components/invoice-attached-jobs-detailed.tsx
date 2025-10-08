@@ -23,6 +23,7 @@ import {
   Truck,
 } from "lucide-react";
 import Link from "next/link";
+import { RegoInput } from "./rego-input";
 import { useState } from "react";
 import { FormatAmount } from "./format-amount";
 
@@ -171,9 +172,12 @@ export function InvoiceAttachedJobsDetailed({
                     )}
 
                     {job.rego && (
-                      <div className="flex items-center gap-1 text-[#878787]">
-                        <Truck className="h-3 w-3" />
-                        <span>{job.rego}</span>
+                      <div className="flex items-center gap-1">
+                        {/* <RegoInput
+                          value={job.rego}
+                          disabled={true}
+                          className="pointer-events-none scale-50 origin-left"
+                        /> */}
                       </div>
                     )}
                   </div>

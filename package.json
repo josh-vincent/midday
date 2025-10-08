@@ -1,7 +1,7 @@
 {
   "name": "invoicing-platform",
   "private": true,
-  "workspaces": ["packages/*", "apps/*", "packages/email/*", "packages/oauth-sync/*"],
+  "workspaces": ["packages/*", "apps/*", "packages/email/*", "packages/oauth-sync/*", "!packages/email/.react-email"],
   "scripts": {
     "build": "turbo build",
     "clean": "git clean -xdf node_modules",

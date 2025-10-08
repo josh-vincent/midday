@@ -49,6 +49,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { SelectCustomer } from "../select-customer";
+import { RegoInput } from "../rego-input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,19 +60,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@midday/ui/alert-dialog";
+import { InputOTP, InputOTPSeparator, InputOTPSlot, InputOTPGroup } from "@midday/ui/input-otp";
 
 const jobFormSchema = z.object({
   customerId: z.string().optional().nullable(),
   jobNumber: z.string().optional(),
-  contactPerson: z.string().optional(),
-  contactNumber: z.string().optional(),
-  rego: z.string().optional(),
+  contactPerson: z.string().min(1, "Contact person is required"),
+  contactNumber: z.string().min(1, "Contact number is required"),
+  rego: z.string().min(6, "Rego must be at least 6 characters"),
   loadNumber: z.number().optional(),
-  companyName: z.string().optional(),
-  addressSite: z.string().optional(),
-  equipmentType: z.string().optional(),
-  materialType: z.string().optional(),
-  pricePerUnit: z.number().optional(),
+  companyName: z.string().min(1, "Customer name is required"),
+  addressSite: z.string().min(1, "Address/Site is required"),
+  equipmentType: z.string().min(1, "Equipment type is required"),
+  materialType: z.string().min(1, "Material type is required"),
+  pricePerUnit: z.number().min(0.01, "Price per unit is required"),
   cubicMetreCapacity: z.number().optional(),
   jobDate: z.date().optional(),
   status: z
@@ -91,14 +93,14 @@ const EQUIPMENT_OPTIONS = [
 ];
 
 const MATERIAL_OPTIONS = [
-  { value: "Dry Clean Fill", label: "Dry Clean Fill", defaultPrice: 85.00 },
-  { value: "Wet Fill", label: "Wet Fill", defaultPrice: 75.00 },
-  { value: "Rock", label: "Rock", defaultPrice: 95.00 },
-  { value: "Sand", label: "Sand", defaultPrice: 80.00 },
-  { value: "Topsoil", label: "Topsoil", defaultPrice: 90.00 },
-  { value: "Clay", label: "Clay", defaultPrice: 70.00 },
-  { value: "Mixed Waste", label: "Mixed Waste", defaultPrice: 110.00 },
-  { value: "Other", label: "Other", defaultPrice: null },
+  { value: "Dry Clean Fill", label: "Dry Clean Fill", defaultPrice: 25.00 },
+  { value: "Wet Fill", label: "Wet Fill", defaultPrice: 35.00 },
+  // { value: "Rock", label: "Rock", defaultPrice: 95.00 },
+  // { value: "Sand", label: "Sand", defaultPrice: 80.00 },
+  // { value: "Topsoil", label: "Topsoil", defaultPrice: 90.00 },
+  // { value: "Clay", label: "Clay", defaultPrice: 70.00 },
+  // { value: "Mixed Waste", label: "Mixed Waste", defaultPrice: 110.00 },
+  // { value: "Other", label: "Other", defaultPrice: null },
 ];
 
 interface JobFormProps {
@@ -290,6 +292,25 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
             <div className="grid grid-cols-2 gap-4 pb-4">
             <FormField
               control={form.control}
+              name="rego"
+              render={({ field }) => (
+                <FormItem className="col-span-2">
+                  <FormLabel>Rego</FormLabel>
+                  <FormControl>
+                    <Input
+                      className="font-bold text-8xl border-4 border-primary h-24  uppercase"
+                      placeholder="ABC123"
+                      autoComplete="off"
+                      {...field}
+                    /> 
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
               name="companyName"
               render={({ field }) => (
                 <FormItem className="col-span-2">
@@ -375,30 +396,13 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="rego"
-              render={({ field }) => (
-                <FormItem className="col-span-2">
-                  <FormLabel>Rego</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="ABC-123"
-                      autoComplete="off"
-                      className="text-lg font-medium"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             
             <FormField
+              
               control={form.control}
               name="jobNumber"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="col-span-2">
                   <FormLabel>Job Number</FormLabel>
                   <FormControl>
                     <Input
@@ -412,9 +416,10 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
               )}
             />
 
-            <FormField
+            {/* <FormField
               control={form.control}
               name="jobDate"
+              className="hidden"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Job Date</FormLabel>
@@ -452,7 +457,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
 
             <FormField
               control={form.control}
@@ -558,7 +563,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
               control={form.control}
               name="equipmentType"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="col-span-2">
                   <FormLabel>Equipment Type</FormLabel>
                   <Select onValueChange={(value) => {
                     field.onChange(value);
@@ -644,7 +649,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
               )}
             />
 
-            <FormField
+            {/* <FormField
               control={form.control}
               name="cubicMetreCapacity"
               render={({ field }) => (
@@ -667,7 +672,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
 
             {/* <FormField
               control={form.control}

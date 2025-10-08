@@ -138,6 +138,13 @@
   }
 }
 
+/* Fix for input text visibility - override slot/OTP input styles */
+/* Only apply to regular inputs, not OTP/slot-based inputs */
+input:not(.pin-field):not([data-input-otp]):not([data-input-otp-mss]):not([style*="letter-spacing"]) {
+  color: hsl(var(--foreground)) !important;
+  caret-color: hsl(var(--foreground)) !important;
+}
+
 /* Date picker */
 .rdp-tbody .rdp-button {
   border-radius: 100%;

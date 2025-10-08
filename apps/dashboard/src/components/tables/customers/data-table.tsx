@@ -11,10 +11,10 @@ import { Table, TableBody } from "@midday/ui/table";
 import { useMutation, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import {
   getCoreRowModel,
-  getFilteredRowModel,
   useReactTable,
+  type VisibilityState,
 } from "@tanstack/react-table";
-import React, { useDeferredValue, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import { columns } from "./columns";
 import { EmptyState, NoResults } from "./empty-states";
@@ -32,7 +32,8 @@ export function DataTable() {
   const [showBulkLinkDialog, setShowBulkLinkDialog] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<{ id: string; name: string } | null>(null);
 
-  const deferredSearch = useDeferredValue(filter.q);
+  // State for column visibility
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
   const tableScroll = useTableScroll({
     useColumnWidths: true,
@@ -43,7 +44,6 @@ export function DataTable() {
     {
       ...filter,
       sort: params.sort,
-      q: deferredSearch,
     },
     {
       getNextPageParam: ({ meta }) => meta?.cursor,

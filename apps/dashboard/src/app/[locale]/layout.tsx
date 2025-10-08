@@ -105,7 +105,7 @@ export default async function Layout({
           <Providers locale={locale}>{children}</Providers>
           <Toaster />
           <Analytics />
-          <ReactScan />
+          {/* <ReactScan /> */}
         </NuqsAdapter>
       </body>
     </html>

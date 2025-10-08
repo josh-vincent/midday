@@ -30,7 +30,7 @@ export function CustomersSkeleton() {
                   <Skeleton className="h-4 w-20" />
                 </TableCell>
                 <TableCell className="w-[100px] sticky right-0 bg-background z-30">
-                  <Skeleton className="h-4 w-8" />
+                  <Skeleton className="h-4 w-4" />
                 </TableCell>
               </TableRow>
             ))}
