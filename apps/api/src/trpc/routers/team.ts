@@ -1,4 +1,5 @@
 import {
+  acceptInviteByCodeSchema,
   acceptTeamInviteSchema,
   createTeamSchema,
   declineTeamInviteSchema,
@@ -7,6 +8,7 @@ import {
   deleteTeamSchema,
   inviteTeamMembersSchema,
   leaveTeamSchema,
+  resendTeamInviteSchema,
   updateBaseCurrencySchema,
   updateTeamByIdSchema,
   updateTeamMemberSchema,
@@ -36,7 +38,7 @@ import {
   updateTeamMember,
 } from "@midday/db/queries";
 import { userInvites, usersOnTeam } from "@midday/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 export const teamRouter = createTRPCRouter({
@@ -71,7 +73,13 @@ export const teamRouter = createTRPCRouter({
   }),
 
   list: authProcedure.query(async ({ ctx: { db, session } }) => {
-    return getTeamsByUserId(db, session.user.id);
+    try {
+      return await getTeamsByUserId(db, session.user.id);
+    } catch (error) {
+      console.error(`[team.list] Error fetching teams for user ${session.user.id}:`, error);
+      // Return empty array if query fails
+      return [];
+    }
   }),
 
   create: authProcedure
@@ -123,6 +131,63 @@ export const teamRouter = createTRPCRouter({
         id: input.id,
         email: session.user.email!,
       });
+    }),
+
+  acceptInviteByCode: authProcedure
+    .input(acceptInviteByCodeSchema)
+    .mutation(async ({ ctx: { db, session }, input }) => {
+      // Find the invitation by code
+      const invite = await db.query.userInvites.findFirst({
+        where: eq(userInvites.code, input.code.toUpperCase()),
+      });
+
+      if (!invite) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Invalid or expired invite code",
+        });
+      }
+
+      // Check if the invitation has expired (optional - add expiry logic if needed)
+      // if (invite.expiresAt && new Date(invite.expiresAt) < new Date()) {
+      //   throw new TRPCError({
+      //     code: "BAD_REQUEST",
+      //     message: "Invite code has expired",
+      //   });
+      // }
+
+      // Check if user is already a member of this team
+      const existingMembership = await db.query.usersOnTeam.findFirst({
+        where: and(
+          eq(usersOnTeam.userId, session.user.id),
+          eq(usersOnTeam.teamId, invite.teamId)
+        ),
+      });
+
+      if (existingMembership) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You are already a member of this team",
+        });
+      }
+
+      // Add user to the team
+      await db.insert(usersOnTeam).values({
+        userId: session.user.id,
+        role: invite.role,
+        teamId: invite.teamId,
+      });
+
+      // Get team details
+      const team = await getTeamById(db, invite.teamId);
+
+      // Delete the invitation
+      await db.delete(userInvites).where(eq(userInvites.id, invite.id));
+
+      return {
+        teamId: invite.teamId,
+        teamName: team?.name,
+      };
     }),
 
   delete: protectedProcedure
@@ -216,21 +281,32 @@ export const teamRouter = createTRPCRouter({
               );
 
               if (existingUser) {
-                // User exists - add them directly to the team
-                try {
+                // User exists - check if they're already a team member
+                const existingMembership = await db.query.usersOnTeam.findFirst({
+                  where: and(
+                    eq(usersOnTeam.userId, existingUser.id),
+                    eq(usersOnTeam.teamId, teamId)
+                  ),
+                });
+
+                if (existingMembership) {
+                  // User is already a member, delete the duplicate invite
+                  await db.delete(userInvites).where(eq(userInvites.email, invite.email!));
+                  console.log(`User ${invite.email} is already a team member - removed duplicate invite`);
+                } else {
+                  // User exists but not a member - add them directly to the team
                   await db.insert(usersOnTeam).values({
                     userId: existingUser.id,
-                    role: invite.role!,
+                    role: invite.role,
                     teamId: teamId,
                   });
 
-                  // Delete the pending invite since user was added directly
+                  // Delete the invite since user was added directly
                   await db.delete(userInvites).where(eq(userInvites.email, invite.email!));
-
                   addedDirectly++;
-                  console.log(`User ${invite.email} already exists - added directly to team`);
-                } catch (error) {
-                  console.error(`Failed to add existing user ${invite.email} to team:`, error);
+                  console.log(`User ${invite.email} added directly to team (existing user)`);
+
+                  // TODO: Send notification email to let them know they were added to the team
                 }
               } else {
                 // User doesn't exist - send Supabase invitation email using admin client
@@ -262,8 +338,8 @@ export const teamRouter = createTRPCRouter({
 
       // Return information about the invitation process
       return {
-        sent: results.length - addedDirectly, // Invites sent via email
-        addedDirectly, // Users added directly
+        sent: results.length - addedDirectly, // Invites sent via email (new users only)
+        addedDirectly, // Existing users added directly to team
         skipped: skippedInvites.length,
         skippedInvites,
       };
@@ -276,6 +352,100 @@ export const teamRouter = createTRPCRouter({
         teamId: teamId!,
         id: input.id,
       });
+    }),
+
+  resendInvite: protectedProcedure
+    .input(resendTeamInviteSchema)
+    .mutation(async ({ ctx: { db, session, teamId }, input }) => {
+      if (!teamId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "No team selected",
+        });
+      }
+
+      // Get the invite details
+      const invite = await db.query.userInvites.findFirst({
+        where: eq(userInvites.id, input.id),
+      });
+
+      if (!invite) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Invitation not found",
+        });
+      }
+
+      if (invite.teamId !== teamId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Not authorized to resend this invitation",
+        });
+      }
+
+      // Get team details separately
+      const team = await getTeamById(db, teamId);
+
+      // Import the admin client creator
+      const { createAdminClient } = await import("@api/services/supabase");
+      const adminClient = await createAdminClient();
+
+      // Check if user already exists
+      const { data: existingUsers, error: userError } = await adminClient.auth.admin.listUsers();
+
+      if (userError) {
+        console.error(`Error checking for existing user ${invite.email}:`, userError);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to check user status",
+        });
+      }
+
+      const existingUser = existingUsers.users.find(
+        (u) => u.email?.toLowerCase() === invite.email!.toLowerCase()
+      );
+
+      if (existingUser) {
+        // User already exists - they just need to accept the invitation
+        // The invitation is already in their pending invites on the /teams page
+        console.log(`User ${invite.email} already registered - invitation is pending on /teams page`);
+
+        return {
+          success: true,
+          email: invite.email,
+          message: "User already registered. They can accept the invitation from the Teams page.",
+        };
+      }
+
+      // User doesn't exist - send new Supabase invitation email
+      const { data: inviteData, error } = await adminClient.auth.admin.inviteUserByEmail(
+        invite.email!,
+        {
+          redirectTo: `${process.env.NEXT_PUBLIC_URL || "http://localhost:3333"}/teams`,
+          data: {
+            team_id: teamId,
+            team_name: team?.name,
+            invited_by: session.user.full_name,
+            role: invite.role,
+          },
+        }
+      );
+
+      if (error) {
+        console.error(`Failed to resend Supabase invite to ${invite.email}:`, error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to resend invitation: ${error.message}`,
+        });
+      }
+
+      console.log(`Supabase invite resent to ${invite.email}:`, inviteData);
+
+      return {
+        success: true,
+        email: invite.email,
+        message: "Invitation email sent successfully.",
+      };
     }),
 
   availablePlans: protectedProcedure.query(async ({ ctx: { db, teamId } }) => {
