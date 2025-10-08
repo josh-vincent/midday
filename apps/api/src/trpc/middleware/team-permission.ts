@@ -68,12 +68,16 @@ export const withTeamPermission = async <TReturn>(opts: {
   // First check if user has a direct teamId
   if (result?.teamId) {
     teamId = result.teamId;
+    console.log(`[Team Permission] User ${userId} has direct teamId: ${teamId}, team name: ${result.team?.name}`);
   }
   // Then check if user has any team memberships
   else if (memberships && memberships.length > 0) {
     // Use the first team membership (later we can add team switching)
     teamId = memberships[0]?.teamId || null;
+    console.log(`[Team Permission] User ${userId} using first membership teamId: ${teamId}`);
   }
+
+  console.log(`[Team Permission] User ${userId} memberships:`, memberships.map(m => ({ teamId: m.teamId, role: m.role })));
 
   // If teamId is still null, user has no team
   // Return null teamId instead of throwing an error
@@ -88,19 +92,17 @@ export const withTeamPermission = async <TReturn>(opts: {
     });
   }
 
-  // Cache check for team access
-  const cacheKey = `user:${userId}:team:${teamId}`;
-  let hasAccess = await teamCache.get(cacheKey);
+  // Check if user has access to this specific team
+  const hasAccess =
+    result?.teamId === teamId ||
+    (memberships &&
+      memberships.some((membership: any) => membership.teamId === teamId));
 
-  if (hasAccess === undefined) {
-    // Check if user has access to this specific team
-    hasAccess =
-      result?.teamId === teamId ||
-      (memberships &&
-        memberships.some((membership: any) => membership.teamId === teamId));
-
-    await teamCache.set(cacheKey, hasAccess || false);
-  }
+  console.log(`[Team Permission] Access check for user ${userId} team ${teamId}:`, {
+    directTeamMatch: result?.teamId === teamId,
+    membershipMatch: memberships?.some((m: any) => m.teamId === teamId),
+    hasAccess,
+  });
 
   if (!hasAccess) {
     throw new TRPCError({
