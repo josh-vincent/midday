@@ -10,7 +10,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           { path: "/settings/members", label: "Members" },
           { path: "/settings/invoice", label: "Invoice" },
           { path: "/settings/billing", label: "Billing" },
-          { path: "/settings/developer", label: "Developer" },
+          // API Keys if we enable it 
+          // { path: "/settings/developer", label: "Developer" },
         ]}
       />
 

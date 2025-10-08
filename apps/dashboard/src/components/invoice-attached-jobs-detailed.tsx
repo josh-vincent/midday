@@ -173,11 +173,11 @@ export function InvoiceAttachedJobsDetailed({
 
                     {job.rego && (
                       <div className="flex items-center gap-1">
-                        {/* <RegoInput
+                        <RegoInput
                           value={job.rego}
                           disabled={true}
                           className="pointer-events-none scale-50 origin-left"
-                        /> */}
+                        />
                       </div>
                     )}
                   </div>

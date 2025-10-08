@@ -13,7 +13,7 @@ export function GatekeeperHeader() {
       <div className="hidden sm:flex sm:gap-2">
         <OpenJobSheet>
           <Button>
-            <Plus className="h-4 w-8 mr-2" />
+            <Plus className="h-4 w-4 mr-2" />
             New Job
           </Button>
         </OpenJobSheet>

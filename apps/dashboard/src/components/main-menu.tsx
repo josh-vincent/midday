@@ -8,9 +8,9 @@ import { useEffect, useState } from "react";
 
 const icons = {
   "/": () => <Icons.Overview size={20} />,
-  "/invoices": () => <Icons.Invoice size={20} />,
-  "/jobs": () => <Icons.Apps size={20} />,
   "/gatekeeper": () => <Icons.Tracker size={20} />,
+  "/jobs": () => <Icons.Apps size={20} />,
+  "/invoices": () => <Icons.Invoice size={20} />,
   "/customers": () => <Icons.Customers size={20} />,
   "/reports": () => <Icons.Amount size={20} />,
   "/inbox": () => <Icons.Inbox2 size={20} />,
@@ -23,15 +23,8 @@ const items = [
     name: "Overview",
   },
   {
-    path: "/invoices",
-    name: "Invoices",
-    children: [
-      { path: "/invoices?statuses=paid", name: "Paid" },
-      { path: "/invoices?statuses=unpaid", name: "Unpaid" },
-      { path: "/invoices?statuses=overdue", name: "Overdue" },
-      { path: "/invoices?statuses=draft", name: "Draft" },
-      { path: "/invoices?type=create", name: "Create new" },
-    ],
+    path: "/gatekeeper",
+    name: "Gatekeeper",
   },
   {
     path: "/jobs",
@@ -44,9 +37,18 @@ const items = [
     ],
   },
   {
-    path: "/gatekeeper",
-    name: "Gatekeeper",
+    path: "/invoices",
+    name: "Invoices",
+    children: [
+      { path: "/invoices?statuses=paid", name: "Paid" },
+      { path: "/invoices?statuses=unpaid", name: "Unpaid" },
+      { path: "/invoices?statuses=overdue", name: "Overdue" },
+      { path: "/invoices?statuses=draft", name: "Draft" },
+      { path: "/invoices?type=create", name: "Create new" },
+    ],
   },
+  
+  
   {
     path: "/customers",
     name: "Customers",
@@ -62,18 +64,18 @@ const items = [
       { path: "/reports?view=volume", name: "Volume" },
     ],
   },
-  {
-    path: "/inbox",
-    name: "Documents",
-    children: [{ path: "/inbox/settings", name: "Settings" }],
-  },
+  // {
+  //   path: "/inbox",
+  //   name: "Documents",
+  //   children: [{ path: "/inbox/settings", name: "Settings" }],
+  // },
   {
     path: "/settings",
     name: "Settings",
     children: [
       { path: "/settings", name: "General" },
       { path: "/settings/members", name: "Team Members" },
-      { path: "/settings/notifications", name: "Notifications" },
+      // { path: "/settings/notifications", name: "Notifications" },
     ],
   },
 ];
