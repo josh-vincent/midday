@@ -20,6 +20,7 @@ export function TeamInvite({ invite }: Props) {
   const updateUserMutation = useMutation(
     trpc.user.update.mutationOptions({
       onSuccess: async () => {
+        // Invalidate all queries to refresh the UI with new team
         await queryClient.invalidateQueries();
         router.push("/");
       },
@@ -28,12 +29,17 @@ export function TeamInvite({ invite }: Props) {
 
   const acceptInviteMutation = useMutation(
     trpc.team.acceptInvite.mutationOptions({
-      onSuccess: (data) => {
+      onSuccess: async (data) => {
         if (!data.teamId) {
           return;
         }
 
-        // Update the user's teamId
+        // Invalidate team queries first so the new team appears in the list
+        await queryClient.invalidateQueries({
+          queryKey: trpc.team.list.queryKey(),
+        });
+
+        // Then update the user's current teamId
         updateUserMutation.mutate({
           teamId: data.teamId,
         });

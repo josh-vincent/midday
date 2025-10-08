@@ -1,3 +1,4 @@
+import { AcceptInviteCode } from "@/components/accept-invite-code";
 import { SelectTeamTable } from "@/components/tables/select-team/table";
 import { TeamInvites } from "@/components/team-invites";
 import { UserMenu } from "@/components/user-menu";
@@ -73,6 +74,9 @@ export default async function Teams() {
 
           {/* If there are invites, show them */}
           {invites?.length > 0 && <TeamInvites />}
+
+          {/* Accept invite by code */}
+          <AcceptInviteCode />
 
           <div className="text-center mt-12 border-t-[1px] border-border pt-6 w-full relative border-dashed">
             <span className="absolute left-1/2 -translate-x-1/2 text-sm text-[#878787] bg-background -top-3 px-4">

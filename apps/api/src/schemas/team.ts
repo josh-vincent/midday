@@ -201,6 +201,20 @@ export const deleteTeamInviteSchema = z.object({
   }),
 });
 
+export const resendTeamInviteSchema = z.object({
+  id: z.string().openapi({
+    description: "Unique identifier of the team invitation to resend",
+    example: "invite-123abc456def",
+  }),
+});
+
+export const acceptInviteByCodeSchema = z.object({
+  code: z.string().min(1).max(10).openapi({
+    description: "Invitation code to accept team invitation",
+    example: "ABC123XYZ",
+  }),
+});
+
 export const updateBaseCurrencySchema = z.object({
   baseCurrency: z.string().openapi({
     description:
