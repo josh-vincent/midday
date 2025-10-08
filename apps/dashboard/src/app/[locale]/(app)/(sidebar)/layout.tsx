@@ -43,12 +43,16 @@ export default async function Layout({
     redirect("/teams");
   }
 
+  // Check if user is a member (not owner) - members get minimal UI
+  const isMember = user.currentTeamRole === "member";
+
   return (
     <HydrateClient>
       <div className="relative">
-        <Sidebar />
+        {/* Only show sidebar for owners */}
+        {!isMember && <Sidebar />}
 
-        <div className="md:ml-[70px] pb-8">
+        <div className={isMember ? "pb-8" : "md:ml-[70px] pb-8"}>
           <Header />
           <div className="px-6">{children}</div>
         </div>

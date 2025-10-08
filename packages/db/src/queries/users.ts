@@ -54,10 +54,16 @@ export const getUserById = async (db: Database, id: string) => {
     .from(usersOnTeam)
     .where(eq(usersOnTeam.userId, id));
 
+  // Find the role for the current team
+  const currentTeamRole = userRow.teamId
+    ? userTeams.find((t) => t.teamId === userRow.teamId)?.role || null
+    : null;
+
   return {
     ...userRow,
     team: teamData,
     usersOnTeams: userTeams,
+    currentTeamRole,
   };
 };
 

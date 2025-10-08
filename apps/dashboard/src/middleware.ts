@@ -153,6 +153,35 @@ export async function middleware(request: NextRequest) {
           return NextResponse.redirect(url);
         }
       }
+
+      // 3. Check role-based access for members
+      if (userData && userData.team_id) {
+        // Get user's role for their current team
+        const { data: membership } = await supabase
+          .from("users_on_team")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .eq("team_id", userData.team_id)
+          .single();
+
+        console.log(`[Middleware] User ${session.user.id} role: ${membership?.role} for team ${userData.team_id}`);
+
+        // If user is a member (not owner), restrict access
+        if (membership?.role === "member") {
+          const allowedPaths = ["/gatekeeper", "/settings"];
+          const isAllowedPath = allowedPaths.some((path) =>
+            newUrl.pathname === path || newUrl.pathname.startsWith(`${path}/`)
+          );
+
+          if (!isAllowedPath) {
+            console.log(`[Middleware] Member access denied to ${newUrl.pathname}, redirecting to /gatekeeper`);
+            const url = new URL("/gatekeeper", request.url);
+            return NextResponse.redirect(url);
+          }
+
+          console.log(`[Middleware] Member access allowed to ${newUrl.pathname}`);
+        }
+      }
     }
 
     // Allow invite pages - no redirect needed, just proceed
