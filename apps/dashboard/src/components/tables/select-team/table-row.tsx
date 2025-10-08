@@ -5,6 +5,7 @@ import type { RouterOutputs } from "@api/trpc/routers/_app";
 import { Avatar, AvatarFallback, AvatarImageNext } from "@midday/ui/avatar";
 import { SubmitButton } from "@midday/ui/submit-button";
 import { TableRow as BaseTableRow, TableCell } from "@midday/ui/table";
+import { useToast } from "@midday/ui/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -18,18 +19,27 @@ export function TableRow({ row }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const trpc = useTRPC();
   const router = useRouter();
+  const { toast } = useToast();
 
   const changeTeamMutation = useMutation(
     trpc.user.update.mutationOptions({
-      onMutate: () => {
-        setIsLoading(true);
-      },
       onSuccess: async () => {
-        await queryClient.invalidateQueries();
-        router.push("/");
+        console.log(`[TableRow] Successfully switched to team ${row.id}`);
+        toast({
+          title: "Success",
+          description: `Switched to ${row.name}`,
+        });
+        // Force a full page reload to refresh session
+        window.location.href = "/";
       },
-      onError: () => {
+      onError: (error) => {
+        console.error("Team switch error:", error);
         setIsLoading(false);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to switch teams. Please try again.",
+          variant: "destructive",
+        });
       },
     }),
   );
@@ -65,6 +75,8 @@ export function TableRow({ row }: Props) {
               isSubmitting={isLoading}
               variant="outline"
               onClick={() => {
+                console.log("Switching to team:", row.id, row.name);
+                setIsLoading(true);
                 changeTeamMutation.mutate({
                   teamId: row.id!,
                 });
