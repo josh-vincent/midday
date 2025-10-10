@@ -1,0 +1,36 @@
+{
+  "name": "@midday/actions",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "private": true,
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./auth": "./src/auth/index.ts",
+    "./billing": "./src/billing/index.ts",
+    "./customer": "./src/customer/index.ts",
+    "./invoice": "./src/invoice/index.ts",
+    "./job": "./src/job/index.ts",
+    "./team": "./src/team/index.ts",
+    "./user": "./src/user/index.ts",
+    "./settings": "./src/settings/index.ts"
+  },
+  "dependencies": {
+    "@midday/api-schemas": "workspace:*",
+    "@midday/db": "workspace:*",
+    "@midday/supabase": "workspace:*",
+    "@midday/utils": "workspace:*",
+    "next-safe-action": "^7.10.8",
+    "zod": "3.25.64"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.1",
+    "typescript": "^5.9.2"
+  }
+}

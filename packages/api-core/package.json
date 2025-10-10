@@ -1,0 +1,40 @@
+{
+  "name": "@midday/api-core",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "private": true,
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "test:watch": "bun test --watch"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./routers/billing": "./src/routers/billing.ts",
+    "./routers/customers": "./src/routers/customers.ts",
+    "./routers/invoice": "./src/routers/invoice.ts",
+    "./routers/job": "./src/routers/job.ts",
+    "./routers/tags": "./src/routers/tags.ts",
+    "./routers/team": "./src/routers/team.ts",
+    "./routers/user": "./src/routers/user.ts",
+    "./middleware": "./src/middleware/index.ts"
+  },
+  "dependencies": {
+    "@midday/api-schemas": "workspace:*",
+    "@midday/db": "workspace:*",
+    "@midday/supabase": "workspace:*",
+    "@supabase/supabase-js": "^2.49.2",
+    "@trpc/server": "^11.5.0",
+    "superjson": "^2.2.2",
+    "zod": "3.25.64"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}

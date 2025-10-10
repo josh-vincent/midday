@@ -1,0 +1,47 @@
+{
+  "name": "@midday/dashboard-components",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "private": true,
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./accept-invite-code": "./src/components/accept-invite-code.tsx",
+    "./amount-range": "./src/components/amount-range.tsx",
+    "./animated-number": "./src/components/animated-number.tsx",
+    "./app-settings": "./src/components/app-settings.tsx",
+    "./apps": "./src/components/apps.tsx",
+    "./assigned-user": "./src/components/assigned-user.tsx",
+    "./attachment-item": "./src/components/attachment-item.tsx",
+    "./avatar-upload": "./src/components/avatar-upload.tsx",
+    "./billing": "./src/components/billing/index.ts",
+    "./category": "./src/components/category.tsx",
+    "./change-theme": "./src/components/change-theme.tsx",
+    "./theme-switch": "./src/components/theme-switch.tsx",
+    "./charts": "./src/components/charts/index.ts",
+    "./color-picker": "./src/components/color-picker.tsx",
+    "./settings": "./src/components/settings/index.ts"
+  },
+  "dependencies": {
+    "@midday/ui": "workspace:*",
+    "@midday/utils": "workspace:*",
+    "@number-flow/react": "^0.5.10",
+    "lucide-react": "^0.511.0",
+    "next": "15.5.2",
+    "next-themes": "^0.4.6",
+    "react": "^19.1.1",
+    "react-colorful": "^5.6.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.1",
+    "@types/react-dom": "^19.1.1",
+    "typescript": "^5.9.2"
+  }
+}

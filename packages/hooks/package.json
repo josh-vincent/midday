@@ -1,0 +1,30 @@
+{
+  "name": "@midday/hooks",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "private": true,
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./use-debounce": "./src/use-debounce.ts",
+    "./use-local-storage": "./src/use-local-storage.ts",
+    "./use-media-query": "./src/use-media-query.ts",
+    "./use-clipboard": "./src/use-clipboard.ts",
+    "./use-mounted": "./src/use-mounted.ts",
+    "./use-async": "./src/use-async.ts",
+    "./use-event-listener": "./src/use-event-listener.ts"
+  },
+  "dependencies": {
+    "react": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.1",
+    "typescript": "^5.9.2"
+  }
+}

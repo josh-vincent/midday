@@ -1,0 +1,37 @@
+{
+  "name": "@midday/billing-core",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "private": true,
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "test:watch": "bun test --watch"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./components": "./src/components/index.ts",
+    "./actions": "./src/actions/index.ts",
+    "./hooks": "./src/hooks/index.ts",
+    "./schemas": "./src/schemas/index.ts",
+    "./utils": "./src/utils/index.ts",
+    "./providers": "./src/providers/index.ts"
+  },
+  "dependencies": {
+    "@midday/api-schemas": "workspace:*",
+    "@midday/db": "workspace:*",
+    "@midday/ui": "workspace:*",
+    "@midday/utils": "workspace:*",
+    "@polar-sh/sdk": "^0.35.4",
+    "react": "^19.1.1",
+    "zod": "3.25.64"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.1",
+    "typescript": "^5.9.2"
+  }
+}

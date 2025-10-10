@@ -1,0 +1,33 @@
+{
+  "name": "@midday/api-schemas",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "private": true,
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./customer": "./src/customer.ts",
+    "./invoice": "./src/invoice.ts",
+    "./job": "./src/job.ts",
+    "./tags": "./src/tags.ts",
+    "./team": "./src/team.ts",
+    "./user": "./src/user.ts",
+    "./billing": "./src/billing.ts",
+    "./common": "./src/common.ts"
+  },
+  "dependencies": {
+    "@hono/zod-openapi": "^0.19.8",
+    "zod": "3.25.64",
+    "zod-openapi": "^4.2.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}
