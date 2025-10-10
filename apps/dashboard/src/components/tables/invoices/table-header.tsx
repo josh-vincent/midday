@@ -146,7 +146,7 @@ export function TableHeader({ table, tableScroll }: Props) {
           </TableHead>
         )}
         {isVisible("amount") && (
-          <TableHead className="w-[200px]">
+          <TableHead className="w-[200px] hidden lg:table-cell">
             <Button
               className="p-0 hover:bg-transparent space-x-2"
               variant="ghost"
@@ -162,49 +162,49 @@ export function TableHeader({ table, tableScroll }: Props) {
         )}
 
         {isVisible("vatRate") && (
-          <TableHead className="w-[100px] min-w-[100px]">
+          <TableHead className="w-[100px] min-w-[100px] hidden lg:table-cell">
             <span>VAT Rate</span>
           </TableHead>
         )}
 
         {isVisible("vatAmount") && (
-          <TableHead className="w-[150px] min-w-[150px]">
+          <TableHead className="w-[150px] min-w-[150px] hidden lg:table-cell">
             <span>VAT Amount</span>
           </TableHead>
         )}
 
         {isVisible("taxRate") && (
-          <TableHead className="w-[100px] min-w-[100px]">
+          <TableHead className="w-[100px] min-w-[100px] hidden lg:table-cell">
             <span>Tax Rate</span>
           </TableHead>
         )}
 
         {isVisible("taxAmount") && (
-          <TableHead className="w-[150px] min-w-[150px]">
+          <TableHead className="w-[150px] min-w-[150px] hidden lg:table-cell">
             <span>Tax Amount</span>
           </TableHead>
         )}
 
         {isVisible("exclVat") && (
-          <TableHead className="w-[150px] min-w-[150px]">
+          <TableHead className="w-[150px] min-w-[150px] hidden lg:table-cell">
             <span>Excl. VAT</span>
           </TableHead>
         )}
 
         {isVisible("exclTax") && (
-          <TableHead className="w-[150px] min-w-[150px]">
+          <TableHead className="w-[150px] min-w-[150px] hidden lg:table-cell">
             <span>Excl. Tax</span>
           </TableHead>
         )}
 
         {isVisible("internalNote") && (
-          <TableHead className="w-[150px] min-w-[150px]">
+          <TableHead className="w-[150px] min-w-[150px] hidden lg:table-cell">
             <span>Internal Note</span>
           </TableHead>
         )}
 
         {isVisible("issueDate") && (
-          <TableHead className="w-[120px] min-w-[120px]">
+          <TableHead className="w-[120px] min-w-[120px] hidden lg:table-cell">
             <Button
               className="p-0 hover:bg-transparent space-x-2"
               variant="ghost"
@@ -222,7 +222,7 @@ export function TableHeader({ table, tableScroll }: Props) {
         )}
 
         {isVisible("sentAt") && (
-          <TableHead className="w-[150px] min-w-[150px]">
+          <TableHead className="w-[150px] min-w-[150px] hidden lg:table-cell">
             <span>Sent at</span>
           </TableHead>
         )}
