@@ -1,5 +1,10 @@
 export function getUrl() {
-  // Prefer VERCEL_URL for all Vercel deployments (production, preview, etc.)
+  // Client-side: use window.location.origin
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+
+  // Server-side: prefer VERCEL_URL for all Vercel deployments (production, preview, etc.)
   // This ensures each deployment uses its own URL
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
