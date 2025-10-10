@@ -1,17 +1,19 @@
 import * as jose from "jose";
 
-export async function verify(token: string) {
-  const secret = new TextEncoder().encode(process.env.INVOICE_JWT_SECRET);
-  const { payload } = await jose.jwtVerify(token, secret);
+export async function verify(token: string, secret?: string) {
+  const jwtSecret = secret || process.env.INVOICE_JWT_SECRET;
+  const encodedSecret = new TextEncoder().encode(jwtSecret);
+  const { payload } = await jose.jwtVerify(token, encodedSecret);
 
   return payload;
 }
 
-export async function generateToken(id: string) {
-  const secret = new TextEncoder().encode(process.env.INVOICE_JWT_SECRET);
+export async function generateToken(id: string, secret?: string) {
+  const jwtSecret = secret || process.env.INVOICE_JWT_SECRET;
+  const encodedSecret = new TextEncoder().encode(jwtSecret);
   const token = await new jose.SignJWT({ id })
     .setProtectedHeader({ alg: "HS256" })
-    .sign(secret);
+    .sign(encodedSecret);
 
   return token;
 }

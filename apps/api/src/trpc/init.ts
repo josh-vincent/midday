@@ -19,6 +19,7 @@ type TRPCContext = {
   teamId?: string;
   supabaseUrl?: string;
   supabaseServiceKey?: string;
+  invoiceJwtSecret?: string;
 };
 
 export const createTRPCContext = async (
@@ -36,6 +37,8 @@ export const createTRPCContext = async (
   const supabaseJwtSecret = c.env?.SUPABASE_JWT_SECRET || process.env.SUPABASE_JWT_SECRET;
   // @ts-ignore - c.env exists in Cloudflare Workers
   const databaseUrl = c.env?.DATABASE_URL || process.env.DATABASE_URL;
+  // @ts-ignore - c.env exists in Cloudflare Workers
+  const invoiceJwtSecret = c.env?.INVOICE_JWT_SECRET || process.env.INVOICE_JWT_SECRET;
 
   const session = await verifyAccessToken(accessToken, supabaseJwtSecret);
   const supabase = await createClient(accessToken, supabaseUrl, supabaseServiceKey);
@@ -49,6 +52,7 @@ export const createTRPCContext = async (
     geo,
     supabaseUrl,
     supabaseServiceKey,
+    invoiceJwtSecret,
   };
 };
 

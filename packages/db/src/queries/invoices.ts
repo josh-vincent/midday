@@ -578,6 +578,7 @@ type DraftInvoiceParams = {
   token?: string;
   teamId: string;
   userId: string;
+  invoiceJwtSecret?: string;
 };
 
 export async function draftInvoice(db: Database, params: DraftInvoiceParams) {
@@ -606,9 +607,10 @@ export async function draftInvoice(db: Database, params: DraftInvoiceParams) {
     bottomBlock,
     amount,
     lineItems,
+    invoiceJwtSecret,
   } = params;
 
-  const useToken = token ?? (await generateToken(id));
+  const useToken = token ?? (await generateToken(id, invoiceJwtSecret));
 
   // Remove paymentDetails and fromDetails from template since they're stored separately
   const { paymentDetails: _, fromDetails: __, ...restTemplate } = template;
@@ -764,13 +766,14 @@ export type DuplicateInvoiceParams = {
   userId: string;
   invoiceNumber: string;
   teamId: string;
+  invoiceJwtSecret?: string;
 };
 
 export async function duplicateInvoice(
   db: Database,
   params: DuplicateInvoiceParams,
 ) {
-  const { id, userId, invoiceNumber, teamId } = params;
+  const { id, userId, invoiceNumber, teamId, invoiceJwtSecret } = params;
 
   // 1. Fetch the invoice that needs to be duplicated
   const [invoice] = await db
@@ -800,7 +803,7 @@ export async function duplicateInvoice(
   }
 
   const draftId = uuidv4();
-  const token = await generateToken(draftId);
+  const token = await generateToken(draftId, invoiceJwtSecret);
 
   const result = await draftInvoice(db, {
     id: draftId,
@@ -833,6 +836,7 @@ export async function duplicateInvoice(
     customerDetails: invoice.customerDetails,
     // @ts-expect-error - JSONB
     lineItems: invoice.lineItems,
+    invoiceJwtSecret,
   });
 
   logActivity({

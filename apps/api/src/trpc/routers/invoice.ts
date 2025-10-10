@@ -122,8 +122,8 @@ export const invoiceRouter = createTRPCRouter({
 
   getInvoiceByToken: publicProcedure
     .input(getInvoiceByTokenSchema)
-    .query(async ({ input, ctx: { db } }) => {
-      const { id } = (await verify(decodeURIComponent(input.token))) as {
+    .query(async ({ input, ctx: { db, invoiceJwtSecret } }) => {
+      const { id } = (await verify(decodeURIComponent(input.token), invoiceJwtSecret)) as {
         id: string;
       };
 
@@ -315,7 +315,7 @@ export const invoiceRouter = createTRPCRouter({
 
   draft: protectedProcedure
     .input(draftInvoiceSchema)
-    .mutation(async ({ input, ctx: { db, teamId, session } }) => {
+    .mutation(async ({ input, ctx: { db, teamId, session, invoiceJwtSecret } }) => {
       try {
         // For drafts, we can work without a teamId temporarily
         // This allows users to create drafts before having a team
@@ -394,6 +394,7 @@ export const invoiceRouter = createTRPCRouter({
             lineItems: input.lineItems || [],
             topBlock: input.topBlock,
             bottomBlock: input.bottomBlock,
+            invoiceJwtSecret,
           });
           return result;
         } catch (dbError) {
@@ -550,7 +551,7 @@ export const invoiceRouter = createTRPCRouter({
 
   duplicate: protectedProcedure
     .input(duplicateInvoiceSchema)
-    .mutation(async ({ input, ctx: { db, session, teamId } }) => {
+    .mutation(async ({ input, ctx: { db, session, teamId, invoiceJwtSecret } }) => {
       const nextInvoiceNumber = await getNextInvoiceNumber(db, teamId!);
 
       return duplicateInvoice(db, {
@@ -558,6 +559,7 @@ export const invoiceRouter = createTRPCRouter({
         userId: session?.user.id!,
         invoiceNumber: nextInvoiceNumber!,
         teamId: teamId!,
+        invoiceJwtSecret,
       });
     }),
 
