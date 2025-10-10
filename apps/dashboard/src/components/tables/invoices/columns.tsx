@@ -25,7 +25,7 @@ export const columns: ColumnDef<Invoice>[] = [
     id: "select",
     size: 40,
     header: ({ table }) => (
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center px-3">
         <Checkbox
           checked={table.getIsAllPageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
@@ -34,9 +34,19 @@ export const columns: ColumnDef<Invoice>[] = [
       </div>
     ),
     cell: ({ row }) => {
+      const status = row.original.status;
+
+      // Determine dot color based on status
+      let dotColor = "bg-gray-500"; // draft
+      if (status === "unpaid") dotColor = "bg-red-500";
+      if (status === "paid") dotColor = "bg-green-500";
+      if (status === "canceled") dotColor = "bg-gray-500";
+      if (status === "overdue") dotColor = "bg-orange-500";
+      if (status === "scheduled") dotColor = "bg-blue-500";
+
       return (
-        <div 
-          className="flex items-center justify-center"
+        <div
+          className="flex items-center justify-center px-3 relative"
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
@@ -48,6 +58,10 @@ export const columns: ColumnDef<Invoice>[] = [
               row.toggleSelected(!!value);
             }}
             aria-label="Select row"
+          />
+          <span
+            className={`absolute top-2 right-2 w-2 h-2 rounded-full ${dotColor}`}
+            title={status}
           />
         </div>
       );
@@ -189,6 +203,7 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     header: "Amount",
     accessorKey: "amount",
+    meta: { hideOnMobile: true },
     cell: ({ row }) => {
       if (!row.original.amount) return "-";
       return (
@@ -208,6 +223,7 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     header: "VAT Rate",
     accessorKey: "vatRate",
+    meta: { hideOnMobile: true },
     cell: ({ row }) => {
       // @ts-expect-error template is a jsonb field
       const vatRate = row.original.template.vatRate as number | undefined;
@@ -227,6 +243,7 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     header: "VAT Amount",
     accessorKey: "vatAmount",
+    meta: { hideOnMobile: true },
     cell: ({ row }) => (
       <span
         className={cn({
@@ -243,6 +260,7 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     header: "Tax Rate",
     accessorKey: "taxRate",
+    meta: { hideOnMobile: true },
     cell: ({ row }) => {
       // @ts-expect-error template is a jsonb field
       const taxRate = row.original.template.taxRate as number | undefined;
@@ -262,6 +280,7 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     header: "Tax Amount",
     accessorKey: "taxAmount",
+    meta: { hideOnMobile: true },
     cell: ({ row }) => (
       <span
         className={cn({
@@ -278,6 +297,7 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     header: "Excl. VAT",
     accessorKey: "exclVat",
+    meta: { hideOnMobile: true },
     cell: ({ row }) => (
       <span
         className={cn({
@@ -296,6 +316,7 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     header: "Excl. Tax",
     accessorKey: "exclTax",
+    meta: { hideOnMobile: true },
     cell: ({ row }) => (
       <span
         className={cn({
@@ -314,6 +335,7 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     header: "Internal Note",
     accessorKey: "internalNote",
+    meta: { hideOnMobile: true },
     cell: ({ row }) => {
       return <span className="truncate">{row.original.internalNote}</span>;
     },
@@ -321,6 +343,7 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     header: "Issue date",
     accessorKey: "issueDate",
+    meta: { hideOnMobile: true },
     cell: ({ row, table }) => {
       const date = row.original.issueDate;
       return (
@@ -333,6 +356,7 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     header: "Sent at",
     accessorKey: "sentAt",
+    meta: { hideOnMobile: true },
     cell: ({ row, table }) => {
       const sentAt = row.original.sentAt;
       const sentTo = row.original.sentTo;
