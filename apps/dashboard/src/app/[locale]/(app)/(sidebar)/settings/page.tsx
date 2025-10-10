@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "Team Settings | Midday",
 };
 
-export default async function Account() {
+export default function Account() {
   prefetch(trpc.team.current.queryOptions());
 
   return (

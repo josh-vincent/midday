@@ -136,7 +136,7 @@ export function InvoiceShareDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>Share Invoice {invoice.number}</DialogTitle>
           <DialogDescription>

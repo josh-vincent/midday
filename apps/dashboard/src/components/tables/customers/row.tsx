@@ -12,21 +12,25 @@ type Props = {
 
 export function CustomerRow({ row, setOpen }: Props) {
   return (
-    <>
-      <TableRow
-        className="group h-[45px] cursor-pointer hover:bg-[#F2F1EF] hover:dark:bg-secondary"
-        key={row.id}
-      >
-        {row.getVisibleCells().map((cell, index) => (
+    <TableRow
+      className="group h-[45px] cursor-pointer hover:bg-[#F2F1EF] hover:dark:bg-secondary"
+      key={row.id}
+    >
+      {row.getVisibleCells().map((cell) => {
+        const hideOnMobile = (cell.column.columnDef.meta as any)?.hideOnMobile;
+        const mobileClass = hideOnMobile ? 'hidden lg:table-cell' : '';
+        const isActionColumn = cell.column.id === 'actions';
+
+        return (
           <TableCell
             key={cell.id}
-            onClick={() => ![3, 4, 5, 6].includes(index) && setOpen(row.id)}
-            className={cn(cell.column.columnDef.meta?.className)}
+            onClick={() => !isActionColumn && setOpen(row.id)}
+            className={cn(cell.column.columnDef.meta?.className, mobileClass)}
           >
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
           </TableCell>
-        ))}
-      </TableRow>
-    </>
+        );
+      })}
+    </TableRow>
   );
 }

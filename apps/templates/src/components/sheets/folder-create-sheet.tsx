@@ -147,7 +147,7 @@ export function FolderCreateSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[500px] sm:max-w-[500px] overflow-y-auto">
+      <SheetContent className="w-[500px] sm:max-w-[800px] overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Create New Folder</SheetTitle>
           <SheetDescription>

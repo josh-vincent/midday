@@ -142,7 +142,22 @@ export const getCustomers = async (
     order = "asc",
   } = params;
 
-  let query = db.select().from(customers).where(eq(customers.teamId, teamId));
+  // Build WHERE conditions
+  const whereConditions = [eq(customers.teamId, teamId)];
+
+  // Add search filter if provided
+  if (search) {
+    whereConditions.push(
+      or(
+        ilike(customers.name, `%${search}%`),
+        ilike(customers.email, `%${search}%`),
+        ilike(customers.phone, `%${search}%`),
+        ilike(customers.contact, `%${search}%`),
+      )!
+    );
+  }
+
+  let query = db.select().from(customers).where(and(...whereConditions));
 
   // Add sorting
   if (sort && order) {
@@ -156,10 +171,12 @@ export const getCustomers = async (
   query = query.limit(limit).offset(offset);
 
   const results = await query;
+
+  // Count total with same search filter
   const totalQuery = await db
     .select({ count: customers.id })
     .from(customers)
-    .where(eq(customers.teamId, teamId));
+    .where(and(...whereConditions));
 
   return {
     data: results,

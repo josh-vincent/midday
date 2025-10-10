@@ -78,16 +78,22 @@ const JobEntry = memo(({
             </div>
           </div>
           
-          <div className="flex flex-colitems-center justify-between gap-3 mb-3">
+          <div className="flex flex-col justify-between gap-3 mb-3">
           <div className="text-lg text-muted-foreground break-after-left mb-2">
             {entry.companyName}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex  text-sm text-muted-foreground">
+              <div className="flex flex-col text-sm text-muted-foreground">
+            {entry.latestJob.addressSite && (
+              <span>
+                {entry.latestJob.addressSite}
+              </span>
+            )}
             {entry.latestJob.materialType && (
               <span>
                 Soil Type: {entry.latestJob.materialType}
               </span>
             )}
-  
+            </div>
           </div>
           </div>        
         </div>
@@ -156,6 +162,7 @@ export function GatekeeperForm() {
 
         // Also invalidate all other job queries
         queryClient.invalidateQueries({
+          // @ts-ignore
           predicate: (query) => {
             const queryKey = query.queryKey;
             return queryKey[0] === 'trpc' &&
@@ -220,7 +227,7 @@ export function GatekeeperForm() {
     // Search filter - only by customer name and rego
     if (deferredSearch) {
       const searchLower = deferredSearch.toLowerCase();
-      jobs = jobs.filter((entry) =>
+      jobs = jobs.filter((entry:any) =>
         entry.companyName.toLowerCase().includes(searchLower) ||
         entry.rego.toLowerCase().includes(searchLower)
       );
@@ -234,7 +241,7 @@ export function GatekeeperForm() {
       {/* Header with Search - Fixed at top */}
       <div className="flex-shrink-0 pb-4">
         <Card>
-          <CardContent className="pt-6">
+          <CardContent className="pt-10">
             <GatekeeperHeader />
           </CardContent>
         </Card>
@@ -266,7 +273,7 @@ export function GatekeeperForm() {
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
-                {filteredJobs.map((entry) => (
+                {filteredJobs.map((entry:any) => (
                   <JobEntry
                     key={`${entry.companyName}-${entry.rego}-${entry.totalLoads}`}
                     entry={entry}

@@ -6,13 +6,13 @@ import { useCustomerFilterParams } from "@/hooks/use-customer-filter-params";
 import { useCustomerParams } from "@/hooks/use-customer-params";
 import { useSortParams } from "@/hooks/use-sort-params";
 import { useTableScroll } from "@/hooks/use-table-scroll";
+import { useCustomersStore } from "@/store/customers";
 import { useTRPC } from "@/trpc/client";
 import { Table, TableBody } from "@midday/ui/table";
 import { useMutation, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import {
   getCoreRowModel,
   useReactTable,
-  type VisibilityState,
 } from "@tanstack/react-table";
 import React, { useEffect, useMemo, useState } from "react";
 import { useInView } from "react-intersection-observer";
@@ -27,13 +27,11 @@ export function DataTable() {
   const trpc = useTRPC();
   const { filter, hasFilters } = useCustomerFilterParams();
   const { params } = useSortParams();
+  const { columnVisibility } = useCustomersStore();
 
   // State for bulk linking dialog
   const [showBulkLinkDialog, setShowBulkLinkDialog] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<{ id: string; name: string } | null>(null);
-
-  // State for column visibility
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
   const tableScroll = useTableScroll({
     useColumnWidths: true,
@@ -102,7 +100,6 @@ export function DataTable() {
     state: {
       columnVisibility,
     },
-    onColumnVisibilityChange: setColumnVisibility,
     meta: {
       deleteCustomer: handleDeleteCustomer,
       showBulkLinkDialog: handleShowBulkLinkDialog,

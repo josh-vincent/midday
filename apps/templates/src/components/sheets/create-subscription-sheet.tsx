@@ -85,7 +85,7 @@ export function CreateSubscriptionSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-[500px] overflow-y-auto">
+      <SheetContent className="sm:max-w-[800px] overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Create New Subscription</SheetTitle>
           <SheetDescription>

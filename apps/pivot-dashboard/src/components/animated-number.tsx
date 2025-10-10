@@ -1,7 +1,7 @@
 "use client";
 
 import { useUserQuery } from "@/hooks/use-user";
-import NumberFlow from "@number-flow/react";
+import { AnimatedNumber as SharedAnimatedNumber } from "@midday/dashboard-components";
 
 type Props = {
   value: number;
@@ -19,19 +19,15 @@ export function AnimatedNumber({
   locale,
 }: Props) {
   const { data: user } = useUserQuery();
-  const localeToUse = locale || user?.locale;
+  const localeToUse = locale || user?.locale || "en";
 
   return (
-    <NumberFlow
+    <SharedAnimatedNumber
       value={value}
-      format={ currency ? {
-        style: "currency",
-        currency: currency ?? "AUD",
-        minimumFractionDigits,
-        maximumFractionDigits,
-      } : undefined}
-      willChange
-      locales={localeToUse ?? "en"}
+      currency={currency}
+      minimumFractionDigits={minimumFractionDigits}
+      maximumFractionDigits={maximumFractionDigits}
+      locale={localeToUse}
     />
   );
 }

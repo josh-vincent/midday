@@ -177,7 +177,7 @@ export function JobSheet() {
   return (
     <>
     <Sheet open={isOpen} onOpenChange={handleOnOpenChange}>
-      <SheetContent className="sm:max-w-[540px]">
+      <SheetContent className="sm:max-w-[800px]">
         <SheetHeader>
           <SheetTitle>{isEditMode ? 'Edit Job' : 'Create New Job'}</SheetTitle>
           <SheetDescription>

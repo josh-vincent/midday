@@ -12,12 +12,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@midday/ui/sheet";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { toast } from "@midday/ui/use-toast";
 
 export function CustomerSheet() {
-  const { createCustomer, setParams } = useCustomerParams();
+  const { createCustomer, customerId, setParams } = useCustomerParams();
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
   const trpc = useTRPC();
@@ -38,21 +38,52 @@ export function CustomerSheet() {
     note: "",
   });
 
-  const createMutation = useMutation(
+  // Fetch customer data when editing
+  const { data: customerData } = useQuery(
+    trpc.customers.getById.queryOptions(
+      { id: customerId || "" },
+      {
+        enabled: !!customerId,
+      }
+    )
+  );
+
+  // Populate form when customer data is loaded
+  useEffect(() => {
+    if (customerData) {
+      setFormData({
+        name: customerData.name || "",
+        email: customerData.email || "",
+        phone: customerData.phone || "",
+        contact: customerData.contact || "",
+        addressLine1: customerData.addressLine1 || "",
+        addressLine2: customerData.addressLine2 || "",
+        city: customerData.city || "",
+        state: customerData.state || "",
+        zipCode: customerData.postalCode || "",
+        country: customerData.country || "",
+        website: customerData.website || "",
+        taxNumber: customerData.taxNumber || "",
+        note: customerData.note || "",
+      });
+    }
+  }, [customerData]);
+
+  const upsertMutation = useMutation(
     trpc.customers.upsert.mutationOptions({
       onSuccess: () => {
         queryClient.invalidateQueries({
           predicate: (query) => {
             const queryKey = query.queryKey;
-            return queryKey[0] === 'trpc' && 
-                   queryKey[1] && 
+            return queryKey[0] === 'trpc' &&
+                   queryKey[1] &&
                    queryKey[1].toString().startsWith('customers.');
           },
         });
         toast({
-          title: "Customer created successfully",
+          title: customerId ? "Customer updated successfully" : "Customer created successfully",
         });
-        setParams({ createCustomer: false });
+        setParams(null);
         // Reset form
         setFormData({
           name: "",
@@ -73,7 +104,7 @@ export function CustomerSheet() {
       },
       onError: (error) => {
         toast({
-          title: "Failed to create customer: " + error.message,
+          title: `Failed to ${customerId ? "update" : "create"} customer: ` + error.message,
         });
         setIsLoading(false);
       },
@@ -89,19 +120,46 @@ export function CustomerSheet() {
       return;
     }
     setIsLoading(true);
-    createMutation.mutate(formData);
+    upsertMutation.mutate({
+      ...(customerId && { id: customerId }),
+      ...formData,
+      zip: formData.zipCode,
+      vatNumber: formData.taxNumber,
+    });
   };
+
+  const isOpen = createCustomer || !!customerId;
 
   return (
     <Sheet
-      open={createCustomer}
-      onOpenChange={(open) => setParams({ createCustomer: open })}
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          setParams(null);
+          // Reset form when closing
+          setFormData({
+            name: "",
+            email: "",
+            phone: "",
+            contact: "",
+            addressLine1: "",
+            addressLine2: "",
+            city: "",
+            state: "",
+            zipCode: "",
+            country: "",
+            website: "",
+            taxNumber: "",
+            note: "",
+          });
+        }
+      }}
     >
-      <SheetContent className="sm:max-w-[500px] overflow-y-auto">
+      <SheetContent className="sm:max-w-[800px] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Create Customer</SheetTitle>
+          <SheetTitle>{customerId ? "Edit" : "Create"} Customer</SheetTitle>
           <SheetDescription>
-            Add a new customer to your database
+            {customerId ? "Update customer information" : "Add a new customer to your database"}
           </SheetDescription>
         </SheetHeader>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -275,13 +333,16 @@ export function CustomerSheet() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setParams({ createCustomer: false })}
+              onClick={() => setParams(null)}
               className="flex-1"
             >
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading} className="flex-1">
-              {isLoading ? "Creating..." : "Create Customer"}
+              {isLoading
+                ? (customerId ? "Updating..." : "Creating...")
+                : (customerId ? "Update Customer" : "Create Customer")
+              }
             </Button>
           </div>
         </form>

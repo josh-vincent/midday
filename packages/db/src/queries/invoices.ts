@@ -368,8 +368,9 @@ export async function getPaymentStatus(
 ): Promise<PaymentStatusResult> {
   try {
     // Use execute instead of executeOnReplica since we're using primary only
+    // Cast teamId to UUID to resolve function ambiguity
     const results = await db.execute(
-      sql`SELECT * FROM get_payment_score(${teamId})`,
+      sql`SELECT * FROM get_payment_score(${teamId}::uuid)`,
     );
     const result = Array.isArray(results)
       ? (results[0] as DbPaymentStatusResult)

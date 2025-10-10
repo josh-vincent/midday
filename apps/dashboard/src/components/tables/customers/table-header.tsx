@@ -3,182 +3,126 @@
 import { HorizontalPagination } from "@/components/horizontal-pagination";
 import { useSortParams } from "@/hooks/use-sort-params";
 import { Button } from "@midday/ui/button";
-import { cn } from "@midday/ui/cn";
 import {
-  TableHeader as BaseTableHeader,
+  TableHeader as UITableHeader,
   TableHead,
   TableRow,
 } from "@midday/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@midday/ui/dropdown-menu";
-import { ArrowDown, ArrowUp, Settings2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import type { Table } from "@tanstack/react-table";
 import type { Customer } from "./columns";
 
-interface Props {
+type Props = {
   table: Table<Customer>;
-  tableScroll?: {
-    canScrollLeft: boolean;
-    canScrollRight: boolean;
-    isScrollable: boolean;
-    scrollLeft: () => void;
-    scrollRight: () => void;
-  };
-}
+  tableScroll?: any;
+};
 
 export function TableHeader({ table, tableScroll }: Props) {
   const { params, setParams } = useSortParams();
 
-  const [column, value] = params.sort || [];
+  const handleSort = (columnId: string) => {
+    // Parse current sort from URL params
+    const currentSortString = params.sort?.[0] || "";
+    const [currentColumn, currentDirection] = currentSortString.split(":");
 
-  const createSortQuery = (name: string) => {
-    const [currentColumn, currentValue] = params.sort || [];
+    let newSort: string[] = [];
 
-    if (name === currentColumn) {
-      if (currentValue === "asc") {
-        setParams({ sort: [name, "desc"] });
-      } else if (currentValue === "desc") {
-        setParams({ sort: null });
-      } else {
-        setParams({ sort: [name, "asc"] });
+    if (currentColumn === columnId) {
+      if (currentDirection === "asc") {
+        // Currently asc, switch to desc
+        newSort = [`${columnId}:desc`];
+      } else if (currentDirection === "desc") {
+        // Currently desc, remove sort
+        newSort = [];
       }
     } else {
-      setParams({ sort: [name, "asc"] });
+      // New column, start with asc
+      newSort = [`${columnId}:asc`];
     }
+
+    setParams({ sort: newSort });
   };
 
+  // Parse current sort from URL params to determine sort state
+  const currentSortString = params.sort?.[0] || "";
+  const [currentColumn, currentDirection] = currentSortString.split(":");
+
   return (
-    <BaseTableHeader className="border-l-0 border-r-0">
-      <TableRow>
-        <TableHead className="w-[240px] min-w-[240px] md:sticky md:left-0 bg-background z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background after:z-[-1]">
-          <div className="flex items-center justify-between">
-            <Button
-              className="p-0 hover:bg-transparent space-x-2"
-              variant="ghost"
-              onClick={() => createSortQuery("name")}
-            >
-              <span>Name</span>
-              {"name" === column && value === "asc" && <ArrowDown size={16} />}
-              {"name" === column && value === "desc" && <ArrowUp size={16} />}
-            </Button>
-            {tableScroll?.isScrollable && (
-              <HorizontalPagination
-                canScrollLeft={tableScroll.canScrollLeft}
-                canScrollRight={tableScroll.canScrollRight}
-                onScrollLeft={tableScroll.scrollLeft}
-                onScrollRight={tableScroll.scrollRight}
-                className="ml-auto hidden md:flex"
-              />
-            )}
-          </div>
-        </TableHead>
-        <TableHead className="w-[180px] min-w-[180px] ">
-          <Button
-            className="p-0 hover:bg-transparent space-x-2"
-            variant="ghost"
-            onClick={() => createSortQuery("contact")}
-          >
-            <span>Contact person</span>
-            {"contact" === column && value === "asc" && <ArrowDown size={16} />}
-            {"contact" === column && value === "desc" && <ArrowUp size={16} />}
-          </Button>
-        </TableHead>
-        <TableHead>
-          <Button
-            className="p-0 hover:bg-transparent space-x-2"
-            variant="ghost"
-            onClick={() => createSortQuery("email")}
-          >
-            <span>Email</span>
-            {"email" === column && value === "asc" && <ArrowDown size={16} />}
-            {"email" === column && value === "desc" && <ArrowUp size={16} />}
-          </Button>
-        </TableHead>
-        <TableHead className="w-[200px]">
-          <Button
-            className="p-0 hover:bg-transparent space-x-2"
-            variant="ghost"
-            onClick={() => createSortQuery("invoices")}
-          >
-            <span>Invoices</span>
-            {"invoices" === column && value === "asc" && (
-              <ArrowDown size={16} />
-            )}
-            {"invoices" === column && value === "desc" && <ArrowUp size={16} />}
-          </Button>
-        </TableHead>
-        <TableHead>
-          <Button
-            className="p-0 hover:bg-transparent space-x-2"
-            variant="ghost"
-            onClick={() => createSortQuery("projects")}
-          >
-            <span>Projects</span>
-            {"projects" === column && value === "asc" && (
-              <ArrowDown size={16} />
-            )}
-            {"projects" === column && value === "desc" && <ArrowUp size={16} />}
-          </Button>
-        </TableHead>
+    <UITableHeader>
+      {table.getHeaderGroups().map((headerGroup) => (
+        <TableRow key={headerGroup.id}>
+          {headerGroup.headers.map((header) => {
+            const canSort = header.column.getCanSort();
+            const columnId = header.column.id;
+            const isSorted = currentColumn === columnId;
+            const sortDirection = isSorted ? currentDirection : false;
 
-        <TableHead className="w-[280px] max-w-[280px]">
-          <Button
-            className="p-0 hover:bg-transparent space-x-2"
-            variant="ghost"
-            onClick={() => createSortQuery("tags")}
-          >
-            <span>Tags</span>
-            {"tags" === column && value === "asc" && <ArrowDown size={16} />}
-            {"tags" === column && value === "desc" && <ArrowUp size={16} />}
-          </Button>
-        </TableHead>
+            const hideOnMobile = (header.column.columnDef.meta as any)?.hideOnMobile;
+            const mobileClass = hideOnMobile ? 'hidden lg:table-cell' : '';
 
-        <TableHead
-          className={cn(
-            "w-[100px] md:sticky md:right-0 bg-background z-30",
-            "before:absolute before:left-0 before:top-0 before:bottom-0 before:w-px before:bg-border",
-            "after:absolute after:left-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-r after:from-transparent after:to-background after:z-[-1]",
-          )}
-        >
-          <div className="flex items-center justify-between">
-            <span>Actions</span>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                >
-                  <Settings2 className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {table
-                  .getAllColumns()
-                  .filter((column) => column.getCanHide())
-                  .map((column) => {
-                    return (
-                      <DropdownMenuCheckboxItem
-                        key={column.id}
-                        className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
-                        }
+            let headerClassName = '';
+            if (header.column.id === 'name') {
+              headerClassName = `w-[240px] min-w-[240px] md:sticky md:left-0 bg-background z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background after:z-[-1] ${mobileClass}`.trim();
+            } else if (header.column.id === 'actions') {
+              headerClassName = `sticky right-0 bg-background z-30 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:left-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-r after:from-transparent after:to-background after:z-[-1] ${mobileClass}`.trim();
+            } else {
+              headerClassName = mobileClass;
+            }
+
+            return (
+              <TableHead
+                key={header.id}
+                style={{
+                  width: header.column.id === 'name'
+                    ? '240px'
+                    : tableScroll?.columnWidths?.[header?.column?.id],
+                }}
+                className={headerClassName}
+              >
+                {header.isPlaceholder ? null : (
+                  <div className="flex items-center space-x-1">
+                    {canSort ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="-ml-3 h-8 data-[state=open]:bg-accent"
+                        onClick={() => handleSort(header?.column.id)}
                       >
-                        {column.id}
-                      </DropdownMenuCheckboxItem>
-                    );
-                  })}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </TableHead>
-      </TableRow>
-    </BaseTableHeader>
+                        <span>
+                          {header.column.columnDef.header
+                            ? typeof header.column.columnDef.header === "function"
+                              ? header.getContext
+                                ? (header.column.columnDef.header as any)(header.getContext())
+                                : null
+                              : header.column.columnDef.header
+                            : null}
+                        </span>
+                        {sortDirection === "desc" ? (
+                          <ArrowDown className="ml-2 h-4 w-4" />
+                        ) : sortDirection === "asc" ? (
+                          <ArrowUp className="ml-2 h-4 w-4" />
+                        ) : (
+                          <ArrowUpDown className="ml-2 h-4 w-4" />
+                        )}
+                      </Button>
+                    ) : (
+                      <>
+                        {header.column.columnDef.header
+                          ? typeof header.column.columnDef.header === "function"
+                            ? header.getContext
+                              ? (header.column.columnDef.header as any)(header.getContext())
+                              : null
+                            : header.column.columnDef.header
+                          : null}
+                      </>
+                    )}
+                  </div>
+                )}
+              </TableHead>
+            );
+          })}
+        </TableRow>
+      ))}
+    </UITableHeader>
   );
 }

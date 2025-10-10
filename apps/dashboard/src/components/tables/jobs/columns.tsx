@@ -134,7 +134,7 @@ export const columns: ColumnDef<Job>[] = [
       const date = row.getValue("jobDate") as string | null;
       const dateFormat = (table.options.meta as any)?.dateFormat || "MMM d, yyyy";
 
-      if (!date) return "-";
+      if (!date) return <Badge variant="outline">N/A</Badge>;
 
       return format(new Date(date), dateFormat);
     },
@@ -157,9 +157,12 @@ export const columns: ColumnDef<Job>[] = [
     meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const description = row.getValue("description") as string | null;
+
+      if (!description) return <Badge variant="outline">N/A</Badge>;
+
       return (
-        <span className="truncate max-w-[300px]" title={description || ""}>
-          {description || "-"}
+        <span className="truncate max-w-[300px]" title={description}>
+          {description}
         </span>
       );
     },
@@ -178,7 +181,7 @@ export const columns: ColumnDef<Job>[] = [
             {rego}
             </Badge>
       ) : (
-        "-"
+        <Badge variant="outline">N/A</Badge>
       );
     },
   },
@@ -191,7 +194,7 @@ export const columns: ColumnDef<Job>[] = [
     meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const pricePerUnit = row.getValue("pricePerUnit") as number | null;
-      return pricePerUnit ? `$${pricePerUnit}` : "-";
+      return pricePerUnit ? `$${pricePerUnit}` : <Badge variant="outline">N/A</Badge>;
     },
   },
   {
@@ -203,7 +206,7 @@ export const columns: ColumnDef<Job>[] = [
     meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const cubicMetreCapacity = row.getValue("cubicMetreCapacity") as number | null;
-      return cubicMetreCapacity ? `${cubicMetreCapacity} m³` : "-";
+      return cubicMetreCapacity ? `${cubicMetreCapacity} m³` : <Badge variant="outline">N/A</Badge>;
     },
   },
   {
@@ -215,7 +218,7 @@ export const columns: ColumnDef<Job>[] = [
     meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const loadNumber = row.getValue("loadNumber") as number | null;
-      return loadNumber ? `${loadNumber}` : "-";
+      return loadNumber ? `${loadNumber}` : <Badge variant="outline">N/A</Badge>;
     },
   },
   {
@@ -227,7 +230,7 @@ export const columns: ColumnDef<Job>[] = [
     meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const contactPerson = row.getValue("contactPerson") as string | null;
-      return contactPerson ? contactPerson : "-";
+      return contactPerson ? contactPerson : <Badge variant="outline">N/A</Badge>;
     },
   },
   {
@@ -239,7 +242,7 @@ export const columns: ColumnDef<Job>[] = [
     meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const volume = row.getValue("volume") as number | null;
-      return volume ? `${volume} m³` : "-";
+      return volume ? `${volume} m³` : <Badge variant="outline">N/A</Badge>;
     },
   },
   {
@@ -251,7 +254,7 @@ export const columns: ColumnDef<Job>[] = [
     meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const weight = row.getValue("weight") as number | null;
-      return weight ? `${weight} kg` : "-";
+      return weight ? `${weight} kg` : <Badge variant="outline">N/A</Badge>;
     },
   },
   {
@@ -263,8 +266,8 @@ export const columns: ColumnDef<Job>[] = [
     cell: ({ row }) => {
       const amount = row.getValue("totalAmount") as number | null;
       const currency = row.original.currency || "USD";
-      
-      if (!amount) return <div className="text-right">-</div>;
+
+      if (!amount) return <div className="text-right"><Badge variant="outline">N/A</Badge></div>;
       
       return (
         <div className="text-right font-medium">
@@ -288,7 +291,7 @@ export const columns: ColumnDef<Job>[] = [
       const invoiceId = row.original.invoiceId;
 
       if (!invoiceNumber) {
-        return <span className="text-muted-foreground">-</span>;
+        return <Badge variant="outline">N/A</Badge>;
       }
 
       if (invoiceId) {

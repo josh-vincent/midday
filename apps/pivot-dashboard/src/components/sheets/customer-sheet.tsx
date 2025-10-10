@@ -97,7 +97,7 @@ export function CustomerSheet() {
       open={createCustomer}
       onOpenChange={(open) => setParams({ createCustomer: open })}
     >
-      <SheetContent className="sm:max-w-[500px] overflow-y-auto">
+      <SheetContent className="sm:max-w-[800px] overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Create Customer</SheetTitle>
           <SheetDescription>

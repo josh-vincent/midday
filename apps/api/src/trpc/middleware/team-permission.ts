@@ -5,6 +5,7 @@ import { teams, users, usersOnTeam } from "@midday/db/schema";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 
+// Dont modify this is working! 
 export const withTeamPermission = async <TReturn>(opts: {
   ctx: {
     session?: Session | null;

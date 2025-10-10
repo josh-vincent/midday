@@ -124,7 +124,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
   const { data: customersData } = useQuery(
     trpc.customers.get.queryOptions({
       q: customerSearch,
-      pageSize: 10,
+      pageSize: 100,
     }),
   );
 
@@ -298,7 +298,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                   <FormLabel>Rego</FormLabel>
                   <FormControl>
                     <Input
-                      className="font-bold text-8xl border-4 border-primary h-24  uppercase"
+                      className="font-bold text-4xl md:text-8xl border-4 border-primary h-24 uppercase"
                       placeholder="ABC123"
                       autoComplete="off"
                       {...field}
@@ -354,6 +354,9 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                                   )}
                                 </button>
                               ))}
+                              {/* 
+                              // Enable this to allow creating new customers from the gatekeeper or member role.
+                              
                               <div className="border-t mt-1 pt-1">
                                 <button
                                   type="button"
@@ -369,7 +372,7 @@ export function JobForm({ job, onSuccess }: JobFormProps) {
                                   <Plus className="h-3 w-3" />
                                   Create "{customerSearch}" as new customer
                                 </button>
-                              </div>
+                              </div> */}
                             </>
                           ) : (
                             <button

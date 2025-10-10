@@ -32,7 +32,7 @@ export const columns: ColumnDef<Customer>[] = [
     cell: ({ row }) => {
       const name = row.original.name;
 
-      if (!name) return "-";
+      if (!name) return <Badge variant="outline">N/A</Badge>;
 
       return (
         <div className="flex items-center space-x-2">
@@ -59,18 +59,62 @@ export const columns: ColumnDef<Customer>[] = [
     header: "Contact person",
     accessorKey: "contact",
     enableHiding: true,
-    cell: ({ row }) => row.getValue("contact") ?? "-",
+    enableSorting: true,
+    meta: {
+      hideOnMobile: true,
+    },
+    cell: ({ row }) => {
+      const contact = row.getValue("contact");
+      return contact ? contact : <Badge variant="outline">N/A</Badge>;
+    },
   },
   {
     header: "Email",
     accessorKey: "email",
     enableHiding: true,
-    cell: ({ row }) => row.getValue("email") ?? "-",
+    enableSorting: true,
+    meta: {
+      hideOnMobile: true,
+    },
+    cell: ({ row }) => {
+      const email = row.getValue("email");
+      return email ? email : <Badge variant="outline">N/A</Badge>;
+    },
+  },
+  {
+    header: "Address",
+    accessorKey: "address",
+    enableHiding: true,
+    enableSorting: true,
+    meta: {
+      hideOnMobile: true,
+    },
+    cell: ({ row }) => {
+      const hasAddress = row.original.addressLine1 || row.original.city || row.original.state || row.original.postalCode;
+
+      if (!hasAddress) {
+        return <Badge variant="outline">N/A</Badge>;
+      }
+
+      return (
+        <div className="flex flex-col gap-1 text-sm">
+          {row.original.addressLine1}
+          {row.original.addressLine2}
+          {row.original.city}
+          {row.original.state}
+          {row.original.postalCode} {row.original.country}
+        </div>
+      );
+    }  
   },
   {
     header: "Invoices",
     accessorKey: "invoices",
     enableHiding: true,
+    enableSorting: true,
+    meta: {
+      hideOnMobile: true,
+    },
     cell: ({ row }) => {
       if (row.original.invoiceCount > 0) {
         return (
@@ -80,13 +124,17 @@ export const columns: ColumnDef<Customer>[] = [
         );
       }
 
-      return "-";
+      return <Badge variant="outline">N/A</Badge>;
     },
   },
   {
     header: "Projects",
     accessorKey: "projects",
     enableHiding: true,
+    enableSorting: true,
+    meta: {
+      hideOnMobile: true,
+    },
     cell: ({ row }) => {
       if (row.original.projectCount > 0) {
         return (
@@ -95,37 +143,39 @@ export const columns: ColumnDef<Customer>[] = [
           </Link>
         );
       }
-
-      return "-";
+      return <Badge variant="outline">N/A</Badge>;
     },
   },
-  {
-    header: "Tags",
-    accessorKey: "tags",
-    enableHiding: true,
-    meta: {
-      className: "w-[280px] max-w-[280px]",
-    },
-    cell: ({ row }) => {
-      return (
-        <div className="relative w-full">
-          <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide">
-            {row.original.tags?.map((tag) => (
-              <Link href={`/transactions?tags=${tag.id}`} key={tag.id}>
-                <Badge
-                  variant="tag-rounded"
-                  className="whitespace-nowrap flex-shrink-0"
-                >
-                  {tag.name}
-                </Badge>
-              </Link>
-            ))}
-          </div>
-          <div className="absolute group-hover:hidden right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none z-10" />
-        </div>
-      );
-    },
-  },
+  // {
+  //   header: "Tags",
+  //   accessorKey: "tags",
+  //   enableHiding: true,
+  //   enableSorting: true,
+  //   meta: {
+  //     className: "w-[280px] max-w-[280px]",
+  //     hideOnMobile: true,
+  //   },
+  //   cell: ({ row }) => {
+  //     return (
+  //       <div className="relative w-full">
+  //         <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide">
+  //           {row.original.tags?.map((tag) => (
+  //             <Link href={`/transactions?tags=${tag.id}`} key={tag.id}>
+  //               <Badge
+  //                 variant="tag-rounded"
+  //                 className="whitespace-nowrap flex-shrink-0"
+  //               >
+  //                 {tag.name}
+  //               </Badge>
+  //             </Link>
+  //           ))}
+  //         </div>
+  //         <div className="absolute group-hover:hidden right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none z-10" />
+  //       </div>
+  //     );
+  //   },
+  // },
+  
   {
     id: "actions",
     header: "Actions",
