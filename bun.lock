@@ -345,6 +345,22 @@
         "typescript": "^5.6.2",
       },
     },
+    "packages/actions": {
+      "name": "@midday/actions",
+      "version": "1.0.0",
+      "dependencies": {
+        "@midday/api-schemas": "workspace:*",
+        "@midday/db": "workspace:*",
+        "@midday/supabase": "workspace:*",
+        "@midday/utils": "workspace:*",
+        "next-safe-action": "^7.10.8",
+        "zod": "3.25.64",
+      },
+      "devDependencies": {
+        "@types/react": "^19.1.1",
+        "typescript": "^5.9.2",
+      },
+    },
     "packages/ai-search": {
       "name": "@midday/ai-search",
       "version": "1.0.0",
@@ -373,9 +389,70 @@
         "react-dom": "^18.0.0 || ^19.0.0",
       },
     },
+    "packages/api-core": {
+      "name": "@midday/api-core",
+      "version": "1.0.0",
+      "dependencies": {
+        "@midday/api-schemas": "workspace:*",
+        "@midday/db": "workspace:*",
+        "@midday/supabase": "workspace:*",
+        "@trpc/server": "^11.5.0",
+        "superjson": "^2.2.2",
+        "zod": "3.25.64",
+      },
+      "devDependencies": {
+        "typescript": "^5.9.2",
+      },
+    },
+    "packages/api-schemas": {
+      "name": "@midday/api-schemas",
+      "version": "1.0.0",
+      "dependencies": {
+        "zod": "3.25.64",
+        "zod-openapi": "^4.2.4",
+      },
+      "devDependencies": {
+        "typescript": "^5.9.2",
+      },
+    },
     "packages/app-store": {
       "name": "@midday/app-store",
       "version": "1.0.0",
+    },
+    "packages/authentication": {
+      "name": "@midday/authentication",
+      "version": "1.0.0",
+      "dependencies": {
+        "@midday/api-schemas": "workspace:*",
+        "@midday/db": "workspace:*",
+        "@midday/supabase": "workspace:*",
+        "@midday/ui": "workspace:*",
+        "@midday/utils": "workspace:*",
+        "jose": "^6.0.11",
+        "react": "^19.1.1",
+        "zod": "3.25.64",
+      },
+      "devDependencies": {
+        "@types/react": "^19.1.1",
+        "typescript": "^5.9.2",
+      },
+    },
+    "packages/billing-core": {
+      "name": "@midday/billing-core",
+      "version": "1.0.0",
+      "dependencies": {
+        "@midday/api-schemas": "workspace:*",
+        "@midday/db": "workspace:*",
+        "@midday/ui": "workspace:*",
+        "@midday/utils": "workspace:*",
+        "@polar-sh/sdk": "^0.35.4",
+        "react": "^19.1.1",
+        "zod": "3.25.64",
+      },
+      "devDependencies": {
+        "@types/react": "^19.1.1",
+        "typescript": "^5.9.2",
+      },
     },
     "packages/cache": {
       "name": "@midday/cache",
@@ -388,6 +465,23 @@
     "packages/categories": {
       "name": "@midday/categories",
       "version": "1.0.0",
+    },
+    "packages/chart-components": {
+      "name": "@midday/chart-components",
+      "version": "1.0.0",
+      "dependencies": {
+        "@midday/charts": "workspace:*",
+        "@midday/ui": "workspace:*",
+        "@midday/utils": "workspace:*",
+        "react": "^19.1.1",
+        "react-dom": "^19.1.1",
+        "recharts": "^2.15.3",
+      },
+      "devDependencies": {
+        "@types/react": "^19.1.1",
+        "@types/react-dom": "^19.1.1",
+        "typescript": "^5.9.2",
+      },
     },
     "packages/charts": {
       "name": "@midday/charts",
@@ -486,6 +580,42 @@
       "peerDependencies": {
         "react": ">=18",
         "react-dom": ">=18",
+      },
+    },
+    "packages/customer-management": {
+      "name": "@midday/customer-management",
+      "version": "1.0.0",
+      "dependencies": {
+        "@midday/api-schemas": "workspace:*",
+        "@midday/db": "workspace:*",
+        "@midday/ui": "workspace:*",
+        "@midday/utils": "workspace:*",
+        "react": "^19.1.1",
+        "zod": "3.25.64",
+      },
+      "devDependencies": {
+        "@types/react": "^19.1.1",
+        "typescript": "^5.9.2",
+      },
+    },
+    "packages/dashboard-components": {
+      "name": "@midday/dashboard-components",
+      "version": "1.0.0",
+      "dependencies": {
+        "@midday/ui": "workspace:*",
+        "@midday/utils": "workspace:*",
+        "@number-flow/react": "^0.5.10",
+        "lucide-react": "^0.511.0",
+        "next": "15.5.2",
+        "next-themes": "^0.4.6",
+        "react": "^19.1.1",
+        "react-colorful": "^5.6.1",
+        "react-dom": "^19.1.1",
+      },
+      "devDependencies": {
+        "@types/react": "^19.1.1",
+        "@types/react-dom": "^19.1.1",
+        "typescript": "^5.9.2",
       },
     },
     "packages/db": {
@@ -659,6 +789,17 @@
       "peerDependencies": {
         "react": ">=18.0.0",
         "react-dom": ">=18.0.0",
+      },
+    },
+    "packages/hooks": {
+      "name": "@midday/hooks",
+      "version": "1.0.0",
+      "dependencies": {
+        "react": "^19.1.1",
+      },
+      "devDependencies": {
+        "@types/react": "^19.1.1",
+        "typescript": "^5.9.2",
       },
     },
     "packages/import-export": {
@@ -995,6 +1136,24 @@
       },
       "devDependencies": {
         "@types/node": "^24.0.1",
+        "typescript": "^5.9.2",
+      },
+    },
+    "packages/reporting": {
+      "name": "@midday/reporting",
+      "version": "1.0.0",
+      "dependencies": {
+        "@midday/api-schemas": "workspace:*",
+        "@midday/charts": "workspace:*",
+        "@midday/db": "workspace:*",
+        "@midday/ui": "workspace:*",
+        "@midday/utils": "workspace:*",
+        "date-fns": "^4.1.0",
+        "react": "^19.1.1",
+        "zod": "3.25.64",
+      },
+      "devDependencies": {
+        "@types/react": "^19.1.1",
         "typescript": "^5.9.2",
       },
     },
@@ -2020,15 +2179,27 @@
 
     "@midday/accounting-providers": ["@midday/accounting-providers@workspace:packages/accounting-providers"],
 
+    "@midday/actions": ["@midday/actions@workspace:packages/actions"],
+
     "@midday/ai-search": ["@midday/ai-search@workspace:packages/ai-search"],
 
     "@midday/api": ["@midday/api@workspace:apps/api"],
 
+    "@midday/api-core": ["@midday/api-core@workspace:packages/api-core"],
+
+    "@midday/api-schemas": ["@midday/api-schemas@workspace:packages/api-schemas"],
+
     "@midday/app-store": ["@midday/app-store@workspace:packages/app-store"],
+
+    "@midday/authentication": ["@midday/authentication@workspace:packages/authentication"],
+
+    "@midday/billing-core": ["@midday/billing-core@workspace:packages/billing-core"],
 
     "@midday/cache": ["@midday/cache@workspace:packages/cache"],
 
     "@midday/categories": ["@midday/categories@workspace:packages/categories"],
+
+    "@midday/chart-components": ["@midday/chart-components@workspace:packages/chart-components"],
 
     "@midday/charts": ["@midday/charts@workspace:packages/charts"],
 
@@ -2038,7 +2209,11 @@
 
     "@midday/crud-components": ["@midday/crud-components@workspace:packages/crud-components"],
 
+    "@midday/customer-management": ["@midday/customer-management@workspace:packages/customer-management"],
+
     "@midday/dashboard": ["@midday/dashboard@workspace:apps/dashboard"],
+
+    "@midday/dashboard-components": ["@midday/dashboard-components@workspace:packages/dashboard-components"],
 
     "@midday/db": ["@midday/db@workspace:packages/db"],
 
@@ -2061,6 +2236,8 @@
     "@midday/filter-components": ["@midday/filter-components@workspace:packages/filter-components"],
 
     "@midday/form-components": ["@midday/form-components@workspace:packages/form-components"],
+
+    "@midday/hooks": ["@midday/hooks@workspace:packages/hooks"],
 
     "@midday/import-export": ["@midday/import-export@workspace:packages/import-export"],
 
@@ -2107,6 +2284,8 @@
     "@midday/queue": ["@midday/queue@workspace:packages/queue"],
 
     "@midday/redis": ["@midday/redis@workspace:packages/redis"],
+
+    "@midday/reporting": ["@midday/reporting@workspace:packages/reporting"],
 
     "@midday/scheduling": ["@midday/scheduling@workspace:packages/scheduling"],
 
@@ -5152,6 +5331,8 @@
 
     "react": ["react@19.1.1", "", {}, "sha512-w8nqGImo45dmMIfljjMwOGtbmC/mk4CMYhWIicdSflH91J9TyCyczcPFXJzrZ/ZXcgGRFeP6BU0BEJTw6tZdfQ=="],
 
+    "react-colorful": ["react-colorful@5.6.1", "", { "peerDependencies": { "react": ">=16.8.0", "react-dom": ">=16.8.0" } }, "sha512-1exovf0uGTGyq5mXQT0zgQ80uvj2PCwvF8zY1RN9/vbJVSjSo3fsB/4L3ObbF7u70NduSiK4xu4Y6q1MHoUGEw=="],
+
     "react-day-picker": ["react-day-picker@9.8.0", "", { "dependencies": { "@date-fns/tz": "1.2.0", "date-fns": "4.1.0", "date-fns-jalali": "4.1.0-0" }, "peerDependencies": { "react": ">=16.8.0" } }, "sha512-E0yhhg7R+pdgbl/2toTb0xBhsEAtmAx1l7qjIWYfcxOy8w4rTSVfbtBoSzVVhPwKP/5E9iL38LivzoE3AQDhCQ=="],
 
     "react-devtools-core": ["react-devtools-core@5.3.2", "", { "dependencies": { "shell-quote": "^1.6.1", "ws": "^7" } }, "sha512-crr9HkVrDiJ0A4zot89oS0Cgv0Oa4OG1Em4jit3P3ZxZSKPMYyMjfwMqgcJna9o625g8oN87rBm8SWWrSTBZxg=="],
@@ -6164,7 +6345,17 @@
 
     "@jest/types/@types/node": ["@types/node@24.3.0", "", { "dependencies": { "undici-types": "~7.10.0" } }, "sha512-aPTXCrfwnDLj4VvXrm+UUCQjNEvJgNA8s5F1cvwQU+3KNltTOkBm1j30uNLyqqPNe7gE3KFzImYoZEfLhp4Yow=="],
 
+    "@midday/actions/zod": ["zod@3.25.64", "", {}, "sha512-hbP9FpSZf7pkS7hRVUrOjhwKJNyampPgtXKc3AN6DsWtoHsg2Sb4SQaS4Tcay380zSwd2VPo9G9180emBACp5g=="],
+
     "@midday/api/zod": ["zod@3.25.64", "", {}, "sha512-hbP9FpSZf7pkS7hRVUrOjhwKJNyampPgtXKc3AN6DsWtoHsg2Sb4SQaS4Tcay380zSwd2VPo9G9180emBACp5g=="],
+
+    "@midday/api-core/zod": ["zod@3.25.64", "", {}, "sha512-hbP9FpSZf7pkS7hRVUrOjhwKJNyampPgtXKc3AN6DsWtoHsg2Sb4SQaS4Tcay380zSwd2VPo9G9180emBACp5g=="],
+
+    "@midday/api-schemas/zod": ["zod@3.25.64", "", {}, "sha512-hbP9FpSZf7pkS7hRVUrOjhwKJNyampPgtXKc3AN6DsWtoHsg2Sb4SQaS4Tcay380zSwd2VPo9G9180emBACp5g=="],
+
+    "@midday/authentication/zod": ["zod@3.25.64", "", {}, "sha512-hbP9FpSZf7pkS7hRVUrOjhwKJNyampPgtXKc3AN6DsWtoHsg2Sb4SQaS4Tcay380zSwd2VPo9G9180emBACp5g=="],
+
+    "@midday/billing-core/zod": ["zod@3.25.64", "", {}, "sha512-hbP9FpSZf7pkS7hRVUrOjhwKJNyampPgtXKc3AN6DsWtoHsg2Sb4SQaS4Tcay380zSwd2VPo9G9180emBACp5g=="],
 
     "@midday/charts/@types/react": ["@types/react@18.3.25", "", { "dependencies": { "@types/prop-types": "*", "csstype": "^3.0.2" } }, "sha512-oSVZmGtDPmRZtVDqvdKUi/qgCsWp5IDY29wp8na8Bj4B3cc99hfNzvNhlMkVVxctkAOGUA3Km7MMpBHAnWfcIA=="],
 
@@ -6179,6 +6370,8 @@
     "@midday/communications/zod": ["zod@3.25.64", "", {}, "sha512-hbP9FpSZf7pkS7hRVUrOjhwKJNyampPgtXKc3AN6DsWtoHsg2Sb4SQaS4Tcay380zSwd2VPo9G9180emBACp5g=="],
 
     "@midday/compliance/zod": ["zod@3.25.64", "", {}, "sha512-hbP9FpSZf7pkS7hRVUrOjhwKJNyampPgtXKc3AN6DsWtoHsg2Sb4SQaS4Tcay380zSwd2VPo9G9180emBACp5g=="],
+
+    "@midday/customer-management/zod": ["zod@3.25.64", "", {}, "sha512-hbP9FpSZf7pkS7hRVUrOjhwKJNyampPgtXKc3AN6DsWtoHsg2Sb4SQaS4Tcay380zSwd2VPo9G9180emBACp5g=="],
 
     "@midday/dashboard/@hookform/resolvers": ["@hookform/resolvers@5.2.1", "", { "dependencies": { "@standard-schema/utils": "^0.3.0" }, "peerDependencies": { "react-hook-form": "^7.55.0" } }, "sha512-u0+6X58gkjMcxur1wRWokA7XsiiBJ6aK17aPZxhkoYiK5J+HcTx0Vhu9ovXe6H+dVpO6cjrn2FkJTryXEMlryQ=="],
 
@@ -6235,6 +6428,8 @@
     "@midday/pivot-dashboard/zustand": ["zustand@5.0.8", "", { "peerDependencies": { "@types/react": ">=18.0.0", "immer": ">=9.0.6", "react": ">=18.0.0", "use-sync-external-store": ">=1.2.0" }, "optionalPeers": ["@types/react", "immer", "react", "use-sync-external-store"] }, "sha512-gyPKpIaxY9XcO2vSMrLbiER7QMAMGOQZVRdJ6Zi782jkbzZygq5GI9nG8g+sMgitRtndwaBSl7uiqC49o1SSiw=="],
 
     "@midday/redis/@types/node": ["@types/node@24.3.0", "", { "dependencies": { "undici-types": "~7.10.0" } }, "sha512-aPTXCrfwnDLj4VvXrm+UUCQjNEvJgNA8s5F1cvwQU+3KNltTOkBm1j30uNLyqqPNe7gE3KFzImYoZEfLhp4Yow=="],
+
+    "@midday/reporting/zod": ["zod@3.25.64", "", {}, "sha512-hbP9FpSZf7pkS7hRVUrOjhwKJNyampPgtXKc3AN6DsWtoHsg2Sb4SQaS4Tcay380zSwd2VPo9G9180emBACp5g=="],
 
     "@midday/scheduling/lucide-react": ["lucide-react@0.468.0", "", { "peerDependencies": { "react": "^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc" } }, "sha512-6koYRhnM2N0GGZIdXzSeiNwguv1gt/FAjZOiPl76roBi3xKEXa4WmfpxgQwTTL4KipXjefrnf3oV4IsYhi4JFA=="],
 
