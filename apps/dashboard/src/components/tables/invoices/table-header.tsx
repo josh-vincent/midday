@@ -2,34 +2,44 @@
 
 import { HorizontalPagination } from "@/components/horizontal-pagination";
 import { useSortParams } from "@/hooks/use-sort-params";
-import { Button } from "@midday/ui/button";
-import { cn } from "@midday/ui/cn";
-import {
-  TableHeader as BaseTableHeader,
-  TableHead,
-  TableRow,
-} from "@midday/ui/table";
-import { ArrowDown, ArrowUp } from "lucide-react";
-
-interface TableColumn {
-  id: string;
-  getIsVisible: () => boolean;
-}
-
-interface TableInterface {
-  getAllLeafColumns: () => TableColumn[];
-}
+import { DataTableHeader, type StickyColumnConfig } from "@midday/table-components";
+import type { Table } from "@tanstack/react-table";
+import type { Invoice } from "./columns";
 
 interface Props {
-  table?: TableInterface;
+  table: Table<Invoice>;
   tableScroll?: {
     canScrollLeft: boolean;
     canScrollRight: boolean;
     isScrollable: boolean;
     scrollLeft: () => void;
     scrollRight: () => void;
+    columnWidths?: Record<string, number>;
   };
 }
+
+const stickyColumns: StickyColumnConfig[] = [
+  {
+    id: "select",
+    left: "0",
+    width: "40px",
+    minWidth: "40px",
+    zIndex: "30"
+  },
+  {
+    id: "title",
+    left: "40px",
+    width: "220px",
+    minWidth: "220px",
+    zIndex: "20"
+  },
+  {
+    id: "actions",
+    right: "0",
+    width: "100px",
+    zIndex: "30"
+  }
+];
 
 export function TableHeader({ table, tableScroll }: Props) {
   const { params, setParams } = useSortParams();
@@ -52,193 +62,33 @@ export function TableHeader({ table, tableScroll }: Props) {
     }
   };
 
-  const isVisible = (id: string) =>
-    table
-      ?.getAllLeafColumns()
-      .find((col) => col.id === id)
-      ?.getIsVisible();
-
   return (
-    <BaseTableHeader className="border-l-0 border-r-0">
-      <TableRow>
-        {isVisible("select") && (
-          <TableHead className="w-[40px] min-w-[40px] md:sticky md:left-0 bg-background z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background after:z-[-1]">
-            <span>Select</span>
-          </TableHead>
-        )}
-        {isVisible("title") && (
-          <TableHead className="w-[220px] min-w-[220px] md:sticky md:left-0 bg-background z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background after:z-[-1]">
+    <DataTableHeader
+      table={table}
+      tableScroll={tableScroll}
+      onSort={createSortQuery}
+      currentSort={{
+        column: column || "",
+        direction: value as "asc" | "desc" | false,
+      }}
+      stickyColumns={stickyColumns}
+      renderCustomHeader={(columnId, context) => {
+        if (columnId === "title" && tableScroll?.isScrollable) {
+          return (
             <div className="flex items-center justify-between">
-              <Button
-                className="p-0 hover:bg-transparent space-x-2"
-                variant="ghost"
-                onClick={() => createSortQuery("title")}
-              >
-                <span>Invoice no.</span>
-                {"title" === column && value === "asc" && (
-                  <ArrowDown size={16} />
-                )}
-                {"title" === column && value === "desc" && (
-                  <ArrowUp size={16} />
-                )}
-              </Button>
-              {tableScroll?.isScrollable && (
-                <HorizontalPagination
-                  canScrollLeft={tableScroll.canScrollLeft}
-                  canScrollRight={tableScroll.canScrollRight}
-                  onScrollLeft={tableScroll.scrollLeft}
-                  onScrollRight={tableScroll.scrollRight}
-                  className="ml-auto hidden md:flex"
-                />
-              )}
+              <span>Invoice no.</span>
+              <HorizontalPagination
+                canScrollLeft={tableScroll.canScrollLeft}
+                canScrollRight={tableScroll.canScrollRight}
+                onScrollLeft={tableScroll.scrollLeft}
+                onScrollRight={tableScroll.scrollRight}
+                className="ml-auto flex"
+              />
             </div>
-          </TableHead>
-        )}
-        {isVisible("status") && (
-          <TableHead className="w-[150px]">
-            <Button
-              className="p-0 hover:bg-transparent space-x-2"
-              variant="ghost"
-              onClick={() => createSortQuery("status")}
-            >
-              <span>Status</span>
-              {"status" === column && value === "asc" && (
-                <ArrowDown size={16} />
-              )}
-              {"status" === column && value === "desc" && <ArrowUp size={16} />}
-            </Button>
-          </TableHead>
-        )}
-
-        {isVisible("dueDate") && (
-          <TableHead className="w-[180px]">
-            <Button
-              className="p-0 hover:bg-transparent space-x-2"
-              variant="ghost"
-              onClick={() => createSortQuery("due_date")}
-            >
-              <span>Due Date</span>
-              {"dueDate" === column && value === "asc" && (
-                <ArrowDown size={16} />
-              )}
-              {"dueDate" === column && value === "desc" && (
-                <ArrowUp size={16} />
-              )}
-            </Button>
-          </TableHead>
-        )}
-
-        {isVisible("customer") && (
-          <TableHead className="min-w-[250px]">
-            <Button
-              className="p-0 hover:bg-transparent space-x-2"
-              variant="ghost"
-              onClick={() => createSortQuery("customer")}
-            >
-              <span>Customer</span>
-              {"customer" === column && value === "asc" && (
-                <ArrowDown size={16} />
-              )}
-              {"customer" === column && value === "desc" && (
-                <ArrowUp size={16} />
-              )}
-            </Button>
-          </TableHead>
-        )}
-        {isVisible("amount") && (
-          <TableHead className="w-[200px] hidden lg:table-cell">
-            <Button
-              className="p-0 hover:bg-transparent space-x-2"
-              variant="ghost"
-              onClick={() => createSortQuery("amount")}
-            >
-              <span>Amount</span>
-              {"amount" === column && value === "asc" && (
-                <ArrowDown size={16} />
-              )}
-              {"amount" === column && value === "desc" && <ArrowUp size={16} />}
-            </Button>
-          </TableHead>
-        )}
-
-        {isVisible("vatRate") && (
-          <TableHead className="w-[100px] min-w-[100px] hidden lg:table-cell">
-            <span>VAT Rate</span>
-          </TableHead>
-        )}
-
-        {isVisible("vatAmount") && (
-          <TableHead className="w-[150px] min-w-[150px] hidden lg:table-cell">
-            <span>VAT Amount</span>
-          </TableHead>
-        )}
-
-        {isVisible("taxRate") && (
-          <TableHead className="w-[100px] min-w-[100px] hidden lg:table-cell">
-            <span>Tax Rate</span>
-          </TableHead>
-        )}
-
-        {isVisible("taxAmount") && (
-          <TableHead className="w-[150px] min-w-[150px] hidden lg:table-cell">
-            <span>Tax Amount</span>
-          </TableHead>
-        )}
-
-        {isVisible("exclVat") && (
-          <TableHead className="w-[150px] min-w-[150px] hidden lg:table-cell">
-            <span>Excl. VAT</span>
-          </TableHead>
-        )}
-
-        {isVisible("exclTax") && (
-          <TableHead className="w-[150px] min-w-[150px] hidden lg:table-cell">
-            <span>Excl. Tax</span>
-          </TableHead>
-        )}
-
-        {isVisible("internalNote") && (
-          <TableHead className="w-[150px] min-w-[150px] hidden lg:table-cell">
-            <span>Internal Note</span>
-          </TableHead>
-        )}
-
-        {isVisible("issueDate") && (
-          <TableHead className="w-[120px] min-w-[120px] hidden lg:table-cell">
-            <Button
-              className="p-0 hover:bg-transparent space-x-2"
-              variant="ghost"
-              onClick={() => createSortQuery("issue_date")}
-            >
-              <span>Issue Date</span>
-              {"issueDate" === column && value === "asc" && (
-                <ArrowDown size={16} />
-              )}
-              {"issueDate" === column && value === "desc" && (
-                <ArrowUp size={16} />
-              )}
-            </Button>
-          </TableHead>
-        )}
-
-        {isVisible("sentAt") && (
-          <TableHead className="w-[150px] min-w-[150px] hidden lg:table-cell">
-            <span>Sent at</span>
-          </TableHead>
-        )}
-
-        {isVisible("actions") && (
-          <TableHead
-            className={cn(
-              "w-[100px] md:sticky md:right-0 bg-background z-30",
-              "before:absolute before:left-0 before:top-0 before:bottom-0 before:w-px before:bg-border",
-              "after:absolute after:left-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-r after:from-transparent after:to-background after:z-[-1]",
-            )}
-          >
-            Actions
-          </TableHead>
-        )}
-      </TableRow>
-    </BaseTableHeader>
+          );
+        }
+        return null;
+      }}
+    />
   );
 }

@@ -14,7 +14,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { format, formatDistanceToNow } from "date-fns";
 import * as React from "react";
 import { ActionsMenu } from "./actions-menu";
-import { Checkbox } from "@midday/ui/checkbox";
+import { MobileCheckbox } from "@midday/table-components";
+import { CustomerCell } from "./customer-cell";
 
 export type Invoice = NonNullable<
   RouterOutputs["invoice"]["get"]["data"]
@@ -24,9 +25,14 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     id: "select",
     size: 40,
+    meta: {
+      className:
+        "sticky left-0 bg-background group-hover:bg-[#F2F1EF] group-hover:dark:bg-secondary z-30 max-w-[33vw]",
+    },
     header: ({ table }) => (
-      <div className="flex items-center justify-center px-3">
-        <Checkbox
+      <div className="flex items-center justify-center">
+        <MobileCheckbox
+          isHeader
           checked={table.getIsAllPageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
@@ -34,34 +40,14 @@ export const columns: ColumnDef<Invoice>[] = [
       </div>
     ),
     cell: ({ row }) => {
-      const status = row.original.status;
-
-      // Determine dot color based on status
-      let dotColor = "bg-gray-500"; // draft
-      if (status === "unpaid") dotColor = "bg-red-500";
-      if (status === "paid") dotColor = "bg-green-500";
-      if (status === "canceled") dotColor = "bg-gray-500";
-      if (status === "overdue") dotColor = "bg-orange-500";
-      if (status === "scheduled") dotColor = "bg-blue-500";
-
       return (
-        <div
-          className="flex items-center justify-center px-3 relative"
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-        >
-          <Checkbox
+        <div className="flex items-center justify-center">
+          <MobileCheckbox
             checked={row.getIsSelected()}
             onCheckedChange={(value) => {
               row.toggleSelected(!!value);
             }}
             aria-label="Select row"
-          />
-          <span
-            className={`absolute top-2 right-2 w-2 h-2 rounded-full ${dotColor}`}
-            title={status}
           />
         </div>
       );
@@ -74,9 +60,19 @@ export const columns: ColumnDef<Invoice>[] = [
     accessorKey: "title",
     meta: {
       className:
-        "w-[180px] min-w-[180px] md:sticky md:left-0 bg-background group-hover:bg-[#F2F1EF] group-hover:dark:bg-secondary z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background group-hover:after:to-muted after:z-[-1]",
+        "w-[180px] min-w-[180px] sticky left-[40px] bg-background group-hover:bg-[#F2F1EF] group-hover:dark:bg-secondary z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background group-hover:after:to-muted after:z-[-1] max-w-[33vw]",
     },
     cell: ({ row }) => {
+      const status = row.original.status;
+
+      // Determine dot color based on status
+      let dotColor = "bg-gray-500"; // draft
+      if (status === "unpaid") dotColor = "bg-red-500";
+      if (status === "paid") dotColor = "bg-green-500";
+      if (status === "canceled") dotColor = "bg-gray-500";
+      if (status === "overdue") dotColor = "bg-orange-500";
+      if (status === "scheduled") dotColor = "bg-blue-500";
+
       // @ts-expect-error template is a jsonb field
       const title = row.original.template?.title as string | undefined;
       const invoiceNumber = row.original.invoiceNumber;
@@ -86,9 +82,15 @@ export const columns: ColumnDef<Invoice>[] = [
             "line-through": row.original.status === "canceled",
           })}
         >
-          <div className="flex flex-col gap-0.5">
-            <span>{title || "Invoice"}</span>
-            <span className="text-xs text-muted-foreground font-mono">{invoiceNumber}</span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`}
+              title={status}
+            />
+            <div className="flex flex-col gap-0.5">
+              <span>{title || "Invoice"}</span>
+              <span className="text-xs text-muted-foreground font-mono">{invoiceNumber}</span>
+            </div>
           </div>
         </span>
       );
@@ -153,52 +155,9 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     header: "Customer",
     accessorKey: "customer",
-    cell: ({ row }) => {
-      const customer = row.original.customer;
-      const name = customer?.name || row.original.customerName;
-      const viewAt = row.original.viewedAt;
-
-      if (!name) return "-";
-
-      return (
-        <div className="flex items-center space-x-2">
-          <Avatar className="size-5">
-            {customer?.website && (
-              <AvatarImageNext
-                src={getWebsiteLogo(customer?.website)}
-                alt={`${name} logo`}
-                width={20}
-                height={20}
-                quality={100}
-              />
-            )}
-            <AvatarFallback className="text-[9px] font-medium">
-              {name?.[0]}
-            </AvatarFallback>
-          </Avatar>
-          <span className="truncate">{name}</span>
-
-          {viewAt && row.original.status !== "paid" && (
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger className="flex items-center space-x-2">
-                  <Icons.Visibility className="size-4 text-[#878787]" />
-                </TooltipTrigger>
-                <TooltipContent
-                  className="text-xs py-1 px-2"
-                  side="right"
-                  sideOffset={5}
-                >
-                  {viewAt
-                    ? `Viewed ${formatDistanceToNow(new Date(viewAt))} ago`
-                    : ""}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <CustomerCell invoice={row.original} />
+    ),
   },
   {
     header: "Amount",
@@ -392,7 +351,7 @@ export const columns: ColumnDef<Invoice>[] = [
     header: "Actions",
     meta: {
       className:
-        "text-right md:sticky md:right-0 bg-background group-hover:bg-[#F2F1EF] group-hover:dark:bg-secondary z-30 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:left-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-r after:from-transparent after:to-background group-hover:after:to-muted after:z-[-1]",
+        "text-right sticky right-0 bg-background group-hover:bg-[#F2F1EF] group-hover:dark:bg-secondary z-30 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:left-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-r after:from-transparent after:to-background group-hover:after:to-muted after:z-[-1]",
     },
     cell: ({ row }) => {
       return <ActionsMenu row={row.original} />;

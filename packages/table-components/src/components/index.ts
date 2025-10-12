@@ -17,3 +17,8 @@ export type { IndeterminateCheckboxProps } from './indeterminate-checkbox';
 
 export { ResizableColumn, useStickyColumns } from './resizable-column';
 export type { ResizableColumnProps } from './resizable-column';
+
+export { MobileCheckbox } from './mobile-checkbox';
+
+export { DataTableHeader } from './data-table-header';
+export type { StickyColumnConfig } from './data-table-header';
