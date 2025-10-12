@@ -127,7 +127,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
     filteredJobs.some((job) => rowSelection[job.id]) && !isAllSelected;
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border" data-testid="jobs-list">
       <Table>
         <TableHeader>
           <TableRow>
@@ -177,6 +177,7 @@ export function JobsTable({ jobs }: JobsTableProps) {
             filteredJobs.map((job) => (
               <TableRow
                 key={job.id}
+                data-testid="job-item"
                 className={rowSelection[job.id] ? "bg-muted/50" : ""}
               >
                 <TableCell className="text-center px-3">

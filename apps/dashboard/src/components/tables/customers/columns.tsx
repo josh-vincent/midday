@@ -102,7 +102,7 @@ export const columns: ColumnDef<Customer>[] = [
     enableHiding: true,
     enableSorting: true,
     meta: {
-      hideOnMobile: true,
+      hideOnMobile: false,
     },
     cell: ({ row }) => {
       const email = row.getValue("email");
@@ -141,7 +141,7 @@ export const columns: ColumnDef<Customer>[] = [
     enableHiding: true,
     enableSorting: true,
     meta: {
-      hideOnMobile: true,
+      hideOnMobile: false,
     },
     cell: ({ row }) => {
       if (row.original.invoiceCount > 0) {

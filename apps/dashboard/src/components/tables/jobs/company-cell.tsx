@@ -2,8 +2,7 @@
 
 import { useCustomerParams } from "@/hooks/use-customer-params";
 import { useTRPC } from "@/trpc/client";
-import { getInitials } from "@/utils/format";
-import { Avatar, AvatarFallback } from "@midday/ui/avatar";
+import { AvatarCell } from "@midday/table-components/components";
 import { Button } from "@midday/ui/button";
 import {
   DropdownMenu,
@@ -51,11 +50,11 @@ export function CompanyCell({ job }: CompanyCellProps) {
         // Invalidate jobs queries to refresh the table
         queryClient.invalidateQueries({
           predicate: (query) => {
-            return query.queryKey[0] === 'trpc' && 
+            return query.queryKey[0] === 'trpc' &&
                    (query.queryKey[1] === 'job.list' || query.queryKey[1] === 'job.get');
           },
         });
-        
+
         toast({
           title: "Job updated",
           description: "Company has been linked to existing customer",
@@ -74,12 +73,12 @@ export function CompanyCell({ job }: CompanyCellProps) {
 
   // Check if company is linked to a customer
   const isLinked = !!job.customerId;
-  
+
   // Find potential customer matches
   const potentialMatches = useMemo(() => {
     if (!customersData?.data || !job.companyName) return [];
-    
-    return customersData.data.filter(customer => 
+
+    return customersData.data.filter(customer =>
       customer.name?.toLowerCase().includes(job.companyName!.toLowerCase()) ||
       job.companyName!.toLowerCase().includes(customer.name?.toLowerCase() || "")
     );
@@ -107,103 +106,89 @@ export function CompanyCell({ job }: CompanyCellProps) {
     return <span className="text-muted-foreground">No company</span>;
   }
 
+  // Prepare tooltip details
+  const tooltipDetails = [];
+  if (job.contactPerson) {
+    tooltipDetails.push({ label: "Contact", value: job.contactPerson });
+  }
+  if (job.contactNumber) {
+    tooltipDetails.push({ value: job.contactNumber });
+  }
+
   return (
-    <div className="flex items-center gap-2 w-10 md:max-w-[200px]">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Avatar className="h-8 w-8 rounded-none flex-shrink-0">
-              <AvatarFallback className="rounded-none text-xs font-medium bg-accent text-accent-foreground">
-                {getInitials(job.companyName)}
-              </AvatarFallback>
-            </Avatar>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="md:hidden">
-            <div className="flex flex-col gap-1">
-              <p className="font-medium">{job.companyName}</p>
-              {job.contactPerson && (
-                <p className="text-xs text-muted-foreground">
-                  Contact: {job.contactPerson}
-                </p>
-              )}
-              {job.contactNumber && (
-                <p className="text-xs text-muted-foreground">
-                  {job.contactNumber}
-                </p>
-              )}
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-      <span className="truncate hidden md:inline">
-        {job.companyName}
-      </span>
+    <AvatarCell
+      name={job.companyName}
+      avatarSize="md"
+      tooltipDetails={tooltipDetails}
+      avatarClassName="rounded-none bg-accent text-accent-foreground"
+      className="flex items-center gap-2 w-10 md:max-w-[200px]"
+      actionElement={
+        hasWarning && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Company not linked to customer</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Button>
+            </DropdownMenuTrigger>
 
-      {hasWarning && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Company not linked to customer</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </Button>
-          </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>Link Company to Customer</DropdownMenuLabel>
+              <DropdownMenuSeparator />
 
-          <DropdownMenuContent align="end" className="w-64">
-            <DropdownMenuLabel>Link Company to Customer</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-
-            {potentialMatches.length > 0 ? (
-              <>
-                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                  Potential Matches:
-                </DropdownMenuLabel>
-                {potentialMatches.map((customer) => (
-                  <DropdownMenuItem
-                    key={customer.id}
-                    onClick={() => handleLinkCustomer(customer.id, customer.name || "")}
-                    className="flex items-center gap-2"
-                  >
-                    <Link2 className="h-3 w-3" />
-                    <div className="flex flex-col">
-                      <span className="font-medium">{customer.name}</span>
-                      {customer.email && (
-                        <span className="text-xs text-muted-foreground">
-                          {customer.email}
-                        </span>
-                      )}
-                    </div>
+              {potentialMatches.length > 0 ? (
+                <>
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                    Potential Matches:
+                  </DropdownMenuLabel>
+                  {potentialMatches.map((customer) => (
+                    <DropdownMenuItem
+                      key={customer.id}
+                      onClick={() => handleLinkCustomer(customer.id, customer.name || "")}
+                      className="flex items-center gap-2"
+                    >
+                      <Link2 className="h-3 w-3" />
+                      <div className="flex flex-col">
+                        <span className="font-medium">{customer.name}</span>
+                        {customer.email && (
+                          <span className="text-xs text-muted-foreground">
+                            {customer.email}
+                          </span>
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem disabled>
+                    <Search className="h-3 w-3 mr-2" />
+                    No matching customers found
                   </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-              </>
-            ) : (
-              <>
-                <DropdownMenuItem disabled>
-                  <Search className="h-3 w-3 mr-2" />
-                  No matching customers found
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-              </>
-            )}
+                  <DropdownMenuSeparator />
+                </>
+              )}
 
-            <DropdownMenuItem
-              onClick={handleCreateCustomer}
-              className="flex items-center gap-2"
-            >
-              <Plus className="h-3 w-3" />
-              Create "{job.companyName}" as new customer
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
-    </div>
+              <DropdownMenuItem
+                onClick={handleCreateCustomer}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-3 w-3" />
+                Create "{job.companyName}" as new customer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      }
+    />
   );
 }

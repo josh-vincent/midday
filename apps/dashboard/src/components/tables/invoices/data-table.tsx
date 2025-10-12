@@ -38,7 +38,7 @@ export function DataTable({
   const { ref, inView } = useInView();
   const { data: user } = useUserQuery();
 
-  const { setColumns } = useInvoiceStore();
+  const { setColumns, rowSelection, setRowSelection, resetRowSelection } = useInvoiceStore();
   const initialColumnVisibility = use(columnVisibilityPromise);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
     initialColumnVisibility ?? {},
@@ -92,8 +92,11 @@ export function DataTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection: true,
     state: {
       columnVisibility,
+      rowSelection,
     },
     meta: {
       dateFormat: user?.dateFormat,

@@ -9,7 +9,7 @@ import Link from "next/link";
 import { ActionsMenu } from "./actions-menu";
 import { CompanyCell } from "./company-cell";
 import { RegoInput } from "../../rego-input";
-import { TooltipContent, Tooltip, TooltipTrigger } from "@midday/ui/tooltip";
+import { TooltipContent, Tooltip, TooltipTrigger, TooltipProvider } from "@midday/ui/tooltip";
 
 export type Job = {
   id: string;
@@ -99,7 +99,7 @@ export const columns: ColumnDef<Job>[] = [
 
       // Determine dot color based on status
       let dotColor = "bg-yellow-500"; // pending
-      if (status === "in_progress") dotColor = "bg-blue-500";
+    if (status === "in_progress") dotColor = "bg-blue-500";
       if (status === "completed") dotColor = "bg-green-500";
       if (status === "cancelled") dotColor = "bg-gray-500";
       if (status === "delivered") dotColor = "bg-green-500";
@@ -110,17 +110,19 @@ export const columns: ColumnDef<Job>[] = [
       if (!jobNumber || jobNumber === "-") {
         return (
           <div className="flex items-center gap-2">
-              <Tooltip>
-              <TooltipTrigger asChild>
-                <span
-                  className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`}
-                  title={invoiceStatus ? `${status} - ${invoiceStatus}` : status}
-                />
-              </TooltipTrigger>
-              <TooltipContent>
-                {invoiceStatus ? `${status} - ${invoiceStatus}` : status}
-              </TooltipContent>
-            </Tooltip>
+              <TooltipProvider>
+                <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`}
+                    title={invoiceStatus ? `${status} - ${invoiceStatus}` : status}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>
+                  {invoiceStatus ? `${status} - ${invoiceStatus}` : status}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <span
               className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`}
               title={invoiceStatus ? `${status} - ${invoiceStatus}` : status}
@@ -131,7 +133,7 @@ export const columns: ColumnDef<Job>[] = [
       }
 
       return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ">
           <span
             className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`}
             title={invoiceStatus ? `${status} - ${invoiceStatus}` : status}
@@ -161,7 +163,7 @@ export const columns: ColumnDef<Job>[] = [
     id: "companyName",
     accessorKey: "companyName",
     header: "Company",
-    size: 120,
+    size: 60,
     enableSorting: true,
     enableHiding: true,
     cell: ({ row }) => (

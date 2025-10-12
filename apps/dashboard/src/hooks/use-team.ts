@@ -3,13 +3,13 @@
 import { useTRPC } from "@/trpc/client";
 import {
   useMutation,
+  useQuery,
   useQueryClient,
-  useSuspenseQuery,
 } from "@tanstack/react-query";
 
 export function useTeamQuery() {
   const trpc = useTRPC();
-  return useSuspenseQuery(trpc.team.current.queryOptions());
+  return useQuery(trpc.team.current.queryOptions());
 }
 
 export function useTeamMutation() {

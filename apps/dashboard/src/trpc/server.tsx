@@ -38,26 +38,37 @@ export const trpc = createTRPCOptionsProxy<AppRouter>({
           console.log("[tRPC] Session exists:", !!session);
           console.log("[tRPC] Access token exists:", !!session?.access_token);
 
-          const headers = {
-            Authorization: `Bearer ${session?.access_token}`,
+          // Build headers object - only include Authorization if we have a valid token
+          const headers: Record<string, string> = {
             "x-user-timezone": await getTimezone(),
             "x-user-locale": await getLocale(),
             "x-user-country": await getCountryCode(),
           };
 
-          console.log("[tRPC] Headers created (without token):", {
+          // Only add Authorization header if we have a valid access token
+          if (session?.access_token) {
+            headers.Authorization = `Bearer ${session.access_token}`;
+            console.log("[tRPC] Authorization header added");
+          } else {
+            console.log("[tRPC] No access token - skipping Authorization header");
+          }
+
+          console.log("[tRPC] Headers created:", {
             "x-user-timezone": headers["x-user-timezone"],
             "x-user-locale": headers["x-user-locale"],
             "x-user-country": headers["x-user-country"],
+            hasAuth: !!headers.Authorization,
           });
 
           return headers;
         },
       }),
       loggerLink({
-        enabled: (opts) =>
-          process.env.NODE_ENV === "development" ||
-          (opts.direction === "down" && opts.result instanceof Error),
+        enabled: (opts) => {
+          const shouldLog = process.env.NODE_ENV === "development" ||
+            (opts.direction === "down" && opts.result instanceof Error);
+          return shouldLog;
+        },
       }),
     ],
   }),
@@ -89,8 +100,7 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
         console.log("[prefetch] Infinite query prefetch successful");
       })
       .catch((error) => {
-        console.error("[prefetch] Error during infinite query prefetch:", error);
-        // Don't re-throw to prevent unhandled promise rejection
+        console.error("[prefetch] Error during infinite query prefetch");
       });
   } else {
     console.log("[prefetch] Prefetching regular query");
@@ -99,8 +109,7 @@ export function prefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
         console.log("[prefetch] Regular query prefetch successful");
       })
       .catch((error) => {
-        console.error("[prefetch] Error during regular query prefetch:", error);
-        // Don't re-throw to prevent unhandled promise rejection
+        console.error("[prefetch] Error during regular query prefetch");
       });
   }
 }
@@ -116,12 +125,12 @@ export function batchPrefetch<T extends ReturnType<TRPCQueryOptions<any>>>(
     if (queryOptions.queryKey[1]?.type === "infinite") {
       void queryClient.prefetchInfiniteQuery(queryOptions as any)
         .catch((error) => {
-          console.error("[batchPrefetch] Error during infinite query prefetch:", error);
+          console.error("[batchPrefetch] Error during infinite query prefetch");
         });
     } else {
       void queryClient.prefetchQuery(queryOptions)
         .catch((error) => {
-          console.error("[batchPrefetch] Error during query prefetch:", error);
+          console.error("[batchPrefetch] Error during regular query prefetch");
         });
     }
   });

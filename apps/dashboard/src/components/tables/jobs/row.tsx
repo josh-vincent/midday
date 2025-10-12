@@ -54,7 +54,7 @@ export function JobRow({ row }: Props) {
     >
       {row.getVisibleCells().map((cell, index) => {
         const hideOnMobile = (cell.column.columnDef.meta as any)?.hideOnMobile;
-        const baseClass = hideOnMobile ? 'hidden lg:table-cell border-l-1' : '';
+        const baseClass = hideOnMobile ? 'hidden lg:table-cell' : '';
 
         let className = baseClass;
         if (cell.column.id === 'select') {

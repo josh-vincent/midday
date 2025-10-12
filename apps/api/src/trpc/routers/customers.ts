@@ -5,6 +5,7 @@ import {
   upsertCustomerSchema,
 } from "@api/schemas/customers";
 import { createTRPCRouter, protectedProcedure } from "@api/trpc/init";
+import { isMockMode, generateMockCustomers } from "@api/trpc/middleware/mock-data";
 import {
   createCustomer,
   deleteCustomer,
@@ -18,6 +19,26 @@ export const customersRouter = createTRPCRouter({
   get: protectedProcedure
     .input(getCustomersSchema.optional())
     .query(async ({ ctx: { teamId, db }, input }) => {
+      // Check for mock mode
+      if (isMockMode()) {
+        const mockCustomers = generateMockCustomers(teamId!, 10);
+        let filteredCustomers = mockCustomers;
+
+        // Apply search filter if provided
+        if (input?.q) {
+          const searchLower = input.q.toLowerCase();
+          filteredCustomers = mockCustomers.filter(c =>
+            c.name?.toLowerCase().includes(searchLower) ||
+            c.email?.toLowerCase().includes(searchLower)
+          );
+        }
+
+        return {
+          data: filteredCustomers.slice(0, input?.pageSize || 10),
+          total: filteredCustomers.length,
+        };
+      }
+
       // Map API parameters to database query parameters
       const queryParams = {
         teamId: teamId!,
@@ -47,6 +68,13 @@ export const customersRouter = createTRPCRouter({
   getById: protectedProcedure
     .input(getCustomerByIdSchema)
     .query(async ({ ctx: { db, teamId }, input }) => {
+      // Check for mock mode
+      if (isMockMode()) {
+        const mockCustomers = generateMockCustomers(teamId!, 10);
+        const customer = mockCustomers.find(c => c.id === input.id);
+        return customer || null;
+      }
+
       const customer = await getCustomerById(db, {
         id: input.id,
         teamId: teamId!,

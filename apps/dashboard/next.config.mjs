@@ -8,7 +8,7 @@ const config = {
   // Remove console logs in production builds
   compiler: {
     removeConsole: process.env.NODE_ENV === "production" ? {
-      exclude: ["error", "warn"],
+      // exclude: ["error", "warn"],
     } : false,
   },
   images: {

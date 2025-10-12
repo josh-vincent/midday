@@ -26,6 +26,7 @@
     "@midday/invoice": "workspace:*",
     "@midday/invoice-components": "workspace:*",
     "@midday/invoice-core": "workspace:*",
+    "@midday/job-sheet-components": "workspace:*",
     "@midday/supabase": "workspace:*",
     "@midday/ui": "workspace:*",
     "@midday/utils": "workspace:*",

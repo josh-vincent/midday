@@ -2,15 +2,20 @@
 
 import { useTRPC } from "@/trpc/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@midday/ui/card";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { InvoiceSummarySkeleton } from "./invoice-summary";
 
 export function MostActiveClient() {
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(
+  const { data, isLoading, error } = useQuery(
     trpc.invoice.mostActiveClient.queryOptions(),
   );
 
-  if (!data) {
+  if (isLoading) {
+    return <InvoiceSummarySkeleton />;
+  }
+
+  if (error || !data) {
     return (
       <Card>
         <CardHeader className="pb-3">

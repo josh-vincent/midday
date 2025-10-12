@@ -3,7 +3,7 @@
 import { useTRPC } from "@/trpc/client";
 import { cn } from "@midday/ui/cn";
 import { Table, TableBody, TableCell, TableRow } from "@midday/ui/table";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { ColumnFiltersState } from "@tanstack/react-table";
 import {
   flexRender,
@@ -19,7 +19,7 @@ import { DataTableHeader } from "./table-header";
 export function DataTable() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const trpc = useTRPC();
-  const { data } = useSuspenseQuery(trpc.team.list.queryOptions());
+  const { data = [] } = useQuery(trpc.team.list.queryOptions());
 
   const table = useReactTable({
     data,

@@ -60,7 +60,7 @@ export const columns: ColumnDef<Invoice>[] = [
     accessorKey: "title",
     meta: {
       className:
-        "w-[180px] min-w-[180px] sticky left-[40px] bg-background group-hover:bg-[#F2F1EF] group-hover:dark:bg-secondary z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background group-hover:after:to-muted after:z-[-1] max-w-[33vw]",
+        "w-[120px] min-w-[120px] md:w-[180px] md:min-w-[180px] sticky left-[40px] bg-background group-hover:bg-[#F2F1EF] group-hover:dark:bg-secondary z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background group-hover:after:to-muted after:z-[-1]",
     },
     cell: ({ row }) => {
       const status = row.original.status;
@@ -155,6 +155,7 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     header: "Customer",
     accessorKey: "customer",
+    size: 60,
     cell: ({ row }) => (
       <CustomerCell invoice={row.original} />
     ),

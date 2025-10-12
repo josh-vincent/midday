@@ -27,7 +27,7 @@ export function DataTable() {
   const trpc = useTRPC();
   const { filter, hasFilters } = useCustomerFilterParams();
   const { params } = useSortParams();
-  const { columnVisibility } = useCustomersStore();
+  const { columnVisibility, rowSelection, setRowSelection } = useCustomersStore();
 
   // State for bulk linking dialog
   const [showBulkLinkDialog, setShowBulkLinkDialog] = useState(false);
@@ -97,8 +97,11 @@ export function DataTable() {
     getRowId: (row) => row.id,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    onRowSelectionChange: setRowSelection,
+    enableRowSelection: true,
     state: {
       columnVisibility,
+      rowSelection,
     },
     meta: {
       deleteCustomer: handleDeleteCustomer,

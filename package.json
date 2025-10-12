@@ -7,7 +7,9 @@
     "clean": "git clean -xdf node_modules",
     "clean:workspaces": "turbo clean",
     "dev": "turbo dev --parallel",
-    "test": "turbo test --parallel",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:watch": "vitest --watch",
     "start:dashboard": "turbo start --filter=@midday/dashboard",
     "dev:api": "turbo dev --filter=@midday/api",
     "dev:dashboard": "turbo dev --filter=@midday/dashboard",
@@ -33,14 +35,19 @@
     "@types/ioredis": "^5.0.0",
     "ioredis": "^5.7.0",
     "react-scan": "^0.4.3",
+    "tslog": "^4.10.2",
     "turbo": "2.5.6",
     "typescript": "^5.9.2"
   },
   "packageManager": "bun@1.2.21",
   "devDependencies": {
+    "@playwright/test": "^1.56.0",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "puppeteer": "^24.19.0"
+    "@vitest/ui": "^3.2.4",
+    "happy-dom": "^20.0.0",
+    "puppeteer": "^24.19.0",
+    "vitest": "^3.2.4"
   }
 }

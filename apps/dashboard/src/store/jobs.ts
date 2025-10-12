@@ -22,6 +22,15 @@ const jobSchema = z.object({
   notes: z.string().optional(),
 });
 
+const invoiceSchema = z.object({
+  id: z.string(),
+  invoiceNumber: z.string(),
+  invoiceDate: z.date(),
+  customerName: z.string(),
+  totalAmount: z.number(),
+  status: z.enum(["draft", "unpaid", "paid", "canceled", "overdue"]),
+});
+
 type JobData = z.infer<typeof jobSchema>;
 
 // Use the same Job type from columns
@@ -50,7 +59,7 @@ export type Job = {
   updatedAt: string;
 };
 
-
+export type Invoice = z.infer<typeof invoiceSchema>;
 
 interface JobsState {
   rowSelection: Record<string, boolean>;
@@ -97,6 +106,7 @@ export const useJobsStore = create<JobsState>((set) => ({
     description: false,
     volume: false,
     totalAmount: true
+
   },
   setColumnVisibility: (visibility) => set({ columnVisibility: visibility }),
   filters: {

@@ -22,3 +22,6 @@ export { MobileCheckbox } from './mobile-checkbox';
 
 export { DataTableHeader } from './data-table-header';
 export type { StickyColumnConfig } from './data-table-header';
+
+export { AvatarCell } from './avatar-cell';
+export type { AvatarCellProps } from './avatar-cell';

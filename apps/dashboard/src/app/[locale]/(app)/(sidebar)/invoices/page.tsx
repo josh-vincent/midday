@@ -8,6 +8,7 @@ import { InvoiceSummarySkeleton } from "@/components/invoice-summary";
 import { InvoicesOpen } from "@/components/invoices-open";
 import { InvoicesOverdue } from "@/components/invoices-overdue";
 import { InvoicesPaid } from "@/components/invoices-paid";
+import { InvoicesBulkActionsPopup } from "@/components/invoices-bulk-actions-popup";
 import { InvoiceSheet } from "@/components/sheets/invoice-sheet";
 import { DataTable } from "@/components/tables/invoices/data-table";
 import { InvoiceSkeleton } from "@/components/tables/invoices/skeleton";
@@ -79,8 +80,11 @@ export default async function Page(props: Props) {
           </Suspense>
         </ErrorBoundary>
       </div>
-      
+
       <InvoiceSheet />
+
+      {/* Bulk Actions Popup */}
+      <InvoicesBulkActionsPopup />
     </>
   );
 }

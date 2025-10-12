@@ -39,6 +39,9 @@ const errorLink: TRPCLink<AppRouter> = () => {
           observer.next(value);
         },
         error(err) {
+          // Enhanced error logging to track permission issues
+          console.error("tRPC Error");
+
           // Handle UNAUTHORIZED errors (expired sessions)
           if (err.data?.code === "UNAUTHORIZED") {
             // Clear any stale session data

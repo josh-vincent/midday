@@ -55,7 +55,8 @@ export function JobSheet() {
   const queryClient = useQueryClient();
   const isOpen = params.createJob === true || !!params.jobId;
   const isEditMode = !!params.jobId;
-  
+  const [isEditing, setIsEditing] = useState(false);
+
   const [formData, setFormData] = useState({
     jobNumber: "",
     companyName: "",
@@ -69,7 +70,7 @@ export function JobSheet() {
     materialType: "",
     addressSite: "",
   });
-  
+
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   // Fetch job data when in edit mode
@@ -78,9 +79,9 @@ export function JobSheet() {
     enabled: isEditMode && !!params.jobId,
   });
 
-  // Update form data when job data is fetched
+  // Update form data when job data is fetched or mode changes
   useEffect(() => {
-    if (jobData) {
+    if (jobData && isEditMode) {
       setFormData({
         jobNumber: jobData.jobNumber || "",
         companyName: jobData.customer?.name || jobData.companyName || "",
@@ -95,7 +96,16 @@ export function JobSheet() {
         addressSite: jobData.addressSite || "",
       });
     }
-  }, [jobData]);
+  }, [jobData, isEditMode]);
+
+  // Reset editing state when opening/closing
+  useEffect(() => {
+    if (!isOpen) {
+      setIsEditing(false);
+    } else if (isOpen && !isEditMode) {
+      setIsEditing(true); // Create mode is always editing
+    }
+  }, [isOpen, isEditMode]);
   
   // Create job mutation
   const createJobMutation = useMutation(
@@ -177,14 +187,98 @@ export function JobSheet() {
   return (
     <>
     <Sheet open={isOpen} onOpenChange={handleOnOpenChange}>
-      <SheetContent className="sm:max-w-[800px]">
+      <SheetContent className="sm:max-w-[800px] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{isEditMode ? 'Edit Job' : 'Create New Job'}</SheetTitle>
-          <SheetDescription>
-            {isEditMode ? 'Update job details.' : 'Add a new job to track your deliveries.'}
-          </SheetDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <SheetTitle>{isEditMode ? 'Job Details' : 'Create New Job'}</SheetTitle>
+              <SheetDescription>
+                {isEditMode ? (isEditing ? 'Edit job information' : 'View job details') : 'Add a new job to track your deliveries.'}
+              </SheetDescription>
+            </div>
+            {isEditMode && !isEditing && (
+              <Button
+                variant="outline"
+                onClick={() => setIsEditing(true)}
+                className="ml-auto"
+              >
+                Edit
+              </Button>
+            )}
+          </div>
         </SheetHeader>
-        
+
+        {/* View Mode - Show job details */}
+        {isEditMode && !isEditing && jobData && (
+          <div className="space-y-6 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label className="text-muted-foreground text-xs">Company Name</Label>
+                <p className="text-base font-medium mt-1">{formData.companyName || 'N/A'}</p>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground text-xs">Rego</Label>
+                <p className="text-lg font-bold mt-1">{formData.rego || 'N/A'}</p>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground text-xs">Job Number</Label>
+                <p className="text-base font-medium mt-1">{formData.jobNumber || 'N/A'}</p>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground text-xs">Job Date</Label>
+                <p className="text-base font-medium mt-1">{formData.jobDate || 'N/A'}</p>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground text-xs">Material Type</Label>
+                <p className="text-base font-medium mt-1">{formData.materialType || 'N/A'}</p>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground text-xs">Status</Label>
+                <p className="text-base font-medium mt-1 capitalize">{formData.status}</p>
+              </div>
+
+              <div className="col-span-1 md:col-span-2">
+                <Label className="text-muted-foreground text-xs">Address/Site</Label>
+                <p className="text-base font-medium mt-1">{formData.addressSite || 'N/A'}</p>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground text-xs">Volume (m³)</Label>
+                <p className="text-base font-medium mt-1">{formData.volume || 'N/A'}</p>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground text-xs">Weight (kg)</Label>
+                <p className="text-base font-medium mt-1">{formData.weight || 'N/A'}</p>
+              </div>
+
+              <div>
+                <Label className="text-muted-foreground text-xs">Price per m³</Label>
+                <p className="text-base font-medium mt-1">${formData.totalAmount || 'N/A'}</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => handleOnOpenChange(false)}
+              >
+                Close
+              </Button>
+              <Button onClick={() => setIsEditing(true)}>
+                Edit Job
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Edit/Create Mode - Show form */}
+        {(!isEditMode || isEditing) && (
         <form onSubmit={handleSubmit} className="space-y-4 mt-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2 col-span-2">
@@ -300,10 +394,16 @@ export function JobSheet() {
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               variant="outline"
-              onClick={() => handleOnOpenChange(false)}
+              onClick={() => {
+                if (isEditMode) {
+                  setIsEditing(false);
+                } else {
+                  handleOnOpenChange(false);
+                }
+              }}
             >
               Cancel
             </Button>
@@ -312,6 +412,7 @@ export function JobSheet() {
             </Button>
           </div>
         </form>
+        )}
       </SheetContent>
     </Sheet>
     

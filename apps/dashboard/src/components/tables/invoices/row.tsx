@@ -70,7 +70,7 @@ export function InvoiceRow({ row }: Props) {
           );
         } else if (cell.column.id === 'title') {
           className = cn(
-            'w-[200px] min-w-[200px] md:sticky md:left-[40px] bg-background z-10 border-r border-border ${baseClass}`.trim()',
+            'w-[180px] min-w-[180px] md:sticky md:left-[40px] bg-background z-10 border-r border-border',
             baseClass,
             cell.column.columnDef.meta?.className,
           );

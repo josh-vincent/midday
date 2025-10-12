@@ -4,16 +4,21 @@ import { useTeamQuery } from "@/hooks/use-team";
 import { useUserQuery } from "@/hooks/use-user";
 import { useTRPC } from "@/trpc/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@midday/ui/card";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { FormatAmount } from "./format-amount";
+import { InvoiceSummarySkeleton } from "./invoice-summary";
 
 export function TopRevenueClient() {
   const trpc = useTRPC();
   const { data: team } = useTeamQuery();
   const { data: user } = useUserQuery();
-  const { data } = useSuspenseQuery(
+  const { data, isLoading } = useQuery(
     trpc.invoice.topRevenueClient.queryOptions(),
   );
+
+  if (isLoading) {
+    return <InvoiceSummarySkeleton />;
+  }
 
   if (!data) {
     return (

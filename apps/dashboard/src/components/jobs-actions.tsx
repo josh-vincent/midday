@@ -94,7 +94,7 @@ export function JobsActions({ jobs = [] }: JobsActionsProps) {
             <div className="flex space-x-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="space-x-2">
+                  <Button variant="outline" className="space-x-2" data-testid="actions-menu-button">
                     <span>Actions</span>
                     <ChevronDown size={16} />
                   </Button>

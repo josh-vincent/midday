@@ -37,7 +37,11 @@ export function TeamDropdown({ isExpanded = false }: Props) {
     }),
   );
 
-  const { data: teams } = useQuery(trpc.team.list.queryOptions());
+  const { data: teams } = useQuery({
+    ...trpc.team.list.queryOptions(),
+    enabled: typeof window !== "undefined", // Only run client-side
+    retry: false, // Don't retry on permission errors
+  });
 
   useEffect(() => {
     if (user?.team?.id) {

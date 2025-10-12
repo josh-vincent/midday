@@ -5,7 +5,9 @@ import { teams, users, usersOnTeam } from "@midday/db/schema";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 
-// Dont modify this is working! 
+const isMockMode = () => process.env.MOCK_MODE === "true";
+
+// Dont modify this is working!
 export const withTeamPermission = async <TReturn>(opts: {
   ctx: {
     session?: Session | null;
@@ -22,6 +24,7 @@ export const withTeamPermission = async <TReturn>(opts: {
   const { ctx, next } = opts;
 
   const userId = ctx.session?.user?.id;
+
 
   if (!userId) {
     throw new TRPCError({

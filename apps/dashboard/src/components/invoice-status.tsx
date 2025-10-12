@@ -16,7 +16,7 @@ export function InvoiceStatus({
   const t = useI18n();
 
   if (isLoading) {
-    return <Skeleton className="w-24 h-6 rounded-full" />;
+    return <Skeleton className="w-24 h-6 " />;
   }
 
   if (!status) {
@@ -25,8 +25,8 @@ export function InvoiceStatus({
 
   return (
     <div
-      className={cn(
-        "px-2 py-0.5 rounded-full cursor-default font-mono inline-flex max-w-full text-[11px]",
+      className={ cn(
+        "px-2 py-0.5  cursor-default font-mono inline-flex max-w-full text-[11px] ",
         (status === "draft" || status === "canceled") &&
           "text-[#878787] bg-[#F2F1EF] text-[10px] dark:text-[#878787] dark:bg-[#1D1D1D]",
         status === "overdue" &&
@@ -40,7 +40,7 @@ export function InvoiceStatus({
         className,
       )}
     >
-      <span className="line-clamp-1 truncate inline-block">
+      <span className="line-clamp-1 truncate inline-block ">
         {t(`invoice_status.${status}`)}
       </span>
     </div>

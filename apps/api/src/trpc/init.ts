@@ -10,6 +10,7 @@ import type { Context } from "hono";
 import superjson from "superjson";
 import { withPrimaryReadAfterWrite } from "./middleware/primary-read-after-write";
 import { withTeamPermission } from "./middleware/team-permission";
+import { withMockData, isMockMode } from "./middleware/mock-data";
 
 type TRPCContext = {
   session: Session | null;
@@ -71,6 +72,22 @@ const withPrimaryDbMiddleware = t.middleware(async (opts) => {
   });
 });
 
+const withMockDataMiddleware = t.middleware(async (opts) => {
+  // Only apply mock data in development mode with MOCK_MODE=true
+  if (isMockMode()) {
+    console.log(`[MOCK MODE] Active for ${opts.path}`);
+    return withMockData({
+      ctx: opts.ctx,
+      type: opts.type,
+      path: opts.path,
+      next: opts.next,
+      input: opts.input,
+    });
+  }
+
+  return opts.next();
+});
+
 const withTeamPermissionMiddleware = t.middleware(async (opts) => {
   return withTeamPermission({
     ctx: opts.ctx,
@@ -78,10 +95,13 @@ const withTeamPermissionMiddleware = t.middleware(async (opts) => {
   });
 });
 
-export const publicProcedure = t.procedure.use(withPrimaryDbMiddleware);
+export const publicProcedure = t.procedure
+  .use(withMockDataMiddleware)
+  .use(withPrimaryDbMiddleware);
 
 // Protected procedure that requires authentication but not team membership
 export const authProcedure = t.procedure
+  .use(withMockDataMiddleware)
   .use(withPrimaryDbMiddleware)
   .use(async (opts) => {
     const { session } = opts.ctx;
@@ -99,10 +119,28 @@ export const authProcedure = t.procedure
 
 // Protected procedure that requires both authentication and team membership
 export const protectedProcedure = t.procedure
+  .use(withMockDataMiddleware) // Mock data before team permission to bypass auth in mock mode
   .use(withTeamPermissionMiddleware) // NOTE: This is needed to ensure that the teamId is set in the context
   .use(withPrimaryDbMiddleware)
   .use(async (opts) => {
     const { teamId, session } = opts.ctx;
+
+    // In mock mode, bypass session check
+    if (isMockMode() && !session) {
+      return opts.next({
+        ctx: {
+          teamId: teamId || "mock-team-id",
+          session: {
+            user: { id: "mock-user-id", email: "mock@example.com" },
+            expires_at: Date.now() + 3600000,
+            aud: "authenticated",
+            sub: "mock-user-id",
+            email: "mock@example.com",
+            role: "authenticated",
+          } as Session,
+        },
+      });
+    }
 
     if (!session) {
       throw new TRPCError({ code: "UNAUTHORIZED" });

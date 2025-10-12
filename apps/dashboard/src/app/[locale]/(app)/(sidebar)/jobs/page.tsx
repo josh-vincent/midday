@@ -7,6 +7,7 @@ import { JobsToday } from "@/components/jobs-today";
 import { JobsWeekSummary } from "@/components/jobs-week-summary";
 import { CustomerCreateSheet } from "@/components/sheets/customer-create-sheet";
 import { JobCreateSheet } from "@/components/sheets/job-create-sheet";
+import { JobViewSheetEnhanced } from "@/components/sheets/job-view-sheet-enhanced";
 import { DataTable } from "@/components/tables/jobs/data-table";
 import { JobsSkeleton } from "@/components/tables/jobs/skeleton";
 import { loadJobFilterParams } from "@/hooks/use-job-filter-params.server";
@@ -73,10 +74,13 @@ export default async function JobsPage(props: Props) {
       
       {/* Job Sheet for creating/editing jobs */}
       <JobCreateSheet />
-      
+
+      {/* Enhanced Job View Sheet for viewing job details */}
+      <JobViewSheetEnhanced />
+
       {/* Customer Create Sheet for linking companies */}
       <CustomerCreateSheet />
-      
+
       {/* Bulk Actions Popup */}
       <JobsBulkActionsPopup />
     </HydrateClient>
