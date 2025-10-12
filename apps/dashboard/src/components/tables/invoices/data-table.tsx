@@ -114,7 +114,7 @@ export function DataTable({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full" data-testid="invoices-list">
       <div
         ref={tableScroll.containerRef}
         className="overflow-x-auto overscroll-x-none md:border-l md:border-r border-border scrollbar-hide"

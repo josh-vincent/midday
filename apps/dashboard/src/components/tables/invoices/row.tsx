@@ -4,6 +4,8 @@ import { useInvoiceParams } from "@/hooks/use-invoice-params";
 import { cn } from "@midday/ui/cn";
 import { TableCell, TableRow } from "@midday/ui/table";
 import { type Row, flexRender } from "@tanstack/react-table";
+import { useRowTouchActions } from "@midday/table-components";
+import { useState } from "react";
 import type { Invoice } from "./columns";
 
 type Props = {
@@ -12,6 +14,7 @@ type Props = {
 
 export function InvoiceRow({ row }: Props) {
   const { setParams } = useInvoiceParams();
+  const [showTouchMenu, setShowTouchMenu] = useState(false);
 
   const handleRowClick = (e: React.MouseEvent) => {
     // Don't open details if clicking on checkbox or actions
@@ -29,10 +32,27 @@ export function InvoiceRow({ row }: Props) {
     });
   };
 
+  const { touchProps } = useRowTouchActions({
+    onLongPress: () => {
+      // Trigger the actions menu button click
+      const actionsCell = document.querySelector(
+        `[data-row-id="${row.id}"] [data-action-menu]`
+      ) as HTMLButtonElement;
+
+      if (actionsCell) {
+        actionsCell.click();
+        setShowTouchMenu(true);
+      }
+    },
+  });
+
   return (
     <TableRow
-      className="group h-[57px] cursor-pointer hover:bg-[#F2F1EF] hover:dark:bg-secondary"
+      data-row-id={row.id}
+      data-testid="invoice-item"
+      className="group h-[57px] cursor-pointer hover:bg-[#F2F1EF] hover:dark:bg-secondary active:bg-[#E8E7E5] active:dark:bg-secondary/80 transition-colors"
       onClick={handleRowClick}
+      {...touchProps}
     >
       {row.getVisibleCells().map((cell, index) => {
         const hideOnMobile = (cell.column.columnDef.meta as any)?.hideOnMobile;
@@ -50,7 +70,7 @@ export function InvoiceRow({ row }: Props) {
           );
         } else if (cell.column.id === 'title') {
           className = cn(
-            'w-[180px] min-w-[180px] md:sticky md:left-[40px] bg-background z-10 border-r border-border',
+            'w-[200px] min-w-[200px] md:sticky md:left-[40px] bg-background z-10 border-r border-border ${baseClass}`.trim()',
             baseClass,
             cell.column.columnDef.meta?.className,
           );

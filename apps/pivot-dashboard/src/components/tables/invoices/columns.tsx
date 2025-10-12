@@ -14,7 +14,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { format, formatDistanceToNow } from "date-fns";
 import * as React from "react";
 import { ActionsMenu } from "./actions-menu";
-import { Checkbox } from "@midday/ui/checkbox";
+import { MobileCheckbox } from "@midday/table-components";
+import { CustomerCell } from "./customer-cell";
 
 export type Invoice = NonNullable<
   RouterOutputs["invoice"]["get"]["data"]
@@ -26,7 +27,8 @@ export const columns: ColumnDef<Invoice>[] = [
     size: 40,
     header: ({ table }) => (
       <div className="flex items-center justify-center">
-        <Checkbox
+        <MobileCheckbox
+          isHeader
           checked={table.getIsAllPageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
@@ -35,14 +37,8 @@ export const columns: ColumnDef<Invoice>[] = [
     ),
     cell: ({ row }) => {
       return (
-        <div 
-          className="flex items-center justify-center"
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-        >
-          <Checkbox
+        <div className="flex items-center justify-center">
+          <MobileCheckbox
             checked={row.getIsSelected()}
             onCheckedChange={(value) => {
               row.toggleSelected(!!value);
@@ -139,52 +135,9 @@ export const columns: ColumnDef<Invoice>[] = [
   {
     header: "Customer",
     accessorKey: "customer",
-    cell: ({ row }) => {
-      const customer = row.original.customer;
-      const name = customer?.name || row.original.customerName;
-      const viewAt = row.original.viewedAt;
-
-      if (!name) return "-";
-
-      return (
-        <div className="flex items-center space-x-2">
-          <Avatar className="size-5">
-            {customer?.website && (
-              <AvatarImageNext
-                src={getWebsiteLogo(customer?.website)}
-                alt={`${name} logo`}
-                width={20}
-                height={20}
-                quality={100}
-              />
-            )}
-            <AvatarFallback className="text-[9px] font-medium">
-              {name?.[0]}
-            </AvatarFallback>
-          </Avatar>
-          <span className="truncate">{name}</span>
-
-          {viewAt && row.original.status !== "paid" && (
-            <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger className="flex items-center space-x-2">
-                  <Icons.Visibility className="size-4 text-[#878787]" />
-                </TooltipTrigger>
-                <TooltipContent
-                  className="text-xs py-1 px-2"
-                  side="right"
-                  sideOffset={5}
-                >
-                  {viewAt
-                    ? `Viewed ${formatDistanceToNow(new Date(viewAt))} ago`
-                    : ""}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <CustomerCell invoice={row.original} />
+    ),
   },
   {
     header: "Amount",

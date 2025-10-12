@@ -2,6 +2,7 @@
 
 import { useCustomerParams } from "@/hooks/use-customer-params";
 import { getWebsiteLogo } from "@/utils/logos";
+import { getInitials } from "@/utils/format";
 import type { RouterOutputs } from "@api/trpc/routers/_app";
 import { Avatar, AvatarFallback, AvatarImageNext } from "@midday/ui/avatar";
 import { Badge } from "@midday/ui/badge";
@@ -13,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@midday/ui/dropdown-menu";
 import { ScrollArea, ScrollBar } from "@midday/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@midday/ui/tooltip";
 import { DotsHorizontalIcon } from "@radix-ui/react-icons";
 import type { ColumnDef } from "@tanstack/react-table";
 import { LinkIcon } from "lucide-react";
@@ -27,7 +29,7 @@ export const columns: ColumnDef<Customer>[] = [
     accessorKey: "name",
     meta: {
       className:
-        "w-[240px] min-w-[240px] md:sticky md:left-0 bg-background group-hover:bg-[#F2F1EF] group-hover:dark:bg-secondary z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background group-hover:after:to-muted after:z-[-1]",
+        "w-[60px] md:w-[240px] min-w-[60px] md:min-w-[240px] md:sticky md:left-0 bg-background group-hover:bg-[#F2F1EF] group-hover:dark:bg-secondary z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background group-hover:after:to-muted after:z-[-1]",
     },
     cell: ({ row }) => {
       const name = row.original.name;
@@ -35,22 +37,48 @@ export const columns: ColumnDef<Customer>[] = [
       if (!name) return "-";
 
       return (
-        <div className="flex items-center space-x-2">
-          <Avatar className="size-5">
-            {row.original.website && (
-              <AvatarImageNext
-                src={getWebsiteLogo(row.original.website)}
-                alt={`${name} logo`}
-                width={20}
-                height={20}
-                quality={100}
-              />
-            )}
-            <AvatarFallback className="text-[9px] font-medium">
-              {name?.[0]}
-            </AvatarFallback>
-          </Avatar>
-          <span className="truncate">{name}</span>
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Avatar className="size-5 flex-shrink-0">
+                  {row.original.website && (
+                    <AvatarImageNext
+                      src={getWebsiteLogo(row.original.website)}
+                      alt={`${name} logo`}
+                      width={20}
+                      height={20}
+                      quality={100}
+                    />
+                  )}
+                  <AvatarFallback className="text-[9px] font-medium">
+                    {getInitials(name)}
+                  </AvatarFallback>
+                </Avatar>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="md:hidden">
+                <div className="flex flex-col gap-1">
+                  <p className="font-medium">{name}</p>
+                  {row.original.contact && (
+                    <p className="text-xs text-muted-foreground">
+                      Contact: {row.original.contact}
+                    </p>
+                  )}
+                  {row.original.email && (
+                    <p className="text-xs text-muted-foreground">
+                      {row.original.email}
+                    </p>
+                  )}
+                  {row.original.phone && (
+                    <p className="text-xs text-muted-foreground">
+                      {row.original.phone}
+                    </p>
+                  )}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <span className="truncate hidden md:inline">{name}</span>
         </div>
       );
     },

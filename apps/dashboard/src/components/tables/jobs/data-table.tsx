@@ -33,7 +33,7 @@ export function DataTable() {
 
   const tableScroll = useTableScroll({
     useColumnWidths: true,
-    startFromColumn: 1,
+    startFromColumn: 2,
   });
 
   const infiniteQueryOptions = trpc.job.list.infiniteQueryOptions(
@@ -120,7 +120,7 @@ export function DataTable() {
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full" data-testid="jobs-list">
       <div
         ref={tableScroll.containerRef}
         className="overflow-x-auto overscroll-x-none md:border-l md:border-r border-border scrollbar-hide"

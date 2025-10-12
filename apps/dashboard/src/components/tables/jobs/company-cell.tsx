@@ -108,16 +108,37 @@ export function CompanyCell({ job }: CompanyCellProps) {
   }
 
   return (
-    <div className="flex items-center gap-2 max-w-[200px]">
-      <Avatar className="h-8 w-8 rounded-none">
-        <AvatarFallback className="rounded-none text-xs font-medium bg-accent text-accent-foreground">
-          {getInitials(job.companyName)}
-        </AvatarFallback>
-      </Avatar>
-      <span className="truncate">
+    <div className="flex items-center gap-2 w-10 md:max-w-[200px]">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Avatar className="h-8 w-8 rounded-none flex-shrink-0">
+              <AvatarFallback className="rounded-none text-xs font-medium bg-accent text-accent-foreground">
+                {getInitials(job.companyName)}
+              </AvatarFallback>
+            </Avatar>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="md:hidden">
+            <div className="flex flex-col gap-1">
+              <p className="font-medium">{job.companyName}</p>
+              {job.contactPerson && (
+                <p className="text-xs text-muted-foreground">
+                  Contact: {job.contactPerson}
+                </p>
+              )}
+              {job.contactNumber && (
+                <p className="text-xs text-muted-foreground">
+                  {job.contactNumber}
+                </p>
+              )}
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <span className="truncate hidden md:inline">
         {job.companyName}
       </span>
-      
+
       {hasWarning && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -134,11 +155,11 @@ export function CompanyCell({ job }: CompanyCellProps) {
               </TooltipProvider>
             </Button>
           </DropdownMenuTrigger>
-          
+
           <DropdownMenuContent align="end" className="w-64">
             <DropdownMenuLabel>Link Company to Customer</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            
+
             {potentialMatches.length > 0 ? (
               <>
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
@@ -172,7 +193,7 @@ export function CompanyCell({ job }: CompanyCellProps) {
                 <DropdownMenuSeparator />
               </>
             )}
-            
+
             <DropdownMenuItem
               onClick={handleCreateCustomer}
               className="flex items-center gap-2"

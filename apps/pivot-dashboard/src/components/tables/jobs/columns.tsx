@@ -2,7 +2,7 @@
 
 import { FormatAmount } from "@/components/format-amount";
 import { Badge } from "@midday/ui/badge";
-import { Checkbox } from "@midday/ui/checkbox";
+import { MobileCheckbox } from "@midday/table-components";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -59,8 +59,9 @@ export const columns: ColumnDef<Job>[] = [
     id: "select",
     size: 50,
     header: ({ table }) => (
-      <div className="flex items-center justify-center px-3">
-        <Checkbox
+      <div className="flex items-center justify-center">
+        <MobileCheckbox
+          isHeader
           checked={table.getIsAllPageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
@@ -68,37 +69,14 @@ export const columns: ColumnDef<Job>[] = [
       </div>
     ),
     cell: ({ row }) => {
-      const status = row.original.status;
-      const invoiceStatus = row.original.invoiceStatus;
-
-      // Determine dot color based on status
-      let dotColor = "bg-yellow-500"; // pending
-      if (status === "in_progress") dotColor = "bg-blue-500";
-      if (status === "completed") dotColor = "bg-green-500";
-      if (status === "cancelled") dotColor = "bg-gray-500";
-      if (status === "delivered") dotColor = "bg-green-500";
-      if (status === "invoiced" || invoiceStatus === "paid") dotColor = "bg-purple-500";
-      if (invoiceStatus === "unpaid") dotColor = "bg-red-500";
-      if (invoiceStatus === "overdue") dotColor = "bg-orange-500";
-
       return (
-        <div
-          className="flex items-center justify-center px-3 relative"
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-        >
-          <Checkbox
+        <div className="flex items-center justify-center">
+          <MobileCheckbox
             checked={row.getIsSelected()}
             onCheckedChange={(value) => {
               row.toggleSelected(!!value);
             }}
             aria-label="Select row"
-          />
-          <span
-            className={`absolute top-2 right-2 w-2 h-2 rounded-full ${dotColor}`}
-            title={invoiceStatus ? `${status} - ${invoiceStatus}` : status}
           />
         </div>
       );
@@ -114,12 +92,40 @@ export const columns: ColumnDef<Job>[] = [
     enableHiding: false, // Keep job number always visible
     cell: ({ row }) => {
       const jobNumber = row.getValue("jobNumber") as string;
+      const status = row.original.status;
+      const invoiceStatus = row.original.invoiceStatus;
+
+      // Determine dot color based on status
+      let dotColor = "bg-yellow-500"; // pending
+      if (status === "in_progress") dotColor = "bg-blue-500";
+      if (status === "completed") dotColor = "bg-green-500";
+      if (status === "cancelled") dotColor = "bg-gray-500";
+      if (status === "delivered") dotColor = "bg-green-500";
+      if (status === "invoiced" || invoiceStatus === "paid") dotColor = "bg-purple-500";
+      if (invoiceStatus === "unpaid") dotColor = "bg-red-500";
+      if (invoiceStatus === "overdue") dotColor = "bg-orange-500";
 
       if (!jobNumber || jobNumber === "-") {
-        return <Badge variant="outline">N/A</Badge>;
+        return (
+          <div className="flex items-center gap-2">
+            <span
+              className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`}
+              title={invoiceStatus ? `${status} - ${invoiceStatus}` : status}
+            />
+            <Badge variant="outline">N/A</Badge>
+          </div>
+        );
       }
 
-      return <span className="font-medium">{jobNumber}</span>;
+      return (
+        <div className="flex items-center gap-2">
+          <span
+            className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`}
+            title={invoiceStatus ? `${status} - ${invoiceStatus}` : status}
+          />
+          <span className="font-medium">{jobNumber}</span>
+        </div>
+      );
     },
   },
   {
@@ -141,7 +147,8 @@ export const columns: ColumnDef<Job>[] = [
   {
     id: "companyName",
     accessorKey: "companyName",
-    header: "Company", 
+    header: "Company",
+    size: 120,
     enableSorting: true,
     enableHiding: true,
     cell: ({ row }) => (
@@ -273,52 +280,56 @@ export const columns: ColumnDef<Job>[] = [
     id: "invoiceNumber",
     accessorKey: "invoiceNumber",
     header: "Invoice #",
+    size: 120,
     enableSorting: true,
     enableHiding: true,
     meta: { hideOnMobile: true },
     cell: ({ row }) => {
       const invoiceNumber = row.getValue("invoiceNumber") as string | null;
       const invoiceId = row.original.invoiceId;
+      const invoiceStatus = row.original.invoiceStatus;
+
+      // Determine dot color based on invoice status
+      let dotColor = "bg-gray-500"; // draft
+      if (invoiceStatus === "unpaid") dotColor = "bg-red-500";
+      if (invoiceStatus === "paid") dotColor = "bg-green-500";
+      if (invoiceStatus === "canceled") dotColor = "bg-gray-500";
+      if (invoiceStatus === "overdue") dotColor = "bg-orange-500";
 
       if (!invoiceNumber) {
         return <span className="text-muted-foreground">-</span>;
       }
 
+      // Truncate to last 3 digits
+      const truncatedNumber = invoiceNumber.length > 3
+        ? `...${invoiceNumber.slice(-3)}`
+        : invoiceNumber;
+
+      const content = (
+        <div className="flex items-center gap-2">
+          {invoiceStatus && (
+            <span
+              className={`w-2 h-2 rounded-full flex-shrink-0 ${dotColor}`}
+              title={invoiceStatus}
+            />
+          )}
+          <span className="font-mono text-sm">{truncatedNumber}</span>
+        </div>
+      );
+
       if (invoiceId) {
         return (
           <Link
             href={`/invoices?type=edit&invoiceId=${invoiceId}`}
-            className="font-mono text-sm text-primary hover:underline"
+            className="text-primary hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
-            {invoiceNumber}
+            {content}
           </Link>
         );
       }
 
-      return <span className="font-mono text-sm">{invoiceNumber}</span>;
-    },
-  },
-  {
-    id: "invoiceStatus",
-    accessorKey: "invoiceStatus",
-    header: "Invoice Status",
-    enableSorting: true,
-    enableHiding: true,
-    meta: { hideOnMobile: true },
-    cell: ({ row }) => {
-      const invoiceStatus = row.getValue("invoiceStatus") as Job["invoiceStatus"];
-      if (!invoiceStatus) return <span className="text-muted-foreground">-</span>;
-
-      return (
-        <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-none text-xs font-medium capitalize ${
-            invoiceStatusColors[invoiceStatus] || invoiceStatusColors.draft
-          }`}
-        >
-          {invoiceStatus}
-        </span>
-      );
+      return content;
     },
   },
   {
