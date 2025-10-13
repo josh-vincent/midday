@@ -18,26 +18,9 @@ interface Props {
 }
 
 const stickyColumns: StickyColumnConfig[] = [
-  {
-    id: "select",
-    left: "0",
-    width: "40px",
-    minWidth: "40px",
-    zIndex: "30"
-  },
-  {
+   {
     id: "name",
-    left: "40px",
-    width: "240px",
-    minWidth: "240px",
-    zIndex: "20"
   },
-  {
-    id: "actions",
-    right: "0",
-    width: "100px",
-    zIndex: "30"
-  }
 ];
 
 export function TableHeader({ table, tableScroll }: Props) {
