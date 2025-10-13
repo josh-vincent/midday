@@ -21,7 +21,7 @@ export default async function Teams() {
     trpc.team.invitesByEmail.queryOptions(),
   );
 
-  const user = await queryClient.fetchQuery(trpc.user.me.queryOptions());
+  const user = await queryClient.fetchQuery(trpc.user.me.queryOptions(undefined));
 
   // If no teams and no invites, redirect to create team
   if (!teams?.length && !invites?.length) {

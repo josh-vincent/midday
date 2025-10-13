@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default async function Page() {
   const queryClient = getQueryClient();
-  const user = await queryClient.fetchQuery(trpc.user.me.queryOptions());
+  const user = await queryClient.fetchQuery(trpc.user.me.queryOptions(undefined));
 
   if (!user?.id) {
     return redirect("/");

@@ -25,7 +25,7 @@ export default async function Layout({
 
   // NOTE: Right now we want to fetch the user and hydrate the client
   // Next steps would be to prefetch and suspense
-  const user = await queryClient.fetchQuery(trpc.user.me.queryOptions());
+  const user = await queryClient.fetchQuery(trpc.user.me.queryOptions(undefined));
 
   if (!user) {
     redirect("/login");

@@ -25,7 +25,7 @@ export default async function Layout({
   // Next steps would be to prefetch and suspense
   let user;
   try {
-    user = await queryClient.fetchQuery(trpc.user.me.queryOptions());
+    user = await queryClient.fetchQuery(trpc.user.me.queryOptions(undefined));
   } catch (error) {
     // If there's an error fetching user data, redirect to login
     redirect("/login");
