@@ -32,3 +32,7 @@ export {
   getGroupKey,
   type CSVParseResult,
 } from "./csv-parser";
+
+export {
+  getWebsiteLogo,
+} from "./logos";

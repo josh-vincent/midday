@@ -45,7 +45,7 @@ export function TableHeader({ tableScroll }: Props) {
   return (
     <BaseTableHeader className="border-l-0 border-r-0">
       <TableRow>
-        <TableHead className="w-[240px] min-w-[240px] md:sticky md:left-0 bg-background z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background after:z-[-1]">
+        <TableHead className="w-[200px] min-w-[200px] md:sticky md:left-0 bg-background z-20 border-r border-border before:absolute before:right-0 before:top-0 before:bottom-0 before:w-px before:bg-border after:absolute after:right-[-24px] after:top-0 after:bottom-0 after:w-6 after:bg-gradient-to-l after:from-transparent after:to-background after:z-[-1]">
           <div className="flex items-center justify-between">
             <Button
               className="p-0 hover:bg-transparent space-x-2"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCustomerParams } from "@/hooks/use-customer-params";
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import { getInitials } from "@/utils/format";
 import type { RouterOutputs } from "@api/trpc/routers/_app";
 import { Avatar, AvatarFallback, AvatarImageNext } from "@midday/ui/avatar";
@@ -42,14 +42,14 @@ export const columns: ColumnDef<Customer>[] = [
             <Tooltip>
               <TooltipTrigger asChild>
                 <Avatar className="size-5 flex-shrink-0">
-                  {row.original.website && (
+                  {row.original.website || row.original.email   && (
                     <AvatarImageNext
-                      src={getWebsiteLogo(row.original.website)}
-                      alt={`${name} logo`}
-                      width={20}
-                      height={20}
-                      quality={100}
-                    />
+                    src={getWebsiteLogo(row.original.website || row.original.email)}
+                    alt={`${name} logo`}
+                    width={20}
+                    height={20}
+                    quality={100}
+                  />
                   )}
                   <AvatarFallback className="text-[9px] font-medium">
                     {getInitials(name)}

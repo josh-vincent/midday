@@ -15,8 +15,9 @@ export function JobCreateSheet() {
   const { openJobSheet, setOpenJobSheet } = useJobsStore();
   const trpc = useTRPC();
 
-  const isOpen = Boolean(params.createJob) || Boolean(params.jobId) || openJobSheet;
-  const isEditMode = Boolean(params.jobId);
+  // Only open for create mode or when explicitly editing (not just viewing)
+  const isOpen = Boolean(params.createJob) || openJobSheet;
+  const isEditMode = Boolean(params.jobId) && !params.createJob;
 
   // Fetch job data when editing
   const { data: jobData } = useQuery({

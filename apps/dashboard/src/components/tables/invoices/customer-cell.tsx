@@ -1,6 +1,6 @@
 "use client";
 
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import { AvatarCell } from "@midday/table-components/components";
 import { Icons } from "@midday/ui/icons";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@midday/ui/tooltip";
@@ -30,7 +30,7 @@ export function CustomerCell({ invoice }: CustomerCellProps) {
   return (
     <AvatarCell
       name={name}
-      logoUrl={customer?.website ? getWebsiteLogo(customer.website) : null}
+      logoUrl={customer?.website || customer?.email ? getWebsiteLogo(customer.website || customer.email) : null}
       avatarSize="md"
       tooltipDetails={tooltipDetails}
       avatarClassName="rounded-none bg-accent text-accent-foreground"

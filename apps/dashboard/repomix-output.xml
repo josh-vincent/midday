@@ -7570,7 +7570,7 @@ export type WindowEvent = z.infer<typeof searchParamsSchema>["event"];
 
 <file path="apps/dashboard/src/app/[locale]/(public)/i/[token]/opengraph-image.tsx">
 import { getQueryClient, trpc } from "@/trpc/server";
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import { OgTemplate, isValidLogoUrl } from "@midday/invoice";
 import { ImageResponse } from "next/og";
 
@@ -16544,7 +16544,7 @@ import { useTRPC } from "@/trpc/client";
 import { getUrl } from "@/utils/environment";
 import { formatDate } from "@/utils/format";
 import { getInitials } from "@/utils/format";
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import { Avatar, AvatarFallback, AvatarImageNext } from "@midday/ui/avatar";
 import { Button } from "@midday/ui/button";
 import { cn } from "@midday/ui/cn";
@@ -29049,7 +29049,7 @@ export function DataTable() {
 "use client";
 
 import { useCustomerParams } from "@/hooks/use-customer-params";
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import type { RouterOutputs } from "@api/trpc/routers/_app";
 import { Avatar, AvatarFallback, AvatarImageNext } from "@midday/ui/avatar";
 import { Badge } from "@midday/ui/badge";
@@ -29900,7 +29900,7 @@ export function ActionsMenu({ row }: Props) {
 import { FormatAmount } from "@/components/format-amount";
 import { InvoiceStatus } from "@/components/invoice-status";
 import { formatDate, getDueDateStatus } from "@/utils/format";
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import type { RouterOutputs } from "@api/trpc/routers/_app";
 import { Avatar, AvatarFallback, AvatarImageNext } from "@midday/ui/avatar";
 import { cn } from "@midday/ui/cn";
@@ -32846,7 +32846,7 @@ import { TrackerTimer } from "@/components/tracker-timer";
 import { useTrackerParams } from "@/hooks/use-tracker-params";
 import { useUserQuery } from "@/hooks/use-user";
 import { formatAmount, secondsToHoursAndMinutes } from "@/utils/format";
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import type { RouterOutputs } from "@api/trpc/routers/_app";
 import {
   AlertDialog,
@@ -43345,7 +43345,7 @@ export function CountrySelector({ defaultValue, onSelect }: Props) {
 </file>
 
 <file path="apps/dashboard/src/components/customer-header.tsx">
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import { Avatar, AvatarFallback, AvatarImageNext } from "@midday/ui/avatar";
 import { InvoiceStatus } from "./invoice-status";
 
@@ -46004,7 +46004,7 @@ import { useInboxParams } from "@/hooks/use-inbox-params";
 import { useUserQuery } from "@/hooks/use-user";
 import { useTRPC } from "@/trpc/client";
 import { formatDate, getInitials } from "@/utils/format";
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import { Avatar, AvatarFallback, AvatarImageNext } from "@midday/ui/avatar";
 import { Separator } from "@midday/ui/separator";
 import { SheetHeader } from "@midday/ui/sheet";
@@ -46700,7 +46700,7 @@ import { useUserQuery } from "@/hooks/use-user";
 import { downloadFile } from "@/lib/download";
 import { useTRPC } from "@/trpc/client";
 import { getUrl } from "@/utils/environment";
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import {
   Accordion,
   AccordionContent,

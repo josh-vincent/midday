@@ -32,7 +32,7 @@ export function InvoiceDetailsSection({
     <AccordionItem value="invoice" className="border-b">
       <AccordionTrigger className="py-3">
         <div className="flex items-center gap-2">
-          <Icons.Receipt className="size-4" />
+          <Icons.Invoice className="size-4" />
           <span className="font-medium">Invoice Details</span>
           {data?.invoiceStatus && (
             <Badge

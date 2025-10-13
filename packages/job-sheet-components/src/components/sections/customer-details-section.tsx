@@ -30,7 +30,7 @@ export function CustomerDetailsSection({
     <AccordionItem value="customer" className="border-b">
       <AccordionTrigger className="py-3">
         <div className="flex items-center gap-2">
-          <Icons.Users className="size-4" />
+          <Icons.AccountCircle className="size-4" />
           <span className="font-medium">Customer Details</span>
           {customerName && (
             <Badge variant="secondary" className="ml-2">

@@ -40,7 +40,7 @@ export const columns: ColumnDef<ApiKey>[] = [
           <Avatar className="h-6 w-6">
             {user.avatarUrl && (
               <AvatarImageNext
-                src={user.avatarUrl}
+                src={user?.avatarUrl ?? ""}
                 alt={user.fullName ?? ""}
                 width={24}
                 height={24}

@@ -112,7 +112,14 @@ export function CompanyCell({ job }: CompanyCellProps) {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
+            <AvatarImageNext
+                src={getWebsiteLogo(job.companyName || job.companyEmail)}
+                alt={`${job.companyName} logo`}
+                width={8}
+                height={8}
+              />
             <Avatar className="h-8 w-8 rounded-none flex-shrink-0">
+              
               <AvatarFallback className="rounded-none text-xs font-medium bg-accent text-accent-foreground">
                 {getInitials(job.companyName)}
               </AvatarFallback>

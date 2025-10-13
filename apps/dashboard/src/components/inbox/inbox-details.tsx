@@ -8,7 +8,7 @@ import { useTRPC } from "@/trpc/client";
 import { getUrl } from "@/utils/environment";
 import { formatDate } from "@/utils/format";
 import { getInitials } from "@/utils/format";
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import { Avatar, AvatarFallback, AvatarImageNext } from "@midday/ui/avatar";
 import { Button } from "@midday/ui/button";
 import { cn } from "@midday/ui/cn";

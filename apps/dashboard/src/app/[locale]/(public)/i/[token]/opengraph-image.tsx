@@ -1,5 +1,5 @@
 import { getQueryClient, trpc } from "@/trpc/server";
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import { OgTemplate, isValidLogoUrl } from "@midday/invoice";
 import { ImageResponse } from "next/og";
 
@@ -32,7 +32,7 @@ export default async function Image({ params }: Props) {
     `${CDN_URL}/fonts/Geist/og/Geist-Regular.otf`,
   ).then((res) => res.arrayBuffer());
 
-  const logoUrl = getWebsiteLogo(invoice.customer?.website);
+  const logoUrl = getWebsiteLogo(invoice.customer?.website || invoice.customer?.email);
 
   const isValidLogo = await isValidLogoUrl(logoUrl);
 

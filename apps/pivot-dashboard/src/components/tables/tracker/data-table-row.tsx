@@ -7,7 +7,7 @@ import { TrackerTimer } from "@/components/tracker-timer";
 import { useTrackerParams } from "@/hooks/use-tracker-params";
 import { useUserQuery } from "@/hooks/use-user";
 import { formatAmount, secondsToHoursAndMinutes } from "@/utils/format";
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import type { RouterOutputs } from "@api/trpc/routers/_app";
 import {
   AlertDialog,
@@ -97,7 +97,7 @@ export function DataTableRow({ row, onDelete }: DataTableRowProps) {
                 <Avatar className="size-5">
                   {row.customer?.website && (
                     <AvatarImageNext
-                      src={getWebsiteLogo(row.customer?.website)}
+                      src={getWebsiteLogo(row.customer?.website || row.customer?.email)}
                       alt={`${row.customer?.name} logo`}
                       width={20}
                       height={20}

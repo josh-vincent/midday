@@ -1,22 +1,23 @@
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import { Avatar, AvatarFallback, AvatarImageNext } from "@midday/ui/avatar";
 import { InvoiceStatus } from "./invoice-status";
 
 type Props = {
   name: string;
   website?: string | null;
+  email?: string | null;
   status?: "overdue" | "paid" | "unpaid" | "draft" | "canceled" | "scheduled";
 };
 
-export default function CustomerHeader({ name, website, status }: Props) {
+export default function CustomerHeader({ name, website, email, status }: Props) {
   return (
     <div className="flex justify-between items-center mb-4">
       <div className="flex items-center space-x-2">
         {name && (
           <Avatar className="size-5 object-contain border border-border">
-            {website && (
+            {website || email && (
               <AvatarImageNext
-                src={getWebsiteLogo(website)}
+                src={getWebsiteLogo(website || email)}
                 alt={`${name} logo`}
                 width={20}
                 height={20}

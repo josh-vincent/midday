@@ -1,6 +1,6 @@
 "use client";
 
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import { getInitials } from "@/utils/format";
 import { Avatar, AvatarFallback, AvatarImageNext } from "@midday/ui/avatar";
 import { Icons } from "@midday/ui/icons";
@@ -25,9 +25,9 @@ export function CustomerCell({ invoice }: CustomerCellProps) {
         <Tooltip>
           <TooltipTrigger asChild>
             <Avatar className="size-5 flex-shrink-0">
-              {customer?.website && (
+              {customer?.website || customer?.email && (
                 <AvatarImageNext
-                  src={getWebsiteLogo(customer?.website)}
+                  src={getWebsiteLogo(customer?.website || customer?.email)}
                   alt={`${name} logo`}
                   width={20}
                   height={20}

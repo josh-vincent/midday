@@ -5,9 +5,9 @@ import { PlainClient, ThreadFieldSchemaType } from "@team-plain/typescript-sdk";
 import { z } from "zod";
 import { authActionClient } from "./safe-action";
 
-const client = new PlainClient({
-  apiKey: process.env.PLAIN_API_KEY!,
-});
+// const client = new PlainClient({
+//   apiKey: process.env.PLAIN_API_KEY!,
+// });
 
 const mapToPriorityNumber = (priority: string) => {
   switch (priority) {
@@ -42,47 +42,51 @@ export const sendSupportAction = authActionClient
     },
   })
   .action(async ({ parsedInput: data, ctx: { user } }) => {
-    const customer = await client.upsertCustomer({
-      identifier: {
-        emailAddress: user.email,
-      },
-      onCreate: {
-        fullName: user.fullName ?? "",
-        externalId: user.id,
-        email: {
-          email: user.email!,
-          isVerified: true,
-        },
-      },
-      onUpdate: {},
-    });
+    const client = {
+      upsertCustomer: async () => ({ data: { customer: { id: "1" } } }),
+      createThread: async () => ({ data: { thread: { id: "1" } } }),
+    };
+    // const customer = await client.upsertCustomer({
+    //   identifier: {
+    //     emailAddress: user.email,
+    //   },
+    //   onCreate: {
+    //     fullName: user.fullName ?? "",
+    //     externalId: user.id,
+    //     email: {
+    //       email: user.email!,
+    //       isVerified: true,
+    //     },
+    //   },
+    //   onUpdate: {},
+    // });
 
-    const response = await client.createThread({
-      title: data.subject,
-      description: data.message,
-      priority: mapToPriorityNumber(data.priority),
-      customerIdentifier: {
-        customerId: customer.data?.customer.id,
-      },
-      // Support
-      labelTypeIds: ["lt_01HV93FQT6NSC1EN2HHA6BG9WK"],
-      components: [
-        {
-          componentText: {
-            text: data.message,
-          },
-        },
-      ],
-      threadFields: data.url
-        ? [
-            {
-              type: ThreadFieldSchemaType.String,
-              key: "url",
-              stringValue: data.url,
-            },
-          ]
-        : undefined,
-    });
+    // const response = await client.createThread({
+    //   title: data.subject,
+    //   description: data.message,
+    //   priority: mapToPriorityNumber(data.priority),
+    //   customerIdentifier: {
+    //     customerId: customer.data?.customer.id,
+    //   },
+    //   // Support
+    //   labelTypeIds: ["lt_01HV93FQT6NSC1EN2HHA6BG9WK"],
+    //   components: [
+    //     {
+    //       componentText: {
+    //         text: data.message,
+    //       },
+    //     },
+    //   ],
+    //   threadFields: data.url
+    //     ? [
+    //         {
+    //           type: ThreadFieldSchemaType.String,
+    //           key: "url",
+    //           stringValue: data.url,
+    //         },
+    //       ]
+    //     : undefined,
+    // });
 
     return response;
   });

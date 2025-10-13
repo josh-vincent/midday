@@ -73,11 +73,11 @@ export function JobViewSheet({
             <div className="space-y-6">
               {/* Header */}
               <div className="flex items-start justify-between">
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <SheetTitle className="text-lg font-semibold">
                     {data?.title || data?.jobNumber || "Job Details"}
                   </SheetTitle>
-                  <SheetDescription className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                     {data?.status && (
                       <Badge
                         variant="outline"
@@ -101,7 +101,7 @@ export function JobViewSheet({
                         {data.priority.toUpperCase()}
                       </Badge>
                     )}
-                  </SheetDescription>
+                  </div>
                 </div>
 
                 <div className="flex gap-2">

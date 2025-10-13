@@ -196,7 +196,7 @@ export function GatekeeperForm() {
       });
       return;
     }
-
+    console.log("entry", entry);
     // Store the entry and material type for confirmation
     setPendingLoadEntry({
       entry,

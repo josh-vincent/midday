@@ -4,12 +4,12 @@ import { JobViewSheet } from "@midday/job-sheet-components/job-view-sheet";
 import { useJobParams } from "@/hooks/use-job-params";
 import { useTRPC } from "@/trpc/client";
 import { useJobsStore } from "@/store/jobs";
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 
 export function JobViewSheetEnhanced() {
   const trpc = useTRPC();
   const { params, setParams } = useJobParams();
-  const [isEditing, setIsEditing] = useState(false);
+  const { setOpenJobSheet } = useJobsStore();
 
   const isOpen = !!params.jobId && !params.createJob;
 
@@ -30,12 +30,11 @@ export function JobViewSheetEnhanced() {
 
   const handleClose = () => {
     setParams({ jobId: null });
-    setIsEditing(false);
   };
 
   const handleEdit = () => {
-    setIsEditing(true);
-    // You can switch to the edit sheet or inline edit mode
+    // Keep the jobId but trigger the edit sheet via the store
+    setOpenJobSheet(true);
   };
 
   return (

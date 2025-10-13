@@ -859,6 +859,7 @@ export const jobsRouter = createTRPCRouter({
         customerId: originalJob.customerId,
         companyName: originalJob.companyName,
         rego: originalJob.rego,
+        jobNumber: originalJob.jobNumber,
         contactPerson: originalJob.contactPerson,
         contactNumber: originalJob.contactNumber,
         addressSite: originalJob.addressSite,
@@ -872,8 +873,8 @@ export const jobsRouter = createTRPCRouter({
         teamId: teamId,
         createdBy: session.user.id,
         totalAmount: originalJob.pricePerUnit && originalJob.cubicMetreCapacity 
-          ? Number(originalJob.pricePerUnit) * Number(originalJob.cubicMetreCapacity) 
-          : undefined,
+          ? Number(originalJob.pricePerUnit) * Number(originalJob.cubicMetreCapacity) * 100 // Convert to cents
+          : 0,
         // Add timestamp for when the load was delivered
         completedTime: new Date().toISOString(),
       };

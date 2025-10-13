@@ -7,7 +7,7 @@ import { useInboxParams } from "@/hooks/use-inbox-params";
 import { useUserQuery } from "@/hooks/use-user";
 import { useTRPC } from "@/trpc/client";
 import { formatDate, getInitials } from "@/utils/format";
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import { Avatar, AvatarFallback, AvatarImageNext } from "@midday/ui/avatar";
 import { Separator } from "@midday/ui/separator";
 import { SheetHeader } from "@midday/ui/sheet";
@@ -59,7 +59,7 @@ export function InboxSheetDetails() {
 
   const isProcessing =
     data.status === "processing" || data.status === "analyzing";
-  const logoUrl = getWebsiteLogo(data.website);
+  const logoUrl = getWebsiteLogo(data.website || data.email);
 
   return (
     <div className="flex flex-col flex-grow min-h-0 relative h-full w-full">

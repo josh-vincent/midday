@@ -95,6 +95,7 @@ export default async function Layout({
     >
       <body
         className={cn(
+          `h-dvh`,
           `${GeistSans.variable} ${GeistMono.variable} ${lora.variable} font-sans`,
           "whitespace-pre-line overscroll-none antialiased",
         )}

@@ -1,5 +1,5 @@
 import { getQueryClient, trpc } from "@/trpc/server";
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import { OgTemplate, isValidLogoUrl } from "@midday/invoice";
 import { ImageResponse } from "next/og";
 

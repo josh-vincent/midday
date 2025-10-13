@@ -8,7 +8,7 @@ import { useTRPC } from "@/trpc/client";
 import { getUrl } from "@/utils/environment";
 import { formatDate } from "@/utils/format";
 import { getInitials } from "@/utils/format";
-import { getWebsiteLogo } from "@/utils/logos";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import { Avatar, AvatarFallback, AvatarImageNext } from "@midday/ui/avatar";
 import { Button } from "@midday/ui/button";
 import { cn } from "@midday/ui/cn";
@@ -330,7 +330,7 @@ export function InboxDetails() {
               ) : (
                 <div className="relative">
                   <Avatar>
-                    {data.website && (
+                    {data.website || data.email && (
                       <AvatarImageNext
                         alt={data.website}
                         width={40}
@@ -339,7 +339,7 @@ export function InboxDetails() {
                           "rounded-full overflow-hidden",
                           showFallback && "hidden",
                         )}
-                        src={getWebsiteLogo(data.website)}
+                        src={getWebsiteLogo(data.website || data.email)}
                         quality={100}
                         onError={() => {
                           setShowFallback(true);

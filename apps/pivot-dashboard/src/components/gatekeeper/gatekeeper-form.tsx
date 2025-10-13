@@ -185,6 +185,7 @@ export function GatekeeperForm() {
   const handleConfirmAddLoad = useCallback(async () => {
     if (!pendingLoadEntry) return;
 
+    console.log("pendingLoadEntry", pendingLoadEntry);
     setShowAddLoadConfirm(false);
 
     await addLoadMutation.mutateAsync({
@@ -298,6 +299,9 @@ export function GatekeeperForm() {
           <div><strong>Date:</strong> {today}</div>
           {pendingLoadEntry?.entry.latestJob.addressSite && (
             <div><strong>Site:</strong> {pendingLoadEntry.entry.latestJob.addressSite}</div>
+          )}
+          {pendingLoadEntry?.entry.latestJob.jobDate && (
+            <div><strong>Date:</strong> {JSON.stringify(pendingLoadEntry.entry.latestJob)}</div>
           )}
         </div>
         <AlertDialogFooter>

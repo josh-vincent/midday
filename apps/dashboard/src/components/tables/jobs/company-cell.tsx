@@ -3,6 +3,7 @@
 import { useCustomerParams } from "@/hooks/use-customer-params";
 import { useTRPC } from "@/trpc/client";
 import { AvatarCell } from "@midday/table-components/components";
+import { getWebsiteLogo } from "@midday/utils/logos";
 import { Button } from "@midday/ui/button";
 import {
   DropdownMenu,
@@ -122,6 +123,7 @@ export function CompanyCell({ job }: CompanyCellProps) {
       tooltipDetails={tooltipDetails}
       avatarClassName="rounded-none bg-accent text-accent-foreground"
       className="flex items-center gap-2 w-10 md:max-w-[200px]"
+      logoUrl={job?.companyName || job?.companyEmail ? getWebsiteLogo(job.companyName || job.companyEmail) : null}
       actionElement={
         hasWarning && (
           <DropdownMenu>
