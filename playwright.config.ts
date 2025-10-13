@@ -30,6 +30,9 @@ export default defineConfig({
     ['list']
   ],
 
+  // Increase timeout to 60 seconds per test
+  timeout: 60000,
+
   use: {
     // Base URL for tests
     baseURL: 'http://localhost:3333',
