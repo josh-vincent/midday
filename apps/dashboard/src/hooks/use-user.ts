@@ -9,7 +9,7 @@ import {
 
 export function useUserQuery() {
   const trpc = useTRPC();
-  return useSuspenseQuery(trpc.user.me.queryOptions());
+  return useSuspenseQuery(trpc.user.me.queryOptions(undefined));
 }
 
 export function useUserMutation() {
